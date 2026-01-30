@@ -89,8 +89,7 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
 
 **Voraussetzungen:**
 * Flutter SDK installiert.
-* Ein Google/Firebase Account
-
+* Ein Google/Firebase Account.
 
 1.  **Repository klonen:**
     ```bash
@@ -103,20 +102,36 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
     flutter pub get
     ```
 
-3. **⚙️ Konfiguration (Wichtig!)**
+3.  **⚙️ Konfiguration (Wichtig!)**
 
-    Da diese App **Firebase** nutzt, benötigst du für die lokale Entwicklung deine eigene Konfigurationsdatei. Die sensiblen Daten sind aus Sicherheitsgründen nicht im Repository enthalten.
+    Da diese App **Firebase** nutzt, benötigst du für die lokale Entwicklung deine eigene Konfigurationsdatei.
 
     **1. Firebase Setup:**
     1.  Erstelle ein neues Projekt in der [Firebase Console](https://console.firebase.google.com/).
     2.  Füge eine **Android-App** hinzu (Package Name: `ch.stutz.app` – oder passe ihn in `android/app/build.gradle` an).
-    3.  Aktiviere im Firebase Dashboard folgende Dienste:
-        * **Authentication** (Google Sign-In & Anonym).
-        * **Firestore Database** (Erstelle eine Datenbank im Test-Modus).
-    4.  Lade die `google-services.json` herunter.
-    5.  Platziere die Datei in: `android/app/google-services.json`.
+    3.  Aktiviere im Firebase Dashboard:
+        * **Authentication:** Aktiviere "Google" und "Anonym".
+        * **Firestore Database:** Erstelle eine Datenbank (starte im Test-Modus).
 
-    **2. (Optional) Release Signing:**
+    **2. WICHTIG: SHA-1 Fingerabdruck (für Google Login):**
+    Damit der Login im Debug-Modus funktioniert, musst du deinen lokalen Fingerabdruck registrieren **bevor** du die Config herunterlädst.
+    * **Mac/Linux:**
+      ```bash
+      cd android
+      ./gradlew signingReport
+      ```
+    * **Windows:**
+      ```bash
+      cd android
+      gradlew signingReport
+      ```
+    Suche in der Ausgabe nach dem Eintrag **Variant: debug**, kopiere den **SHA1**-Schlüssel und füge ihn in den [Firebase Projekteinstellungen](https://console.firebase.google.com/project/_/settings/general/) unter "Apps" -> "Fingerabdruck hinzufügen" ein.
+
+    **3. Config Datei integrieren:**
+    1.  Lade **jetzt** (nachdem der SHA-1 drin ist) die `google-services.json` herunter.
+    2.  Verschiebe die Datei in diesen Ordner: `android/app/google-services.json`.
+
+    **4. (Optional) Release Signing:**
     Für `flutter run` (Debug Mode) ist dies nicht nötig. Wenn du jedoch eine **Release APK** bauen möchtest (`flutter build apk --release`), benötigst du einen Keystore.
     1.  Erstelle eine Datei `android/key.properties` (siehe `android/key.properties.example` falls vorhanden, sonst Struktur wie folgt):
         ```properties
