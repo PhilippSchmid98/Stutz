@@ -82,7 +82,6 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     final flatNodes = snapshot.docs
         .map((doc) => ExpenseNode.fromFirestore(doc))
         .toList();
-    // Wichtig: Firestore liefert flach -> Wir müssen den Baum bauen
     return _buildTree(flatNodes);
   }
 
@@ -93,7 +92,6 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> updateExpenseNode(ExpenseNode node) async {
-    // merge: true verhindert, dass Felder gelöscht werden, die wir hier nicht senden
     await _collection
         .doc(node.id)
         .set(node.toFirestore(), SetOptions(merge: true));
@@ -101,12 +99,26 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> deleteExpenseNode(String id) async {
-    // Wir machen hier für den Start einen "Hard Delete".
-    // Achtung: Kinder und Transaktionen könnten verweisen (Orphans).
     await _collection.doc(id).delete();
   }
 
-  // --- NEUE FEATURES ---
+  // --- NEU: BATCH UPDATE FÜR SORTIERUNG ---
+  // Diese Methode fehlte und wird von der UI beim Drag & Drop benötigt
+  @override
+  Future<void> updateNodeOrder(List<ExpenseNode> sortedNodes) async {
+    final batch = _firestore.batch();
+
+    for (int i = 0; i < sortedNodes.length; i++) {
+      final node = sortedNodes[i];
+      final docRef = _collection.doc(node.id);
+      // Wir aktualisieren nur das sortOrder Feld
+      batch.update(docRef, {'sortOrder': i});
+    }
+
+    await batch.commit();
+  }
+
+  // --- LIVE UPDATES ---
 
   @override
   Stream<List<ExpenseNode>> watchAllExpenseNodes() {
@@ -118,7 +130,7 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     });
   }
 
-  // --- INTERNE LOGIK: Baum bauen (Rekonstruktion) ---
+  // --- INTERNE LOGIK: Baum bauen & Sortieren ---
   List<ExpenseNode> _buildTree(List<ExpenseNode> flatNodes) {
     // 1. Gruppiere Kinder nach Parent-ID
     Map<String, List<ExpenseNode>> childrenMap = {};
@@ -132,6 +144,15 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     ExpenseNode attachChildren(ExpenseNode parent) {
       final children = childrenMap[parent.id] ?? [];
 
+      // WICHTIG: Kinder sortieren!
+      children.sort((a, b) {
+        // Zuerst nach sortOrder
+        int res = a.sortOrder.compareTo(b.sortOrder);
+        // Fallback: Alphabetisch, wenn sortOrder gleich ist (z.B. bei alten Daten)
+        if (res == 0) return a.name.compareTo(b.name);
+        return res;
+      });
+
       return ExpenseNode(
         id: parent.id,
         parentId: parent.parentId,
@@ -139,16 +160,24 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
         plannedAmount: parent.plannedAmount,
         interval: parent.interval,
         type: parent.type,
-        // Rekursion hier:
+        sortOrder:
+            parent.sortOrder, // WICHTIG: sortOrder muss durchgereicht werden!
+        // Rekursion für die Kinder
         children: children.map((c) => attachChildren(c)).toList(),
       );
     }
 
-    // 3. Nur Root-Knoten zurückgeben (die keinen Parent haben)
-    return flatNodes
-        .where((n) => n.parentId == null)
-        .map((root) => attachChildren(root))
-        .toList();
+    // 3. Root-Knoten finden
+    final roots = flatNodes.where((n) => n.parentId == null).toList();
+
+    // WICHTIG: Root-Knoten sortieren!
+    roots.sort((a, b) {
+      int res = a.sortOrder.compareTo(b.sortOrder);
+      if (res == 0) return a.name.compareTo(b.name);
+      return res;
+    });
+
+    return roots.map((root) => attachChildren(root)).toList();
   }
 }
 

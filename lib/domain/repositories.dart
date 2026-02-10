@@ -10,6 +10,8 @@ abstract class IncomeSourceRepository {
 }
 
 abstract class ExpenseNodeRepository {
+  Future<void> updateNodeOrder(List<ExpenseNode> sortedNodes);
+
   Future<List<ExpenseNode>> getAllExpenseNodes();
   Stream<List<ExpenseNode>> watchAllExpenseNodes();
 

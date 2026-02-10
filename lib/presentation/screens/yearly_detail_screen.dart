@@ -1,7 +1,6 @@
 // Datei: lib/presentation/screens/yearly_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
 
 class YearlyDetailScreen extends ConsumerStatefulWidget {
@@ -88,8 +87,9 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Fehler: $e')),
         data: (roots) {
-          if (roots.isEmpty)
+          if (roots.isEmpty) {
             return const Center(child: Text("Keine Daten für dieses Jahr."));
+          }
 
           // Gesamtsummen für Footer
           double totalPlanned = 0;
@@ -146,7 +146,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                             ),
                             Switch(
                               value: _includeOffset,
-                              activeColor: Colors.teal,
+                              activeThumbColor: Colors.teal,
                               onChanged: (val) =>
                                   setState(() => _includeOffset = val),
                             ),
@@ -219,7 +219,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 10,
                       offset: const Offset(0, -5),
                     ),

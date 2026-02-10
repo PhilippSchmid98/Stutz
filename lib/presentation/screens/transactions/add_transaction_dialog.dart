@@ -212,8 +212,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                               ),
                                             ),
                                         validator: (v) {
-                                          if (_selectedNodeId == null)
+                                          if (_selectedNodeId == null) {
                                             return 'Bitte Kategorie wählen';
+                                          }
                                           return null;
                                         },
                                         onChanged: (text) {
@@ -522,8 +523,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     final List<ExpenseNode> flat = [];
     for (var node in nodes) {
       if (node.type == 'Variable') flat.add(node);
-      if (node.children.isNotEmpty)
+      if (node.children.isNotEmpty) {
         flat.addAll(_flattenTreeVariableOnly(node.children));
+      }
     }
     return flat;
   }
