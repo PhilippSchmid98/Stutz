@@ -64,6 +64,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '78877647203',
     projectId: 'stutz-7ed90',
     storageBucket: 'stutz-7ed90.firebasestorage.app',
+    androidClientId: '78877647203-90bkqm8dde7srh36cure9v9bk1su4jqu.apps.googleusercontent.com',
+    iosClientId: '78877647203-gmjvometrj0jtjrugpv14s3ldsbo5qfo.apps.googleusercontent.com',
     iosBundleId: 'ch.stutz.app',
   );
 
@@ -73,6 +75,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '78877647203',
     projectId: 'stutz-7ed90',
     storageBucket: 'stutz-7ed90.firebasestorage.app',
+    androidClientId: '78877647203-90bkqm8dde7srh36cure9v9bk1su4jqu.apps.googleusercontent.com',
+    iosClientId: '78877647203-l72cgbc9kk6nsph5s6eq0da90o3795la.apps.googleusercontent.com',
     iosBundleId: 'com.example.expenseTracker',
   );
 
@@ -85,4 +89,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'stutz-7ed90.firebasestorage.app',
     measurementId: 'G-PN322RJLP5',
   );
+
 }

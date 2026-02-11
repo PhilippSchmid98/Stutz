@@ -13,10 +13,7 @@
                     "projectId": "stutz-7ed90",
                     "configurations": {
                         "android": "1:78877647203:android:0ea6a4ff3a57399f8c3356",
-                        "ios": "1:78877647203:ios:1a9438fec5e102c88c3356",
-                        "macos": "1:78877647203:ios:0434a955f1371a9b8c3356",
-                        "web": "1:78877647203:web:44c04b3797875ba88c3356",
-                        "windows": "1:78877647203:web:5959ec978ae0ccda8c3356"
+                        "ios": "1:78877647203:ios:1a9438fec5e102c88c3356"
                     }
                 }
             }
