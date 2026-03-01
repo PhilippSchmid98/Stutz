@@ -11,7 +11,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Der Provider lädt die Daten spezifisch für das übergebene Monat-Datum
+    // Provider loads data specific to the given month
     final treeAsync = ref.watch(monthlyDetailTreeProvider(month));
 
     return Scaffold(
@@ -34,7 +34,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
             );
           }
 
-          // Gesamtsummen berechnen
+          // Calculate total sums
           double totalPlanned = 0;
           double totalActual = 0;
           for (var root in roots) {
@@ -49,7 +49,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
 
           return Column(
             children: [
-              // HEADER ZEILE
+              // Header row
               Container(
                 padding: const EdgeInsets.symmetric(
                   vertical: 12,
@@ -94,7 +94,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
                 ),
               ),
 
-              // LISTE
+              // List
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 20),
@@ -104,7 +104,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
                 ),
               ),
 
-              // FOOTER (TOTAL & DIFFERENZ)
+              // Footer (total & difference)
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -121,7 +121,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Zeile 1: Ist vs Budget
+                      // Row 1: Actual vs Budget
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -140,7 +140,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 12),
 
-                      // Zeile 2: Progress Bar
+                      // Row 2: Progress bar
                       LinearPercentIndicator(
                         lineHeight: 12.0,
                         percent: percent,
@@ -153,7 +153,7 @@ class MonthlyDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // Zeile 3: Grosse Differenz Anzeige
+                      // Row 3: Large difference display
                       const Divider(),
                       const SizedBox(height: 10),
                       Row(
@@ -223,7 +223,7 @@ class _ComparisonNodeRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              // NAME
+              // Name
               Expanded(
                 flex: 4,
                 child: Row(
@@ -253,7 +253,7 @@ class _ComparisonNodeRow extends StatelessWidget {
                 ),
               ),
 
-              // IST
+              // Actual
               Expanded(
                 flex: 2,
                 child: Text(
@@ -268,7 +268,7 @@ class _ComparisonNodeRow extends StatelessWidget {
                 ),
               ),
 
-              // SOLL
+              // Budget
               Expanded(
                 flex: 2,
                 child: Text(
@@ -280,7 +280,7 @@ class _ComparisonNodeRow extends StatelessWidget {
             ],
           ),
 
-          // Bar
+          // Progress bar
           if (node.planned > 0 || node.actual > 0) ...[
             const SizedBox(height: 6),
             Padding(

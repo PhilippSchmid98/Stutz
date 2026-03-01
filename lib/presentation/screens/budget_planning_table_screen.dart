@@ -11,7 +11,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Wir holen die Daten
+    // Fetch data
     final incomeAsync = ref.watch(incomeListProvider);
     final expenseRootsAsync = ref.watch(expenseTreeProvider);
 
@@ -28,9 +28,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         child: Column(
           children: [
-            // ------------------------------------------------------
-            // 1. EINNAHMEN KARTE
-            // ------------------------------------------------------
+            // 1. Income card
             incomeAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Fehler: $e'),
@@ -121,7 +119,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
                 return Column(
                   children: [
                     ...roots.map((rootNode) {
-                      // Rekursive Berechnung für die Karte
+                      // Recursive calculation for the card
                       double calcSum(
                         List<ExpenseNode> nodes,
                         String targetInterval,
@@ -221,12 +219,12 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
     );
   }
 
-  // Helper Methode für die Übersichtskarte
+  // Helper method for the overview card
   Widget _buildOverviewCard(
     List<IncomeSource> incomes,
     List<ExpenseNode> roots,
   ) {
-    // 1. Total Einnahmen (Ø Monatlich)
+    // 1. Total income (average monthly)
     double totalIncome = 0;
     for (var i in incomes) {
       if (i.interval == 'Monthly') {
@@ -236,7 +234,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
       }
     }
 
-    // 2. Total Ausgaben nach Typ (Fix vs Variabel) - alles auf Ø Monatlich normalisiert
+    // 2. Total expenses by type (Fixed vs Variable) - all normalized to average monthly
     double totalFixed = 0;
     double totalVariable = 0;
 
@@ -728,7 +726,7 @@ class _ExpenseItemRow extends StatelessWidget {
                 ],
               ),
 
-            // Add Button für Gruppen
+            // Add button for groups
             if (hasChildren || node.plannedAmount == null)
               IconButton(
                 icon: const Icon(
@@ -797,14 +795,14 @@ class _AddButton extends StatelessWidget {
 }
 
 // -----------------------------------------------------------------------------
-// DIALOGE
+// DIALOGS
 // -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
-// DIALOGE & STYLING
+// DIALOGS & STYLING
 // -----------------------------------------------------------------------------
 
-// Kleines Hilfs-Widget für einheitliches Textfeld-Design
+// Small helper widget for consistent text field design
 class _StyledTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -859,7 +857,7 @@ class _StyledTextField extends StatelessWidget {
 // Hilfs-Widget für Dropdowns
 class _StyledDropdown extends StatelessWidget {
   final String value;
-  final Map<String, String> items; // Key: Interner Wert, Value: Anzeige Text
+  final Map<String, String> items; // Key: internal value, Value: display text
   final String label;
   final IconData icon;
   final ValueChanged<String?> onChanged;
@@ -1412,7 +1410,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
   }
 }
 
-// Button für die Auswahl "Eintrag" vs "Gruppe"
+// Button to select "entry" vs "group"
 class _TypeSelectorButton extends StatelessWidget {
   final String label;
   final IconData icon;

@@ -38,30 +38,28 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
 
-    // 1. Filtern: Nur Items, die wirklich im Bild sind
+    // 1. Filter: only items that are actually visible
     final visibleItems = positions.where((pos) {
       return pos.itemLeadingEdge < 1 && pos.itemTrailingEdge > 0;
     }).toList();
 
     if (visibleItems.isEmpty) return;
 
-    // 2. Sortieren nach Index (damit wir wissen, was oben und was unten ist)
-    // index 0 = ganz oben
+    // 2. Sort by index (so we know which item is top or bottom)
+    // index 0 = top
     visibleItems.sort((a, b) => a.index.compareTo(b.index));
 
     int targetIndex;
 
-    // --- LOGIK ---
+    // --- Logic ---
 
-    // REGEL 1: Sind wir ganz oben am Start der Liste?
-    // Wenn das allererste Element (Index 0) sichtbar ist, gewinnt es IMMER.
-    // Das löst dein Problem, dass bei wenigen Einträgen im Januar fälschlich Dezember angezeigt wird.
+    // RULE 1: If we're at the very top of the list, choose index 0.
+    // This prevents incorrect month selection when few items are present near the top.
     if (visibleItems.first.index == 0) {
       targetIndex = 0;
     } else {
-      // REGEL 2: Ansonsten schauen wir nach UNTEN.
-      // Wir nehmen das letzte sichtbare Element (das ganz unten am Bildschirmrand ist).
-      // Sobald ein neuer Monat unten reinscrollt, springt die Anzeige um.
+      // RULE 2: Otherwise, consider the bottom-most visible item.
+      // When a new month scrolls in at the bottom, update to that month.
       targetIndex = visibleItems.last.index;
     }
 
@@ -125,7 +123,7 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
     final transactionListAsync = ref.watch(transactionListProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white, // Cleaner Hintergrund
+      backgroundColor: Colors.white, // Cleaner background
       appBar: AppBar(
         title: const Text('Transaktionen'),
         actions: [const CloudStatusIcon()],
@@ -133,7 +131,7 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        // Wir verstecken die Linie der AppBar für einen "nahtlosen" Look zur Monatsleiste
+        // Hide AppBar divider for a seamless look with the month selector
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: Colors.grey.shade100, height: 1),
@@ -149,20 +147,20 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
         onPressed: () {
           showDialog(
             context: context,
-            // builder statt nur child widget
+            // use builder to provide a dialog widget
             builder: (_) => const AddTransactionDialog(),
           );
         },
       ),
       body: Column(
         children: [
-          // DIE NEUE CLEAN MONTH SELECTOR LEISTE
+          // New: Clean month selector
           const SizedBox(height: 8),
           _CleanMonthSelector(onMonthSelected: _scrollToMonth),
           const SizedBox(height: 8),
           Divider(height: 1, color: Colors.grey.shade100),
 
-          // LISTE
+          // List
           Expanded(
             child: transactionListAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -190,7 +188,7 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
 }
 
 // -----------------------------------------------------------------------------
-// NEW: INTELLIGENT CLEAN MONTH SELECTOR
+// NEW: Intelligent clean month selector
 // -----------------------------------------------------------------------------
 
 class _CleanMonthSelector extends ConsumerStatefulWidget {
@@ -206,7 +204,7 @@ class _CleanMonthSelector extends ConsumerStatefulWidget {
 class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
   final ScrollController _scrollController = ScrollController();
 
-  // Design-Konstante: Breite eines Items
+  // Design constant: width of an item
   final double _itemWidth = 80.0;
 
   @override
@@ -221,11 +219,11 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
     final currentMonth = ref.watch(currentVisibleMonthProvider);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Berechnung: Brauchen wir überhaupt Scrollen?
+    // Compute: do we need to enable scrolling?
     final totalContentWidth = months.length * _itemWidth;
     final isScrollable = totalContentWidth > screenWidth;
 
-    // Auto-Scroll Logic (Nur ausführen, wenn wir auch scrollen können)
+    // Auto-scroll logic (only run when the list is scrollable)
     if (isScrollable) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!_scrollController.hasClients) return;
@@ -259,7 +257,7 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
     );
   }
 
-  // VARIANTE A: Zu viele Items -> Scrollbar
+  // Variant A: Many items -> scrollable
   Widget _buildScrollableList(
     List<DateTime> months,
     DateTime currentMonth,
@@ -268,7 +266,7 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
     return ListView.builder(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
-      // Padding sorgt dafür, dass erstes/letztes Item in die Mitte können
+      // Padding ensures first/last item can be centered
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: months.length,
       itemBuilder: (context, index) {
@@ -277,11 +275,11 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
     );
   }
 
-  // VARIANTE B: Wenige Items -> Zentriert & Statisch
+  // Variant B: Few items -> centered & static
   Widget _buildCenteredList(List<DateTime> months, DateTime currentMonth) {
     return Center(
       child: Row(
-        mainAxisSize: MainAxisSize.min, // Nimmt nur so viel Platz wie nötig
+        mainAxisSize: MainAxisSize.min, // Takes only as much space as needed
         mainAxisAlignment: MainAxisAlignment.center,
         children: months.map((date) {
           return _buildItem(date, currentMonth);
@@ -290,7 +288,7 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
     );
   }
 
-  // Das eigentliche Design des Text-Items (wiederverwendet)
+  // Item text design (reused)
   Widget _buildItem(DateTime date, DateTime currentMonth) {
     final isSelected =
         date.year == currentMonth.year && date.month == currentMonth.month;
@@ -305,7 +303,7 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
           duration: const Duration(milliseconds: 200),
           style: TextStyle(
             fontFamily: 'Roboto',
-            // Aktiv: Groß & Schwarz. Inaktiv: Kleiner & Grau
+            // Active: larger & black. Inactive: smaller & grey
             fontSize: isSelected ? 18 : 15,
             fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
             color: isSelected ? Colors.black : Colors.grey.shade400,
@@ -320,8 +318,8 @@ class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
 }
 
 // -----------------------------------------------------------------------------
-// HELPER WIDGETS (Unverändert, nur reinkopiert damit File komplett ist)
-// -----------------------------------------------------------------------------
+// HELPER WIDGETS
+// --------------------------------------------------------------------------
 
 class _DailyTransactionGroup extends StatelessWidget {
   final DailyTransactions group;
@@ -336,7 +334,7 @@ class _DailyTransactionGroup extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 8), // Etwas mehr Rand
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 8), // More padding
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -402,7 +400,7 @@ class _TransactionItem extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100, // Sehr dezentes Icon
+                color: Colors.grey.shade100, // Very subtle icon
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Icon(

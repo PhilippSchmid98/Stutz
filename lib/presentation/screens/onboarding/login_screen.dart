@@ -14,7 +14,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   bool _isLoading = false;
 
-  // Wenn Login erfolgreich: Flag speichern und zum Dashboard
+  // Save flag and navigate to the dashboard upon successful login
   Future<void> _onLoginSuccess() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('seenOnboarding', true);
@@ -22,9 +22,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(
-        builder: (context) => const HomeScreen(),
-      ), // Hier dein Ziel-Screen
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
       (route) => false,
     );
   }

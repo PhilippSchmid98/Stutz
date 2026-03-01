@@ -6,7 +6,6 @@ import 'package:stutz/domain/repositories.dart';
 
 part 'firestore_repositories.g.dart';
 
-// Hilfs-Provider für die UserID
 @riverpod
 String? currentUserId(Ref ref) {
   return FirebaseAuth.instance.currentUser?.uid;
@@ -24,8 +23,6 @@ class FirestoreTransactionRepository implements TransactionRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(userId).collection('transactions');
 
-  // --- STANDARD METHODEN (Kompatibel mit deinem alten Code) ---
-
   @override
   Future<List<Transaction>> getAllTransactions() async {
     final snapshot = await _collection
@@ -36,7 +33,7 @@ class FirestoreTransactionRepository implements TransactionRepository {
 
   @override
   Future<void> addTransaction(Transaction t) async {
-    // Wir nutzen .set(t.id), damit wir die ID (UUID) behalten, die wir im UI generiert haben
+    // Use .set(t.id) to retain the ID (UUID) generated in the UI
     await _collection.doc(t.id).set(t.toFirestore());
   }
 
@@ -50,8 +47,6 @@ class FirestoreTransactionRepository implements TransactionRepository {
     await _collection.doc(id).delete();
   }
 
-  // --- NEUE FEATURES (Live Updates) ---
-
   @override
   Stream<List<Transaction>> watchAllTransactions() {
     return _collection.orderBy('dateTime', descending: true).snapshots().map((
@@ -63,7 +58,7 @@ class FirestoreTransactionRepository implements TransactionRepository {
 }
 
 // -----------------------------------------------------------------------------
-// EXPENSE NODE REPOSITORY (Budget-Baum)
+// EXPENSE NODE REPOSITORY (Budget Tree)
 // -----------------------------------------------------------------------------
 class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
   final String userId;
@@ -74,15 +69,13 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(userId).collection('expense_nodes');
 
-  // --- STANDARD METHODEN ---
-
   @override
   Future<List<ExpenseNode>> getAllExpenseNodes() async {
     final snapshot = await _collection.get();
     final flatNodes = snapshot.docs
         .map((doc) => ExpenseNode.fromFirestore(doc))
         .toList();
-    // Wichtig: Firestore liefert flach -> Wir müssen den Baum bauen
+    // Firestore returns flat data -> Build the tree structure
     return _buildTree(flatNodes);
   }
 
@@ -93,7 +86,7 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> updateExpenseNode(ExpenseNode node) async {
-    // merge: true verhindert, dass Felder gelöscht werden, die wir hier nicht senden
+    // merge: true prevents deletion of fields not sent here
     await _collection
         .doc(node.id)
         .set(node.toFirestore(), SetOptions(merge: true));
@@ -101,12 +94,9 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> deleteExpenseNode(String id) async {
-    // Wir machen hier für den Start einen "Hard Delete".
-    // Achtung: Kinder und Transaktionen könnten verweisen (Orphans).
+    // Perform a "Hard Delete". Note: Children and transactions may reference this node (orphans).
     await _collection.doc(id).delete();
   }
-
-  // --- NEUE FEATURES ---
 
   @override
   Stream<List<ExpenseNode>> watchAllExpenseNodes() {
@@ -118,9 +108,9 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     });
   }
 
-  // --- INTERNE LOGIK: Baum bauen (Rekonstruktion) ---
+  // Internal logic: Build tree structure from flat nodes
   List<ExpenseNode> _buildTree(List<ExpenseNode> flatNodes) {
-    // 1. Gruppiere Kinder nach Parent-ID
+    // 1. Group children by parent ID
     Map<String, List<ExpenseNode>> childrenMap = {};
     for (var node in flatNodes) {
       if (node.parentId != null) {
@@ -128,7 +118,7 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
       }
     }
 
-    // 2. Rekursive Funktion zum Zusammenbauen
+    // 2. Recursive function to attach children
     ExpenseNode attachChildren(ExpenseNode parent) {
       final children = childrenMap[parent.id] ?? [];
 
@@ -139,12 +129,12 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
         plannedAmount: parent.plannedAmount,
         interval: parent.interval,
         type: parent.type,
-        // Rekursion hier:
+        // Recursion here:
         children: children.map((c) => attachChildren(c)).toList(),
       );
     }
 
-    // 3. Nur Root-Knoten zurückgeben (die keinen Parent haben)
+    // 3. Return only root nodes (those without a parent)
     return flatNodes
         .where((n) => n.parentId == null)
         .map((root) => attachChildren(root))
@@ -194,26 +184,26 @@ class FirestoreIncomeRepository implements IncomeSourceRepository {
 }
 
 // -----------------------------------------------------------------------------
-// RIVERPOD PROVIDERS (Ersatz für die alten Provider)
+// RIVERPOD PROVIDERS
 // -----------------------------------------------------------------------------
 
 @riverpod
 TransactionRepository transactionRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Nicht eingeloggt (TransactionRepo)");
+  if (uid == null) throw Exception("Not logged in (TransactionRepo)");
   return FirestoreTransactionRepository(uid);
 }
 
 @riverpod
 ExpenseNodeRepository expenseNodeRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Nicht eingeloggt (ExpenseRepo)");
+  if (uid == null) throw Exception("Not logged in (ExpenseRepo)");
   return FirestoreExpenseNodeRepository(uid);
 }
 
 @riverpod
 IncomeSourceRepository incomeSourceRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Nicht eingeloggt (IncomeRepo)");
+  if (uid == null) throw Exception("Not logged in (IncomeRepo)");
   return FirestoreIncomeRepository(uid);
 }

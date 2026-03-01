@@ -19,18 +19,7 @@ class CloudStatusIcon extends ConsumerWidget {
       );
     }
 
-    // Wenn Online: Zeigen wir eine "Alles Ok" Wolke oder nichts?
-    // Option A: Nichts (Empfohlen für saubere UI)
+    // When online: show nothing for a clean UI
     return const SizedBox.shrink();
-
-    // Option B: Grüne Wolke (Falls du es explizit willst)
-
-    // return const Tooltip(
-    //   message: "Online & Synchronisiert",
-    //   child: Padding(
-    //     padding: EdgeInsets.symmetric(horizontal: 8.0),
-    //     child: Icon(Icons.cloud_done, color: Colors.teal),
-    //   ),
-    // );
   }
 }

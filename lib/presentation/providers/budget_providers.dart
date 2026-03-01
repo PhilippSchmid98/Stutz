@@ -1,4 +1,3 @@
-// Datei: lib/presentation/providers/budget_providers.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';

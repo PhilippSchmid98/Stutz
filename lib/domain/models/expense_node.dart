@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ExpenseNode {
   final String id;
-  final String? parentId; // Added: Needed for Repository to save to DB
+  final String? parentId; // Needed for Repository to save to DB
   final String name;
   final double? plannedAmount;
   final double? actualAmount; // Calculated field (not in DB)
   final String? type; // 'Fixed' or 'Variable'
-  final String? interval; // Added: 'Monthly' or 'Yearly'
+  final String? interval; // 'Monthly' or 'Yearly'
   final List<ExpenseNode> children;
 
   ExpenseNode({
@@ -40,11 +40,11 @@ class ExpenseNode {
     return ExpenseNode(
       id: doc.id,
       parentId: data['parentId'],
-      name: data['name'] ?? 'Unbekannt',
+      name: data['name'] ?? 'Unknown',
       plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
       interval: data['interval'],
       type: data['type'],
-      children: [], // Wird später gefüllt
+      children: [], // Will be filled later
     );
   }
 }

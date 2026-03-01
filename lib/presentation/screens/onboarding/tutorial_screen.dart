@@ -43,7 +43,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
         actions: [
           TextButton(
             onPressed: () {
-              // Überspringen -> Direkt zum Login
+              // Skip -> Navigate directly to login
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -105,7 +105,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       ),
                       onPressed: () {
                         if (_currentPage == _pages.length - 1) {
-                          // Ende -> Login Screen
+                          // End -> Login Screen
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(

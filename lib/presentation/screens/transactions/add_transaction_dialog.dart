@@ -24,7 +24,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
   late DateTime _selectedDate;
 
-  // Wir speichern ID und Name separat für die Autocomplete-Logik
+  // Store ID and name separately for autocomplete logic
   String? _selectedNodeId;
   String _selectedNodeName = "";
 
@@ -71,7 +71,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // HEADER
+            // Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -98,14 +98,14 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
             const SizedBox(height: 16),
 
-            // SCROLLBARER INHALT
+            // Scrollable content
             Flexible(
               child: SingleChildScrollView(
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      // 1. BETRAG
+                      // 1. Amount
                       const SizedBox(height: 8),
                       IntrinsicWidth(
                         child: TextFormField(
@@ -114,7 +114,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                             decimal: true,
                           ),
                           textAlign: TextAlign.center,
-                          autofocus: !isEdit, // Fokus nur bei neuem Eintrag
+                          autofocus: !isEdit, // Autofocus only for new entries
                           style: const TextStyle(
                             fontSize: 42,
                             fontWeight: FontWeight.w900,
@@ -137,7 +137,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       ),
                       const SizedBox(height: 24),
 
-                      // 2. KATEGORIE (AUTOCOMPLETE / SUCHE)
+                      // 2. Category (autocomplete / search)
                       expenseTreeAsync.when(
                         loading: () => const LinearProgressIndicator(),
                         error: (_, __) => const SizedBox(),
@@ -147,16 +147,16 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                           return LayoutBuilder(
                             builder: (context, constraints) {
                               return RawAutocomplete<ExpenseNode>(
-                                // Initialwert setzen (wichtig für Edit Modus)
+                                // Set initial value (important for edit mode)
                                 initialValue: _selectedNodeId != null
                                     ? TextEditingValue(text: _selectedNodeName)
                                     : null,
 
-                                // LOGIK: Filtern beim Tippen
+                                // Options filtering while typing
                                 optionsBuilder:
                                     (TextEditingValue textEditingValue) {
                                       if (textEditingValue.text == '') {
-                                        return allNodes; // Alles anzeigen wenn leer
+                                        return allNodes; // Show all when empty
                                       }
                                       return allNodes.where((
                                         ExpenseNode option,
@@ -170,20 +170,20 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                       });
                                     },
 
-                                // LOGIK: Wenn ausgewählt wurde
+                                // When an option is selected
                                 onSelected: (ExpenseNode selection) {
                                   setState(() {
                                     _selectedNodeId = selection.id;
                                     _selectedNodeName = selection.name;
                                   });
-                                  // Fokus schließen oder zum nächsten Feld springen
+                                  // Close keyboard or move to next field
                                   FocusScope.of(context).unfocus();
                                 },
 
                                 displayStringForOption: (ExpenseNode option) =>
                                     option.name,
 
-                                // UI: Das Textfeld
+                                // UI: The text field
                                 fieldViewBuilder:
                                     (
                                       context,
@@ -191,7 +191,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                       focusNode,
                                       onFieldSubmitted,
                                     ) {
-                                      // Fix: Wenn ID gesetzt aber Text leer (z.B. nach Reset), Text wiederherstellen
+                                      // Fix: restore text when ID is set but field is empty (e.g., after reset)
                                       if (_selectedNodeId != null &&
                                           textController.text.isEmpty) {
                                         textController.text = _selectedNodeName;
@@ -212,12 +212,13 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                               ),
                                             ),
                                         validator: (v) {
-                                          if (_selectedNodeId == null)
+                                          if (_selectedNodeId == null) {
                                             return 'Bitte Kategorie wählen';
+                                          }
                                           return null;
                                         },
                                         onChanged: (text) {
-                                          // ID löschen wenn User den Text ändert, damit er neu wählen muss
+                                          // Clear ID when user changes text so they must re-select
                                           if (_selectedNodeId != null) {
                                             setState(() {
                                               _selectedNodeId = null;
@@ -227,7 +228,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                       );
                                     },
 
-                                // UI: Die Ergebnis-Liste (Dropdown)
+                                // UI: Options dropdown
                                 optionsViewBuilder: (context, onSelected, options) {
                                   return Align(
                                     alignment: Alignment.topLeft,
@@ -237,9 +238,10 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                                       color: Colors.white,
                                       child: ConstrainedBox(
                                         constraints: BoxConstraints(
-                                          maxHeight: 200, // Max Höhe der Liste
+                                          maxHeight:
+                                              200, // Max height of the list
                                           maxWidth: constraints
-                                              .maxWidth, // Gleiche Breite wie Input
+                                              .maxWidth, // Same width as input
                                         ),
                                         child: ListView.separated(
                                           padding: EdgeInsets.zero,
@@ -289,7 +291,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
                       const SizedBox(height: 16),
 
-                      // 3. DATUM
+                      // 3. Date
                       InkWell(
                         onTap: _pickDateTime,
                         borderRadius: BorderRadius.circular(12),
@@ -308,7 +310,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // 4. NOTIZ
+                      // 4. Note
                       TextFormField(
                         controller: _noteCtrl,
                         decoration: _inputDecoration(
@@ -327,7 +329,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
 
             const SizedBox(height: 24),
 
-            // BUTTONS
+            // Buttons
             Row(
               children: [
                 if (isEdit) ...[
@@ -405,7 +407,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   }
 
   Future<void> _pickDateTime() async {
-    FocusScope.of(context).unfocus(); // Tastatur zu
+    FocusScope.of(context).unfocus(); // Close keyboard
 
     final now = DateTime.now();
     final date = await showDatePicker(
@@ -522,8 +524,9 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
     final List<ExpenseNode> flat = [];
     for (var node in nodes) {
       if (node.type == 'Variable') flat.add(node);
-      if (node.children.isNotEmpty)
+      if (node.children.isNotEmpty) {
         flat.addAll(_flattenTreeVariableOnly(node.children));
+      }
     }
     return flat;
   }

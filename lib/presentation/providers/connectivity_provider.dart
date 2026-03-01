@@ -5,21 +5,20 @@ part 'connectivity_provider.g.dart';
 
 @riverpod
 Stream<List<ConnectivityResult>> connectivityStatus(Ref ref) {
-  // Gibt einen Stream zurück, der feuert, wenn sich WiFi/Mobile ändert
+  // Returns a stream that triggers when WiFi/Mobile connectivity changes
   return Connectivity().onConnectivityChanged;
 }
 
-// Kleiner Helper, um einfach zu prüfen "Sind wir offline?"
 @riverpod
 bool isOffline(Ref ref) {
   final statusAsync = ref.watch(connectivityStatusProvider);
 
   return statusAsync.when(
     data: (results) {
-      // Wenn "none" in der Liste ist, haben wir gar keine Verbindung
+      // If "none" is in the list, there is no connection
       return results.contains(ConnectivityResult.none);
     },
-    loading: () => false, // Annahme: Wir sind erst mal online
-    error: (_, __) => true, // Im Fehlerfall lieber warnen
+    loading: () => false, // Assume: Initially online
+    error: (_, __) => true, // In case of error, better to warn
   );
 }

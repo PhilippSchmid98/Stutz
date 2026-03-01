@@ -11,12 +11,12 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Lokaler State für den Index – das ist hier völlig ausreichend
+  // Local state for index is sufficient here
   int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    // Die Screens, zwischen denen wir wechseln
+    // Screens we switch between
     const screens = [
       DashboardScreen(),
       BudgetPlanningTableScreen(),
@@ -24,14 +24,14 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     return Scaffold(
-      // IndexedStack hält den State der Screens (z.B. Scrollposition)
+      // IndexedStack maintains screen state (e.g., scroll position)
       body: IndexedStack(index: _currentIndex, children: screens),
 
-      // Navigation Bar
+      // Navigation bar
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
-          // setState baut das Widget neu mit dem neuen Index
+          // setState rebuilds the widget with new index
           setState(() {
             _currentIndex = index;
           });
