@@ -1,7 +1,6 @@
 // Datei: lib/presentation/screens/yearly_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
 
 class YearlyDetailScreen extends ConsumerStatefulWidget {
