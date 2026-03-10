@@ -6,6 +6,9 @@ on:
       - main
     tags:
       - 'v*'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -29,6 +32,7 @@ jobs:
   build_apk:
     name: 🏗️ Build APK
     needs: test
+    if: github.event_name != 'pull_request' # Baut keine APKs bei PRs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +76,7 @@ jobs:
   build_aab:
     name: 🏗️ Build AAB
     needs: test
+    if: github.event_name != 'pull_request' # Baut keine AABs bei PRs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
