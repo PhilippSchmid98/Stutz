@@ -109,9 +109,8 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ------------------------------------------------------
-            // 2. AUSGABEN KARTEN
-            // ------------------------------------------------------
+            // 2. Expense cards
+            // -----------------------------------------------
             expenseRootsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Fehler: $e'),
@@ -205,10 +204,8 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // ------------------------------------------------------
-            // 3. BUDGET ÜBERSICHT (Die neue Karte)
-            // ------------------------------------------------------
-            // Wir müssen hier sicherstellen, dass beide AsyncValues geladen sind
+            // 3. Budget overview (the new card)
+            // We must ensure both AsyncValues are loaded here
             if (incomeAsync.hasValue && expenseRootsAsync.hasValue)
               _buildOverviewCard(incomeAsync.value!, expenseRootsAsync.value!),
 
@@ -243,13 +240,12 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
         if (node.plannedAmount != null) {
           double amount = node.plannedAmount!;
           if (node.interval == 'Yearly') {
-            amount /= 12; // Auf Monat runterrechnen
+            amount /= 12; // Convert to monthly
           }
 
           if (node.type == 'Fixed') {
             totalFixed += amount;
           } else {
-            // Variable (oder null, zählen wir mal zu Variabel oder separat)
             totalVariable += amount;
           }
         }
@@ -570,11 +566,10 @@ class _SectionCard extends StatelessWidget {
                             );
                           },
                         ),
-                        // --- ÄNDERUNG ENDE ---
                       ],
                     ),
                   ),
-                  // Das Gesamttotal (Durchschnitt) ganz rechts
+                  // The total (average) on the right
                   if (totalYearly > 0)
                     Text(
                       "Ø ${(totalMonthly + totalYearly / 12).toStringAsFixed(0)}",
@@ -679,9 +674,7 @@ class _ExpenseItemRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         child: Row(
           children: [
-            // Einrückung
-            SizedBox(width: depth * 12.0),
-
+            // Indentation
             // Icon
             Icon(
               hasChildren
@@ -781,7 +774,7 @@ class _AddButton extends StatelessWidget {
         width: double.infinity,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05), // Leichter Farbstich
+          color: color.withValues(alpha: 0.05), // Light color tint
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
@@ -854,7 +847,7 @@ class _StyledTextField extends StatelessWidget {
   }
 }
 
-// Hilfs-Widget für Dropdowns
+// Helper widget for dropdowns
 class _StyledDropdown extends StatelessWidget {
   final String value;
   final Map<String, String> items; // Key: internal value, Value: display text
@@ -924,7 +917,7 @@ class _AddMainCategoryDialogState
         'Neue Hauptkategorie',
         style: TextStyle(fontWeight: FontWeight.bold),
       ),
-      // HIER: SizedBox mit maxFinite sorgt für volle Breite
+      // Full width provided by SizedBox with maxFinite
       content: SizedBox(
         width: double.maxFinite,
         child: Form(
@@ -1215,7 +1208,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      // HIER: SizedBox mit maxFinite sorgt für volle Breite
+      // Full width provided by SizedBox with maxFinite
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(

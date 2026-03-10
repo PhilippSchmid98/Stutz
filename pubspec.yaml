@@ -32,6 +32,9 @@ dependencies:
   collection: ^1.19.1
   google_sign_in: ^7.2.0
   shared_preferences: ^2.5.4
+  showcaseview: ^5.0.1
+  animations: ^2.1.1
+  flutter_native_splash: ^2.4.7
 
 dev_dependencies:
   flutter_test:

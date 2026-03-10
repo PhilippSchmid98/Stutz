@@ -2,13 +2,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ExpenseNode {
   final String id;
-  final String? parentId; // Needed for Repository to save to DB
+  final String? parentId;
   final String name;
   final double? plannedAmount;
   final double? actualAmount; // Calculated field (not in DB)
   final String? type; // 'Fixed' or 'Variable'
   final String? interval; // 'Monthly' or 'Yearly'
   final List<ExpenseNode> children;
+
+  // NEW: Field for sorting
+  final int sortOrder;
 
   ExpenseNode({
     required this.id,
@@ -19,6 +22,7 @@ class ExpenseNode {
     this.type,
     this.interval,
     this.children = const [],
+    this.sortOrder = 0, // Default value when created in code
   });
 
   bool get isGroup => children.isNotEmpty;
@@ -30,6 +34,7 @@ class ExpenseNode {
       'plannedAmount': plannedAmount,
       'interval': interval,
       'type': type,
+      'sortOrder': sortOrder, // NEW: Save
     };
   }
 
@@ -44,7 +49,12 @@ class ExpenseNode {
       plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
       interval: data['interval'],
       type: data['type'],
-      children: [], // Will be filled later
+
+      // NEW: Lazy migration.
+      // If null (old document), set to 99999 (to end).
+      sortOrder: data['sortOrder'] ?? 99999,
+
+      children: [], // Filled recursively later in repository
     );
   }
 }

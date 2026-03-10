@@ -75,7 +75,6 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     final flatNodes = snapshot.docs
         .map((doc) => ExpenseNode.fromFirestore(doc))
         .toList();
-    // Firestore returns flat data -> Build the tree structure
     return _buildTree(flatNodes);
   }
 
@@ -86,7 +85,6 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> updateExpenseNode(ExpenseNode node) async {
-    // merge: true prevents deletion of fields not sent here
     await _collection
         .doc(node.id)
         .set(node.toFirestore(), SetOptions(merge: true));
@@ -94,9 +92,26 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> deleteExpenseNode(String id) async {
-    // Perform a "Hard Delete". Note: Children and transactions may reference this node (orphans).
     await _collection.doc(id).delete();
   }
+
+  // NEW: Batch update for sorting
+  // This method was missing and is needed by the UI for drag & drop
+  @override
+  Future<void> updateNodeOrder(List<ExpenseNode> sortedNodes) async {
+    final batch = _firestore.batch();
+
+    for (int i = 0; i < sortedNodes.length; i++) {
+      final node = sortedNodes[i];
+      final docRef = _collection.doc(node.id);
+      // Update only the sortOrder field
+      batch.update(docRef, {'sortOrder': i});
+    }
+
+    await batch.commit();
+  }
+
+  // Live updates from Firestore
 
   @override
   Stream<List<ExpenseNode>> watchAllExpenseNodes() {
@@ -108,7 +123,7 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     });
   }
 
-  // Internal logic: Build tree structure from flat nodes
+  // Internal logic: build tree and sort
   List<ExpenseNode> _buildTree(List<ExpenseNode> flatNodes) {
     // 1. Group children by parent ID
     Map<String, List<ExpenseNode>> childrenMap = {};
@@ -122,6 +137,15 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     ExpenseNode attachChildren(ExpenseNode parent) {
       final children = childrenMap[parent.id] ?? [];
 
+      // IMPORTANT: Sort children!
+      children.sort((a, b) {
+        // First by sortOrder
+        int res = a.sortOrder.compareTo(b.sortOrder);
+        // Fallback: alphabetically if sortOrder is same (e.g., for old data)
+        if (res == 0) return a.name.compareTo(b.name);
+        return res;
+      });
+
       return ExpenseNode(
         id: parent.id,
         parentId: parent.parentId,
@@ -129,16 +153,24 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
         plannedAmount: parent.plannedAmount,
         interval: parent.interval,
         type: parent.type,
-        // Recursion here:
+        sortOrder:
+            parent.sortOrder, // IMPORTANT: sortOrder must be passed through!
+        // Recursion for children
         children: children.map((c) => attachChildren(c)).toList(),
       );
     }
 
-    // 3. Return only root nodes (those without a parent)
-    return flatNodes
-        .where((n) => n.parentId == null)
-        .map((root) => attachChildren(root))
-        .toList();
+    // Find root nodes
+    final roots = flatNodes.where((n) => n.parentId == null).toList();
+
+    // IMPORTANT: Sort root nodes!
+    roots.sort((a, b) {
+      int res = a.sortOrder.compareTo(b.sortOrder);
+      if (res == 0) return a.name.compareTo(b.name);
+      return res;
+    });
+
+    return roots.map((root) => attachChildren(root)).toList();
   }
 }
 
