@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/data/firestore_repositories.dart';
+import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/providers/budget_providers.dart';
@@ -484,6 +485,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
       }
 
       ref.invalidate(transactionListProvider);
+      ref.invalidate(dashboardMonthlyStatsProvider);
       if (mounted) Navigator.pop(context);
     }
   }
@@ -515,6 +517,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           .read(transactionRepositoryProvider)
           .deleteTransaction(widget.existingItem!.transaction.id);
       ref.invalidate(transactionListProvider);
+      ref.invalidate(dashboardMonthlyStatsProvider);
       if (mounted) Navigator.pop(context);
     }
   }
