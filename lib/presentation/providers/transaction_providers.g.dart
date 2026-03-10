@@ -102,7 +102,7 @@ final class AvailableMonthsProvider
   }
 }
 
-String _$availableMonthsHash() => r'5f810a9c5febc07f2d487b1a4e42f829e2336607';
+String _$availableMonthsHash() => r'2b4cf9e43d270b41c001caa1544c5f5f005a01ab';
 
 @ProviderFor(TransactionList)
 const transactionListProvider = TransactionListProvider._();
@@ -128,7 +128,7 @@ final class TransactionListProvider
   TransactionList create() => TransactionList();
 }
 
-String _$transactionListHash() => r'126ef8d45e99f8ee82ddad847f9427bc15694a9a';
+String _$transactionListHash() => r'f673bf2aa41a1e14d64eb21c5582ec872bdbd5cc';
 
 abstract class _$TransactionList
     extends $AsyncNotifier<List<DailyTransactions>> {
