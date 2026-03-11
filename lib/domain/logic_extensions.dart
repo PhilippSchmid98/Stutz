@@ -1,23 +1,22 @@
 import 'package:stutz/domain/models/models.dart';
 
 extension IncomeLogic on IncomeSource {
-  /// Gibt den monatlichen Betrag zurück.
-  /// Rechnet 'Yearly' Beträge automatisch durch 12.
+  /// Returns the monthly amount.
+  /// Automatically divides 'Yearly' amounts by 12.
   double get monthlyAmount {
     if (interval == 'Yearly') {
       return amount / 12;
     }
-    // Gehe von 'Monthly' aus (oder Fallback)
+    // Assume 'Monthly' as default
     return amount;
   }
 }
 
 extension ExpenseLogic on ExpenseNode {
-  /// Berechnet rekursiv die monatlichen Gesamtkosten für diesen Knoten
-  /// inklusive aller Unterkategorien (Kinder).
+  /// Recursively calculates the total monthly cost for this node,
+  /// including all subcategories (children).
   double get totalMonthlyCalculated {
-    // 1. Eigener Betrag (umgerechnet auf Monat)
-    // FALL 1: Es ist eine Gruppe (hat Kinder)
+    // Case 1: It is a group (has children)
     if (isGroup) {
       return children.fold<double>(
         0.0,
@@ -25,8 +24,8 @@ extension ExpenseLogic on ExpenseNode {
       );
     }
 
-    // FALL 2: Es ist ein Blatt (keine Kinder) -> Berechne eigenen Wert
-    // Falls plannedAmount null ist (sollte bei Blatt nicht passieren, aber sicher ist sicher), nimm 0.0
+    // Case 2: It is a leaf (no children) -> Calculate its own value
+    // If plannedAmount is null (should not happen for leaves, but just in case), use 0.0
     final amount = plannedAmount ?? 0.0;
 
     if (interval == 'Yearly') {

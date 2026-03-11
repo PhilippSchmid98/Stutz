@@ -6,7 +6,6 @@ import 'package:stutz/domain/models/models.dart';
 
 part 'transaction_providers.g.dart';
 
-// --- DTO Klassen (bleiben gleich) ---
 class TransactionWithCategory {
   final Transaction transaction;
   final String categoryName;
@@ -31,24 +30,19 @@ class DailyTransactions {
   });
 }
 
-// --- UPDATE: State für den AKTIV SICHTBAREN Monat (Modern) ---
-// Statt StateProvider nutzen wir eine generierte Notifier-Klasse.
 @riverpod
 class CurrentVisibleMonth extends _$CurrentVisibleMonth {
   @override
   DateTime build() {
-    // Initialwert: Heute
     final now = DateTime.now();
     return DateTime(now.year, now.month);
   }
 
-  // Methode zum Ändern des Zustands
   void set(DateTime date) {
     state = date;
   }
 }
 
-// --- Verfügbare Monate (bleibt functional provider) ---
 @riverpod
 List<DateTime> availableMonths(Ref ref) {
   final transactionsAsync = ref.watch(transactionListProvider);
@@ -78,14 +72,10 @@ List<DateTime> availableMonths(Ref ref) {
   );
 }
 
-// --- TransactionList (bleibt AsyncNotifier) ---
 @riverpod
 class TransactionList extends _$TransactionList {
   @override
   Future<List<DailyTransactions>> build() async {
-    // ... (Logik wie gehabt: Laden, Flachklopfen, Sortieren, Gruppieren) ...
-    // HIER BITTE DEINEN VORHERIGEN CODE FÜR build() EINFÜGEN
-    // (Ich kürze das hier ab, da sich die Logik nicht geändert hat)
     final transactions = await ref
         .watch(transactionRepositoryProvider)
         .getAllTransactions();
@@ -102,8 +92,8 @@ class TransactionList extends _$TransactionList {
       );
       return TransactionWithCategory(
         transaction: txn,
-        categoryName: node?.name ?? 'Unbekannt',
-        groupName: node?.parentId, // Vereinfacht
+        categoryName: node?.name ?? 'Unknown',
+        groupName: node?.parentId,
       );
     }).toList();
 

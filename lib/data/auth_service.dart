@@ -8,7 +8,7 @@ part 'auth_service.g.dart';
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // V7: Zugriff über Singleton
+  // Access GoogleSignIn instance via Singleton
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
@@ -30,23 +30,22 @@ class AuthService {
     const webClientId =
         "78877647203-vc4uh88pqqb317ied0apm4tckkpk0bbi.apps.googleusercontent.com";
 
-    // WICHTIG: Einmalig initialisieren und den Server (Firebase) nennen
-    // Das behebt den "serverClientId must be provided" Fehler
+    // Initialize GoogleSignIn with Firebase server client ID to avoid errors
     await _googleSignIn.initialize(serverClientId: webClientId);
 
     try {
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
 
-      // Auth-Details holen
+      // Retrieve authentication details
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-      // Credential für Firebase
+      // Create Firebase credential
       final credential = GoogleAuthProvider.credential(
         idToken: googleAuth.idToken,
         accessToken: null,
       );
 
-      // Bei Firebase einloggen
+      // Sign in to Firebase
       final userCredential = await _auth.signInWithCredential(credential);
       return userCredential.user;
     } catch (e) {
@@ -58,7 +57,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut(); // signOut existiert weiterhin
+    await _googleSignIn.signOut();
     await _auth.signOut();
   }
 }

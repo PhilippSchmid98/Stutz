@@ -6,8 +6,8 @@ part 'monthly_detail_provider.g.dart';
 
 class BudgetVsActualNode {
   final ExpenseNode node;
-  final double planned; // Total (Eigen + Kinder)
-  final double actual; // Total (Eigen + Kinder)
+  final double planned; // Total (Own + Children)
+  final double actual; // Total (Own + Children)
   final List<BudgetVsActualNode> children;
 
   double get difference => planned - actual;
@@ -30,12 +30,10 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
   Ref ref,
   DateTime month,
 ) async {
-  // 1. Den fertigen Baum laden (Roots enthalten bereits ihre Children)
   final rootNodes = await ref
       .watch(expenseNodeRepositoryProvider)
       .getAllExpenseNodes();
 
-  // 2. Transaktionen laden und filtern
   final allTxns = await ref
       .watch(transactionRepositoryProvider)
       .getAllTransactions();
@@ -43,14 +41,11 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
     return t.dateTime.year == month.year && t.dateTime.month == month.month;
   }).toList();
 
-  // 3. Rekursive Funktion: Filtert den Baum und berechnet Werte
   BudgetVsActualNode? processNode(ExpenseNode node) {
-    // REGEL 1: Fixkosten sofort entfernen
     if (node.type == 'Fixed') {
       return null;
     }
 
-    // REGEL 2: Kinder verarbeiten (Rekursion durch node.children)
     List<BudgetVsActualNode> keptChildren = [];
     for (var child in node.children) {
       final processedChild = processNode(child);
@@ -59,13 +54,10 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
       }
     }
 
-    // REGEL 3: Eigene Werte berechnen
-    // Actual: Summe der Transaktionen für genau diese Node-ID
     double ownActual = txnsInMonth
         .where((t) => t.expenseNodeId == node.id)
         .fold(0.0, (sum, t) => sum + t.amount);
 
-    // Planned: Eigenes Budget (Intervall beachten)
     double ownPlanned = 0.0;
     if (node.plannedAmount != null) {
       if (node.interval == 'Yearly') {
@@ -75,10 +67,6 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
       }
     }
 
-    // REGEL 4: Bereinigen (Pruning)
-    // Wenn es eine Gruppe ist (kein eigenes Budget/Ausgaben) UND durch das Filtern
-    // keine Kinder mehr übrig sind -> Entfernen.
-    // Ausnahme: Wenn man auf einer Gruppe direkt Ausgaben gebucht hätte (sollte man nicht, kann aber passieren), zeigen wir sie an.
     bool hasChildren = keptChildren.isNotEmpty;
     bool hasOwnValues = ownActual > 0 || ownPlanned > 0;
 
@@ -86,7 +74,6 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
       return null;
     }
 
-    // REGEL 5: Summen bilden (Bubble Up)
     double totalActual =
         ownActual + keptChildren.fold(0.0, (sum, c) => sum + c.actual);
     double totalPlanned =
@@ -100,7 +87,6 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
     );
   }
 
-  // 4. Starten mit den Root-Nodes
   final List<BudgetVsActualNode> result = [];
   for (var root in rootNodes) {
     final processed = processNode(root);

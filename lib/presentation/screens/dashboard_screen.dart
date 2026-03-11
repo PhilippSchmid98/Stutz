@@ -6,7 +6,6 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:stutz/presentation/screens/monthly_detail_screen.dart';
-// WICHTIG: Import für den Dialog hinzufügen
 import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:stutz/presentation/screens/yearly_detail_screen.dart';
@@ -33,31 +32,30 @@ class DashboardScreen extends ConsumerWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const YearlyDetailScreen(),
-                ), // Import nicht vergessen
+                ),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              // 1. Sauber ausloggen (Google + Firebase)
-              // Wir nutzen deinen AuthService, da er beides bereinigt
+              // 1. Clean logout (Google + Firebase)
+              // Using AuthService, as it cleans up both
               final auth = ref.read(authServiceProvider);
               await auth.signOut();
 
-              // 2. SharedPreferences löschen (App Reset)
+              // 2. Clear SharedPreferences (App Reset)
               final prefs = await SharedPreferences.getInstance();
               await prefs.clear();
 
-              // 3. Navigation (KORRIGIERT)
+              // 3. Navigation
               if (context.mounted) {
-                // Wir navigieren direkt zum Widget, da '/' nicht als Route definiert ist
+                // Navigate directly to widget since '/' is not defined as a route
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(
                     builder: (context) => const WelcomeScreen(),
                   ),
-                  (route) =>
-                      false, // Entfernt alle vorherigen Screens aus dem Stack
+                  (route) => false, // Remove all previous screens from the stack
                 );
               }
             },
@@ -67,7 +65,7 @@ class DashboardScreen extends ConsumerWidget {
         foregroundColor: Colors.black,
         elevation: 0,
       ),
-      // HIER: Der Button für neue Transaktionen
+      // FAB for new transactions
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'dashboard_fab',
         backgroundColor: Colors.black,
@@ -88,11 +86,11 @@ class DashboardScreen extends ConsumerWidget {
         data: (stats) {
           if (stats.isEmpty) return const Center(child: Text("Keine Daten"));
 
-          final currentMonth = stats.first; // Index 0 ist der aktuelle Monat
-          final pastMonths = stats.sublist(1); // Der Rest
+          final currentMonth = stats.first; // Index 0 is the current month
+          final pastMonths = stats.sublist(1); // Remaining months
 
           return SingleChildScrollView(
-            // HIER: Bottom Padding erhöht, damit der Button nichts verdeckt
+            // Increased bottom padding to prevent FAB overlap
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +105,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // 1. Große Karte für den aktuellen Monat (Circular)
+                // 1. Large card for current month (circular)
                 _CurrentMonthCard(status: currentMonth),
 
                 const SizedBox(height: 32),
@@ -121,7 +119,7 @@ class DashboardScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // 2. Liste der vergangenen Monate (Linear)
+                // 2. List of past months (linear)
                 ...pastMonths.map((m) => _PastMonthTile(status: m)),
               ],
             ),
@@ -133,7 +131,7 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 // -----------------------------------------------------------------------------
-// WIDGETS (Unverändert, aber der Vollständigkeit halber hier aufgeführt)
+// WIDGETS
 // -----------------------------------------------------------------------------
 
 class _CurrentMonthCard extends StatelessWidget {

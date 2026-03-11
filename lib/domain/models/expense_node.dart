@@ -10,7 +10,7 @@ class ExpenseNode {
   final String? interval; // 'Monthly' or 'Yearly'
   final List<ExpenseNode> children;
 
-  // NEU: Das Feld für die Sortierung
+  // NEW: Field for sorting
   final int sortOrder;
 
   ExpenseNode({
@@ -22,7 +22,7 @@ class ExpenseNode {
     this.type,
     this.interval,
     this.children = const [],
-    this.sortOrder = 0, // Standardwert bei Neuerstellung im Code
+    this.sortOrder = 0, // Default value when created in code
   });
 
   bool get isGroup => children.isNotEmpty;
@@ -34,7 +34,7 @@ class ExpenseNode {
       'plannedAmount': plannedAmount,
       'interval': interval,
       'type': type,
-      'sortOrder': sortOrder, // NEU: Speichern
+      'sortOrder': sortOrder, // NEW: Save
     };
   }
 
@@ -45,16 +45,16 @@ class ExpenseNode {
     return ExpenseNode(
       id: doc.id,
       parentId: data['parentId'],
-      name: data['name'] ?? 'Unbekannt',
+      name: data['name'] ?? 'Unknown',
       plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
       interval: data['interval'],
       type: data['type'],
 
-      // NEU: Lazy Migration.
-      // Wenn null (altes Dokument), setze 99999 (ans Ende).
+      // NEW: Lazy migration.
+      // If null (old document), set to 99999 (to end).
       sortOrder: data['sortOrder'] ?? 99999,
 
-      children: [], // Wird später rekursiv im Repository gefüllt
+      children: [], // Filled recursively later in repository
     );
   }
 }

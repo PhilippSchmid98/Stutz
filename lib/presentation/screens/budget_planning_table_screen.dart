@@ -1,404 +1,227 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/data/firestore_repositories.dart';
-import 'package:stutz/domain/logic_extensions.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/providers/budget_providers.dart';
 import 'package:stutz/presentation/screens/widgets/cloud_status_icon.dart';
 import 'package:uuid/uuid.dart';
 
-// Callback-Definition für bessere Lesbarkeit
-typedef OnReorderCallback =
-    void Function(ExpenseNode parent, int oldIndex, int newIndex);
-
-class BudgetPlanningTableScreen extends ConsumerStatefulWidget {
+class BudgetPlanningTableScreen extends ConsumerWidget {
   const BudgetPlanningTableScreen({super.key});
 
   @override
-  ConsumerState<BudgetPlanningTableScreen> createState() =>
-      _BudgetPlanningTableScreenState();
-}
-
-class _BudgetPlanningTableScreenState
-    extends ConsumerState<BudgetPlanningTableScreen> {
-  bool _isEditMode = false;
-
-  // LOKALER STATE für butterweiche Animationen (Optimistic UI)
-  List<ExpenseNode>? _localNodes;
-
-  // Synchronisiert die DB-Daten mit unserem lokalen State
-  void _syncLocalState(List<ExpenseNode> nodesFromDb) {
-    if (_localNodes == null || !_isEditMode) {
-      _localNodes = List.from(nodesFromDb);
-    }
-  }
-
-  // --- HILFSFUNKTION: Rekursives Update im Baum ---
-  // Sucht den Knoten mit der ID von updatedNode und ersetzt ihn durch die neue Version
-  List<ExpenseNode> _updateNodeInTree(
-    List<ExpenseNode> nodes,
-    ExpenseNode updatedNode,
-  ) {
-    return nodes.map((node) {
-      // Treffer: Ersetze diesen Knoten
-      if (node.id == updatedNode.id) return updatedNode;
-
-      // Kein Treffer, aber hat Kinder: Suche rekursiv weiter
-      if (node.children.isNotEmpty) {
-        return ExpenseNode(
-          id: node.id,
-          parentId: node.parentId,
-          name: node.name,
-          plannedAmount: node.plannedAmount,
-          interval: node.interval,
-          type: node.type,
-          sortOrder: node.sortOrder,
-          children: _updateNodeInTree(node.children, updatedNode),
-        );
-      }
-      // Nichts zu tun
-      return node;
-    }).toList();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Fetch data
     final incomeAsync = ref.watch(incomeListProvider);
     final expenseRootsAsync = ref.watch(expenseTreeProvider);
-
-    ref.listen<AsyncValue<List<ExpenseNode>>>(expenseTreeProvider, (
-      prev,
-      next,
-    ) {
-      if (next.hasValue && next.value != null) {
-        setState(() {
-          _syncLocalState(next.value!);
-        });
-      }
-    });
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text('Budget Planung'),
+        actions: [const CloudStatusIcon()],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        actions: [
-          const CloudStatusIcon(),
-          IconButton(
-            icon: Icon(_isEditMode ? Icons.check : Icons.sort),
-            color: _isEditMode ? Colors.teal : Colors.black,
-            tooltip: _isEditMode ? "Bearbeiten beenden" : "Reihenfolge ändern",
-            onPressed: () {
-              setState(() {
-                _isEditMode = !_isEditMode;
-                if (_isEditMode && expenseRootsAsync.hasValue) {
-                  _localNodes = List.from(expenseRootsAsync.value!);
-                }
-              });
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         child: Column(
           children: [
-            // ------------------------------------------------------
-            // 1. EINNAHMEN
-            // ------------------------------------------------------
+            // 1. Income card
             incomeAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Fehler: $e'),
-              data: (incomes) => _buildIncomeSection(context, incomes),
+              data: (incomes) {
+                final mainIncomes = incomes
+                    .where((i) => i.group == 'Main')
+                    .toList();
+                final additionalIncomes = incomes
+                    .where((i) => i.group == 'Additional')
+                    .toList();
+
+                double rawMonthlySum = 0;
+                double rawYearlySum = 0;
+                for (final item in incomes) {
+                  if (item.interval == 'Monthly') {
+                    rawMonthlySum += item.amount;
+                  } else {
+                    rawYearlySum += item.amount;
+                  }
+                }
+
+                return _SectionCard(
+                  title: "EINNAHMEN",
+                  totalMonthly: rawMonthlySum,
+                  totalYearly: rawYearlySum,
+                  icon: Icons.trending_up,
+                  iconColor: Colors.green,
+                  backgroundColor: Colors.green.shade50,
+                  onHeaderTap: null,
+                  children: [
+                    if (mainIncomes.isNotEmpty) ...[
+                      const _SubsectionTitle(title: "Haupteinnahmen"),
+                      ...mainIncomes.map((i) => _IncomeItemRow(item: i)),
+                    ],
+                    if (mainIncomes.isNotEmpty && additionalIncomes.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Divider(color: Colors.green.shade200),
+                      ),
+                    if (additionalIncomes.isNotEmpty) ...[
+                      const _SubsectionTitle(title: "Nebeneinnahmen"),
+                      ...additionalIncomes.map((i) => _IncomeItemRow(item: i)),
+                    ],
+                    const SizedBox(height: 16),
+                    _AddButton(
+                      label: "Neue Einnahme",
+                      onTap: () => showDialog(
+                        context: context,
+                        builder: (_) => const _AddIncomeDialog(),
+                      ),
+                      color: Colors.green,
+                    ),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 32),
-            _buildSeparator("AUSGABEN"),
+
+            // Separator
+            Row(
+              children: [
+                Expanded(child: Divider(color: Colors.grey.shade300)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    "AUSGABEN",
+                    style: TextStyle(
+                      color: Colors.grey.shade500,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ),
+                Expanded(child: Divider(color: Colors.grey.shade300)),
+              ],
+            ),
             const SizedBox(height: 16),
 
-            // ------------------------------------------------------
-            // 2. AUSGABEN (Tree View)
-            // ------------------------------------------------------
+            // 2. Expense cards
+            // -----------------------------------------------
             expenseRootsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Fehler: $e'),
               data: (roots) {
-                // Initialer Sync
-                if (_localNodes == null) {
-                  _localNodes = List.from(roots);
-                }
+                return Column(
+                  children: [
+                    ...roots.map((rootNode) {
+                      // Recursive calculation for the card
+                      double calcSum(
+                        List<ExpenseNode> nodes,
+                        String targetInterval,
+                      ) {
+                        double sum = 0;
+                        for (var node in nodes) {
+                          if (node.plannedAmount != null &&
+                              node.interval == targetInterval) {
+                            sum += node.plannedAmount!;
+                          }
+                          if (node.children.isNotEmpty) {
+                            sum += calcSum(node.children, targetInterval);
+                          }
+                        }
+                        return sum;
+                      }
 
-                final displayList = _localNodes ?? roots;
+                      final monthly = calcSum(rootNode.children, 'Monthly');
+                      final yearly = calcSum(rootNode.children, 'Yearly');
 
-                if (_isEditMode) {
-                  // --- EDIT MODE (Reorderable) ---
-                  return ReorderableListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    buildDefaultDragHandles: false,
-                    itemCount: displayList.length,
-                    onReorder: _onReorderMainCategories,
-                    proxyDecorator: (child, index, animation) {
-                      return Material(
-                        elevation: 5,
-                        color: Colors.transparent,
-                        child: child,
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: _SectionCard(
+                          title: rootNode.name.toUpperCase(),
+                          totalMonthly: monthly,
+                          totalYearly: yearly,
+                          icon: Icons.folder_open,
+                          iconColor: Colors.teal,
+                          backgroundColor: Colors.white,
+                          onHeaderTap: () => showDialog(
+                            context: context,
+                            builder: (_) => _AddExpenseNodeDialog(
+                              parentId: rootNode.parentId,
+                              existingNode: rootNode,
+                            ),
+                          ),
+                          children: [
+                            ...rootNode.children.map(
+                              (child) => _ExpenseItemRow(node: child, depth: 0),
+                            ),
+                            const SizedBox(height: 12),
+                            _AddButton(
+                              label: "Eintrag hinzufügen",
+                              onTap: () => showDialog(
+                                context: context,
+                                builder: (_) => _AddExpenseNodeDialog(
+                                  parentId: rootNode.id,
+                                ),
+                              ),
+                              color: Colors.teal,
+                            ),
+                          ],
+                        ),
                       );
-                    },
-                    itemBuilder: (context, index) {
-                      final rootNode = displayList[index];
-                      return _buildExpenseCard(
-                        context,
-                        rootNode,
-                        index,
-                        isEditMode: true,
-                      );
-                    },
-                  );
-                } else {
-                  // --- VIEW MODE (Normal) ---
-                  return Column(
-                    children: displayList.map((rootNode) {
-                      return _buildExpenseCard(
-                        context,
-                        rootNode,
-                        -1,
-                        isEditMode: false,
-                      );
-                    }).toList(),
-                  );
-                }
+                    }),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: OutlinedButton.icon(
+                          icon: const Icon(Icons.create_new_folder_outlined),
+                          label: const Text("Neue Hauptkategorie erstellen"),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Colors.grey.shade400),
+                            foregroundColor: Colors.grey.shade700,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () => showDialog(
+                            context: context,
+                            builder: (_) => const _AddMainCategoryDialog(),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
               },
             ),
 
             const SizedBox(height: 24),
-            if (incomeAsync.hasValue && _localNodes != null)
-              _buildOverviewCard(incomeAsync.value!, _localNodes!),
 
-            if (!_isEditMode) const _LegendRow(),
+            // 3. Budget overview (the new card)
+            // We must ensure both AsyncValues are loaded here
+            if (incomeAsync.hasValue && expenseRootsAsync.hasValue)
+              _buildOverviewCard(incomeAsync.value!, expenseRootsAsync.value!),
+
+            const _LegendRow(),
           ],
         ),
       ),
     );
   }
 
-  // --- LOGIK: REORDERING ---
-
-  void _onReorderMainCategories(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) newIndex -= 1;
-
-    setState(() {
-      final item = _localNodes!.removeAt(oldIndex);
-      _localNodes!.insert(newIndex, item);
-    });
-
-    final sortedList = List<ExpenseNode>.from(_localNodes!);
-    ref.read(expenseNodeRepositoryProvider).updateNodeOrder(sortedList);
-  }
-
-  // Diese Methode wurde verbessert, um rekursiv zu arbeiten
-  void _onReorderSubItems(ExpenseNode parent, int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) newIndex -= 1;
-
-    setState(() {
-      // 1. Liste der Kinder kopieren und ändern
-      final mutableChildren = List<ExpenseNode>.from(parent.children);
-      final item = mutableChildren.removeAt(oldIndex);
-      mutableChildren.insert(newIndex, item);
-
-      // 2. Den Eltern-Knoten neu erstellen mit der neuen Kinder-Liste
-      final newParent = ExpenseNode(
-        id: parent.id,
-        parentId: parent.parentId,
-        name: parent.name,
-        plannedAmount: parent.plannedAmount,
-        interval: parent.interval,
-        type: parent.type,
-        sortOrder: parent.sortOrder,
-        children: mutableChildren,
-      );
-
-      // 3. Den Baum aktualisieren (rekursives Suchen & Ersetzen)
-      _localNodes = _updateNodeInTree(_localNodes!, newParent);
-
-      // 4. DB Update
-      ref.read(expenseNodeRepositoryProvider).updateNodeOrder(mutableChildren);
-    });
-  }
-
-  // --- WIDGET BUILDER ---
-
-  Widget _buildExpenseCard(
-    BuildContext context,
-    ExpenseNode rootNode,
-    int index, {
-    required bool isEditMode,
-  }) {
-    final monthly = rootNode.totalMonthlyCalculated;
-    double yearly = 0;
-
-    Widget content;
-
-    if (isEditMode) {
-      // --- EDIT MODE: Sortierbare Liste ---
-      content = ReorderableListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        buildDefaultDragHandles: false,
-        itemCount: rootNode.children.length,
-        // Callback weitergeben
-        onReorder: (oldIdx, newIdx) =>
-            _onReorderSubItems(rootNode, oldIdx, newIdx),
-        itemBuilder: (ctx, childIndex) {
-          final child = rootNode.children[childIndex];
-          return _ExpenseItemRow(
-            key: ValueKey(child.id),
-            node: child,
-            depth: 0,
-            isEditMode: true,
-            index: childIndex,
-            // Callback weiterreichen für verschachtelte Gruppen!
-            onReorder: _onReorderSubItems,
-          );
-        },
-      );
-    } else {
-      // --- VIEW MODE: Statische Liste ---
-      content = Column(
-        children: rootNode.children
-            .map(
-              (child) =>
-                  _ExpenseItemRow(node: child, depth: 0, isEditMode: false),
-            )
-            .toList(),
-      );
-    }
-
-    return Padding(
-      key: ValueKey(rootNode.id),
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: _SectionCard(
-        title: rootNode.name.toUpperCase(),
-        totalMonthly: monthly,
-        totalYearly: yearly,
-        icon: Icons.folder_open,
-        iconColor: Colors.teal,
-        backgroundColor: Colors.white,
-        onHeaderTap: isEditMode
-            ? null
-            : () => showDialog(
-                context: context,
-                builder: (_) => _AddExpenseNodeDialog(
-                  parentId: rootNode.parentId,
-                  existingNode: rootNode,
-                ),
-              ),
-        trailingHeader: isEditMode
-            ? ReorderableDragStartListener(
-                index: index,
-                child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Icon(Icons.drag_handle, color: Colors.teal),
-                ),
-              )
-            : null,
-        children: [
-          content,
-          if (!isEditMode) ...[
-            const SizedBox(height: 12),
-            _AddButton(
-              label: "Eintrag hinzufügen",
-              onTap: () => showDialog(
-                context: context,
-                builder: (_) => _AddExpenseNodeDialog(parentId: rootNode.id),
-              ),
-              color: Colors.teal,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // --- HELPER SECTIONS (Income, Separator, Overview) ---
-  Widget _buildIncomeSection(BuildContext context, List<IncomeSource> incomes) {
-    double rawMonthlySum = 0;
-    double rawYearlySum = 0;
-    for (final item in incomes) {
-      if (item.interval == 'Monthly') {
-        rawMonthlySum += item.amount;
-      } else {
-        rawYearlySum += item.amount;
-      }
-    }
-
-    final mainIncomes = incomes.where((i) => i.group == 'Main').toList();
-    final additionalIncomes = incomes
-        .where((i) => i.group == 'Additional')
-        .toList();
-
-    return _SectionCard(
-      title: "EINNAHMEN",
-      totalMonthly: rawMonthlySum,
-      totalYearly: rawYearlySum,
-      icon: Icons.trending_up,
-      iconColor: Colors.green,
-      backgroundColor: Colors.green.shade50,
-      children: [
-        if (mainIncomes.isNotEmpty) ...[
-          const _SubsectionTitle(title: "Haupteinnahmen"),
-          ...mainIncomes.map((i) => _IncomeItemRow(item: i)),
-        ],
-        if (mainIncomes.isNotEmpty && additionalIncomes.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Divider(color: Colors.green.shade200),
-          ),
-        if (additionalIncomes.isNotEmpty) ...[
-          const _SubsectionTitle(title: "Nebeneinnahmen"),
-          ...additionalIncomes.map((i) => _IncomeItemRow(item: i)),
-        ],
-        const SizedBox(height: 16),
-        _AddButton(
-          label: "Neue Einnahme",
-          onTap: () => showDialog(
-            context: context,
-            builder: (_) => const _AddIncomeDialog(),
-          ),
-          color: Colors.green,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSeparator(String title) {
-    return Row(
-      children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            title,
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
-          ),
-        ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
-      ],
-    );
-  }
-
+  // Helper method for the overview card
   Widget _buildOverviewCard(
     List<IncomeSource> incomes,
     List<ExpenseNode> roots,
   ) {
+    // 1. Total income (average monthly)
     double totalIncome = 0;
     for (var i in incomes) {
       if (i.interval == 'Monthly') {
@@ -408,6 +231,7 @@ class _BudgetPlanningTableScreenState
       }
     }
 
+    // 2. Total expenses by type (Fixed vs Variable) - all normalized to average monthly
     double totalFixed = 0;
     double totalVariable = 0;
 
@@ -416,8 +240,9 @@ class _BudgetPlanningTableScreenState
         if (node.plannedAmount != null) {
           double amount = node.plannedAmount!;
           if (node.interval == 'Yearly') {
-            amount /= 12;
+            amount /= 12; // Convert to monthly
           }
+
           if (node.type == 'Fixed') {
             totalFixed += amount;
           } else {
@@ -429,6 +254,7 @@ class _BudgetPlanningTableScreenState
     }
 
     calcByType(roots);
+
     double totalExpenses = totalFixed + totalVariable;
     double balance = totalIncome - totalExpenses;
 
@@ -441,421 +267,9 @@ class _BudgetPlanningTableScreenState
     );
   }
 }
-
 // -----------------------------------------------------------------------------
 // UI WIDGETS
 // -----------------------------------------------------------------------------
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final double totalMonthly;
-  final double totalYearly;
-  final IconData icon;
-  final Color iconColor;
-  final Color backgroundColor;
-  final List<Widget> children;
-  final VoidCallback? onHeaderTap;
-  final Widget? trailingHeader;
-
-  const _SectionCard({
-    required this.title,
-    required this.totalMonthly,
-    required this.totalYearly,
-    required this.icon,
-    required this.iconColor,
-    required this.backgroundColor,
-    required this.children,
-    this.onHeaderTap,
-    this.trailingHeader,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: backgroundColor != Colors.white
-            ? Border.all(color: iconColor.withValues(alpha: 0.2))
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          InkWell(
-            onTap: onHeaderTap,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, color: iconColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        if (totalMonthly > 0)
-                          Text(
-                            "${totalMonthly.toStringAsFixed(2)} / Monat",
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (totalMonthly > 0)
-                    Text(
-                      "Ø ${totalMonthly.toStringAsFixed(0)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: iconColor,
-                      ),
-                    ),
-                  if (trailingHeader != null) ...[
-                    const SizedBox(width: 16),
-                    trailingHeader!,
-                  ],
-                ],
-              ),
-            ),
-          ),
-          Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            color: iconColor.withValues(alpha: 0.1),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ExpenseItemRow extends StatelessWidget {
-  final ExpenseNode node;
-  final int depth;
-  final bool isEditMode;
-  final int index;
-  final OnReorderCallback? onReorder; // NEU: Callback für Verschachtelung
-
-  const _ExpenseItemRow({
-    super.key,
-    required this.node,
-    required this.depth,
-    this.isEditMode = false,
-    this.index = 0,
-    this.onReorder,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasChildren = node.children.isNotEmpty;
-    final isFixed = node.type == 'Fixed';
-
-    // 1. Die Zeile selbst
-    Widget rowContent = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          SizedBox(width: depth * 12.0),
-          Icon(
-            hasChildren
-                ? Icons.folder_outlined
-                : (isFixed ? Icons.lock_outline : Icons.shopping_bag_outlined),
-            size: 18,
-            color: hasChildren ? Colors.grey.shade700 : Colors.grey.shade400,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              node.name,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: hasChildren ? FontWeight.w600 : FontWeight.normal,
-                color: isFixed ? Colors.grey.shade600 : Colors.black87,
-              ),
-            ),
-          ),
-          if (node.plannedAmount != null)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  node.plannedAmount!.toStringAsFixed(2),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: isFixed ? Colors.grey.shade600 : Colors.black87,
-                  ),
-                ),
-                Text(
-                  node.interval == 'Monthly' ? "Monatlich" : "Jährlich",
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-          if (isEditMode) ...[
-            const SizedBox(width: 16, height: 48),
-            ReorderableDragStartListener(
-              index: index,
-              child: const Icon(Icons.drag_handle, color: Colors.grey),
-            ),
-          ] else if (hasChildren || node.plannedAmount == null) ...[
-            IconButton(
-              icon: const Icon(
-                Icons.add_circle_outline,
-                size: 20,
-                color: Colors.teal,
-              ),
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => _AddExpenseNodeDialog(parentId: node.id),
-              ),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
-        ],
-      ),
-    );
-
-    // Klickverhalten im View Mode
-    if (!isEditMode) {
-      rowContent = InkWell(
-        onTap: () => showDialog(
-          context: context,
-          builder: (_) => _AddExpenseNodeDialog(
-            parentId: node.parentId,
-            existingNode: node,
-          ),
-        ),
-        child: rowContent,
-      );
-    }
-
-    // --- REKURSION: Kinder anzeigen ---
-    if (hasChildren) {
-      if (isEditMode) {
-        // EDIT MODE: Sortierbare Liste anzeigen
-        return Column(
-          children: [
-            rowContent,
-            Container(
-              margin: const EdgeInsets.only(left: 16), // Einrückung
-              // Wir nutzen ReorderableListView für die Verschachtelung
-              child: ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                buildDefaultDragHandles: false,
-                itemCount: node.children.length,
-                onReorder: (oldIdx, newIdx) {
-                  // Callback aufrufen (node ist hier der Parent)
-                  if (onReorder != null) onReorder!(node, oldIdx, newIdx);
-                },
-                itemBuilder: (ctx, idx) {
-                  final child = node.children[idx];
-                  return _ExpenseItemRow(
-                    key: ValueKey(child.id),
-                    node: child,
-                    depth: 0, // Reset depth da wir Container margin nutzen
-                    isEditMode: true,
-                    index: idx,
-                    onReorder: onReorder, // Rekursiv weitergeben
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      } else {
-        // VIEW MODE: Einfache Liste anzeigen
-        return Column(
-          children: [
-            rowContent,
-            ...node.children.map(
-              (child) => _ExpenseItemRow(
-                node: child,
-                depth: depth + 1,
-                isEditMode: false,
-              ),
-            ),
-          ],
-        );
-      }
-    }
-
-    return rowContent;
-  }
-}
-
-class _AddButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  final Color color;
-
-  const _AddButton({
-    required this.label,
-    required this.onTap,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        width: double.infinity,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Text(
-          "+ $label",
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendRow extends StatelessWidget {
-  const _LegendRow();
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _legendItem(Icons.lock_outline, "Fixkosten"),
-          const SizedBox(width: 16),
-          _legendItem(Icons.shopping_bag_outlined, "Variable Kosten"),
-          const SizedBox(width: 16),
-          _legendItem(Icons.folder_outlined, "Gruppe"),
-        ],
-      ),
-    );
-  }
-
-  Widget _legendItem(IconData icon, String label) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: Colors.grey.shade500),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-        ),
-      ],
-    );
-  }
-}
-
-class _IncomeItemRow extends StatelessWidget {
-  final IncomeSource item;
-  const _IncomeItemRow({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final isMonthly = item.interval == 'Monthly';
-    return InkWell(
-      onTap: () => showDialog(
-        context: context,
-        builder: (_) => _AddIncomeDialog(existingItem: item),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          children: [
-            Icon(
-              Icons.monetization_on_outlined,
-              size: 20,
-              color: Colors.grey.shade500,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(item.name, style: const TextStyle(fontSize: 15)),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  item.amount.toStringAsFixed(2),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                Text(
-                  isMonthly ? "Monatlich" : "Jährlich",
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SubsectionTitle extends StatelessWidget {
-  final String title;
-  const _SubsectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
-      child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey.shade600,
-          letterSpacing: 1.1,
-        ),
-      ),
-    );
-  }
-}
 
 class _BudgetOverviewCard extends StatelessWidget {
   final double income;
@@ -906,6 +320,8 @@ class _BudgetOverviewCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // Große Balance
           Text(
             "${isPositive ? '+' : ''} ${balance.toStringAsFixed(2)} CHF",
             style: TextStyle(
@@ -922,9 +338,12 @@ class _BudgetOverviewCard extends StatelessWidget {
               fontWeight: FontWeight.w500,
             ),
           ),
+
           const SizedBox(height: 24),
           const Divider(height: 1),
           const SizedBox(height: 16),
+
+          // Einnahmen vs Ausgaben Zeile
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -940,6 +359,7 @@ class _BudgetOverviewCard extends StatelessWidget {
               ),
             ],
           ),
+
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
@@ -1027,10 +447,355 @@ class _OverviewItem extends StatelessWidget {
   }
 }
 
+class _SubsectionTitle extends StatelessWidget {
+  final String title;
+  const _SubsectionTitle({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey.shade600,
+          letterSpacing: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  final String title;
+  final double totalMonthly;
+  final double totalYearly;
+  final IconData icon;
+  final Color iconColor;
+  final Color backgroundColor;
+  final List<Widget> children;
+  final VoidCallback? onHeaderTap;
+
+  const _SectionCard({
+    required this.title,
+    required this.totalMonthly,
+    required this.totalYearly,
+    required this.icon,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.children,
+    this.onHeaderTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: backgroundColor != Colors.white
+            ? Border.all(color: iconColor.withValues(alpha: 0.2))
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          InkWell(
+            onTap: onHeaderTap,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: iconColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(icon, color: iconColor),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        // --- ÄNDERUNG START ---
+                        // Wir bauen den String dynamisch zusammen
+                        Builder(
+                          builder: (context) {
+                            final List<String> parts = [];
+
+                            if (totalMonthly > 0) {
+                              parts.add(
+                                "${totalMonthly.toStringAsFixed(2)} / Monat",
+                              );
+                            }
+                            if (totalYearly > 0) {
+                              parts.add(
+                                "${totalYearly.toStringAsFixed(2)} / Jahr",
+                              );
+                            }
+
+                            if (parts.isEmpty) return const SizedBox.shrink();
+
+                            return Text(
+                              parts.join("  -  "), // Hier der Separator
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 12,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  // The total (average) on the right
+                  if (totalYearly > 0)
+                    Text(
+                      "Ø ${(totalMonthly + totalYearly / 12).toStringAsFixed(0)}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: iconColor,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Divider(
+            height: 1,
+            indent: 16,
+            endIndent: 16,
+            color: iconColor.withValues(alpha: 0.1),
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IncomeItemRow extends StatelessWidget {
+  final IncomeSource item;
+  const _IncomeItemRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMonthly = item.interval == 'Monthly';
+
+    return InkWell(
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) => _AddIncomeDialog(existingItem: item),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            Icon(
+              Icons.monetization_on_outlined,
+              size: 20,
+              color: Colors.grey.shade500,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(item.name, style: const TextStyle(fontSize: 15)),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  item.amount.toStringAsFixed(2),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  isMonthly ? "Monatlich" : "Jährlich",
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpenseItemRow extends StatelessWidget {
+  final ExpenseNode node;
+  final int depth;
+
+  const _ExpenseItemRow({required this.node, required this.depth});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasChildren = node.children.isNotEmpty;
+    final isFixed = node.type == 'Fixed';
+
+    Widget rowContent = InkWell(
+      onTap: () => showDialog(
+        context: context,
+        builder: (_) =>
+            _AddExpenseNodeDialog(parentId: node.parentId, existingNode: node),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Row(
+          children: [
+            // Indentation
+            // Icon
+            Icon(
+              hasChildren
+                  ? Icons.folder_outlined
+                  : (isFixed
+                        ? Icons.lock_outline
+                        : Icons.shopping_bag_outlined),
+              size: 18,
+              color: hasChildren ? Colors.grey.shade700 : Colors.grey.shade400,
+            ),
+            const SizedBox(width: 8),
+
+            // Name
+            Expanded(
+              child: Text(
+                node.name,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: hasChildren ? FontWeight.w600 : FontWeight.normal,
+                  color: isFixed ? Colors.grey.shade600 : Colors.black87,
+                ),
+              ),
+            ),
+
+            // Amount
+            if (node.plannedAmount != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    node.plannedAmount!.toStringAsFixed(2),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: isFixed ? Colors.grey.shade600 : Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    node.interval == 'Monthly' ? "Monatlich" : "Jährlich",
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+
+            // Add button for groups
+            if (hasChildren || node.plannedAmount == null)
+              IconButton(
+                icon: const Icon(
+                  Icons.add_circle_outline,
+                  size: 20,
+                  color: Colors.teal,
+                ),
+                onPressed: () => showDialog(
+                  context: context,
+                  builder: (_) => _AddExpenseNodeDialog(parentId: node.id),
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (hasChildren) {
+      return Column(
+        children: [
+          rowContent,
+          ...node.children.map(
+            (child) => _ExpenseItemRow(node: child, depth: depth + 1),
+          ),
+        ],
+      );
+    }
+    return rowContent;
+  }
+}
+
+class _AddButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _AddButton({
+    required this.label,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        width: double.infinity,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.05), // Light color tint
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          "+ $label",
+          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}
+
 // -----------------------------------------------------------------------------
-// DIALOGE (Add/Edit)
+// DIALOGS
 // -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// DIALOGS & STYLING
+// -----------------------------------------------------------------------------
+
+// Small helper widget for consistent text field design
 class _StyledTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -1082,9 +847,10 @@ class _StyledTextField extends StatelessWidget {
   }
 }
 
+// Helper widget for dropdowns
 class _StyledDropdown extends StatelessWidget {
   final String value;
-  final Map<String, String> items;
+  final Map<String, String> items; // Key: internal value, Value: display text
   final String label;
   final IconData icon;
   final ValueChanged<String?> onChanged;
@@ -1131,6 +897,90 @@ class _StyledDropdown extends StatelessWidget {
   }
 }
 
+class _AddMainCategoryDialog extends ConsumerStatefulWidget {
+  const _AddMainCategoryDialog();
+  @override
+  ConsumerState<_AddMainCategoryDialog> createState() =>
+      _AddMainCategoryDialogState();
+}
+
+class _AddMainCategoryDialogState
+    extends ConsumerState<_AddMainCategoryDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameCtrl = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text(
+        'Neue Hauptkategorie',
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      // Full width provided by SizedBox with maxFinite
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Erstellt einen Ordner für weitere Unterkategorien.",
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+              _StyledTextField(
+                controller: _nameCtrl,
+                label: 'Name der Kategorie',
+                icon: Icons.folder_open,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            'Abbrechen',
+            style: TextStyle(color: Colors.grey.shade600),
+          ),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: Colors.black,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          onPressed: () async {
+            if (_formKey.currentState!.validate()) {
+              final node = ExpenseNode(
+                id: const Uuid().v4(),
+                parentId: null,
+                name: _nameCtrl.text,
+                plannedAmount: null,
+                interval: null,
+                type: null,
+                children: [],
+              );
+              await ref
+                  .read(expenseNodeRepositoryProvider)
+                  .addExpenseNode(node);
+              ref.invalidate(expenseTreeProvider);
+              ref.invalidate(totalMonthlyExpensesProvider);
+              if (context.mounted) Navigator.pop(context);
+            }
+          },
+          child: const Text('Erstellen'),
+        ),
+      ],
+    );
+  }
+}
+
 class _AddIncomeDialog extends ConsumerStatefulWidget {
   final IncomeSource? existingItem;
   const _AddIncomeDialog({this.existingItem});
@@ -1170,6 +1020,7 @@ class _AddIncomeDialogState extends ConsumerState<_AddIncomeDialog> {
         isEdit ? 'Einnahme bearbeiten' : 'Neue Einnahme',
         style: const TextStyle(fontWeight: FontWeight.bold),
       ),
+      // HIER: SizedBox mit maxFinite sorgt für volle Breite
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -1357,6 +1208,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+      // Full width provided by SizedBox with maxFinite
       content: SizedBox(
         width: double.maxFinite,
         child: SingleChildScrollView(
@@ -1522,10 +1374,6 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
                   ? widget.existingNode!.parentId
                   : widget.parentId;
               final id = isEdit ? widget.existingNode!.id : const Uuid().v4();
-              // SortOrder beim Erstellen beibehalten oder default
-              final currentSortOrder = isEdit
-                  ? widget.existingNode!.sortOrder
-                  : 99999;
 
               final node = ExpenseNode(
                 id: id,
@@ -1537,7 +1385,6 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
                 interval: _isGroup ? null : _interval,
                 type: _isGroup ? null : _type,
                 children: isEdit ? widget.existingNode!.children : [],
-                sortOrder: currentSortOrder,
               );
               if (isEdit) {
                 await repo.updateExpenseNode(node);
@@ -1556,6 +1403,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
   }
 }
 
+// Button to select "entry" vs "group"
 class _TypeSelectorButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1606,6 +1454,40 @@ class _TypeSelectorButton extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LegendRow extends StatelessWidget {
+  const _LegendRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _legendItem(Icons.lock_outline, "Fixkosten"),
+          const SizedBox(width: 16),
+          _legendItem(Icons.shopping_bag_outlined, "Variable Kosten"),
+          const SizedBox(width: 16),
+          _legendItem(Icons.folder_outlined, "Gruppe"),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendItem(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.grey.shade500),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+        ),
+      ],
     );
   }
 }

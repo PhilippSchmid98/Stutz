@@ -1,4 +1,3 @@
-// Datei: lib/presentation/screens/yearly_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
@@ -12,13 +11,13 @@ class YearlyDetailScreen extends ConsumerStatefulWidget {
 
 class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
   int _selectedYear = DateTime.now().year;
-  bool _includeOffset = true; // Default: Option B (Virtuell + Echt)
+  bool _includeOffset = true;
 
   @override
   Widget build(BuildContext context) {
     final treeAsync = ref.watch(yearlyDetailTreeProvider(_selectedYear));
 
-    // Jahresfortschritt berechnen
+    // Calculate year progress
     final now = DateTime.now();
     double yearProgress = 0.0;
     if (_selectedYear == now.year) {
@@ -27,9 +26,9 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
       final daysInYear = (_selectedYear % 4 == 0) ? 366 : 365;
       yearProgress = daysPassed / daysInYear;
     } else if (_selectedYear < now.year) {
-      yearProgress = 1.0; // Vergangenes Jahr ist 100% vorbei
+      yearProgress = 1.0; // Past year is 100% complete
     } else {
-      yearProgress = 0.0; // Zukunft
+      yearProgress = 0.0; // Future
     }
 
     return Scaffold(
@@ -57,7 +56,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
           ],
         ),
         actions: [
-          // Anzeige Jahresfortschritt oben rechts
+          // Display year progress at top right
           Center(
             child: Padding(
               padding: const EdgeInsets.only(right: 16.0),
@@ -110,7 +109,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
 
           return Column(
             children: [
-              // HEADER & TOGGLE
+              // Header & Toggle
               Container(
                 color: Colors.white,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -154,7 +153,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                         ),
                       ),
 
-                    // Spaltenbeschriftung
+                    // Column headers
                     const Row(
                       children: [
                         Expanded(
@@ -325,13 +324,13 @@ class _YearlyNodeRow extends StatelessWidget {
     final isGroup = node.children.isNotEmpty;
     final isRoot = depth == 0;
 
-    // Prozente berechnen
+    // Calculate percentages
     final percentOffset = showOffset ? node.percentOffset : 0.0;
     final percentActual = node.percentUsedReal;
     final percentTotalDisplay = (percentOffset + percentActual).clamp(
       0.0,
       9.99,
-    ); // Cap für Textanzeige
+    ); // Cap for text display
 
     return Column(
       children: [
@@ -373,7 +372,7 @@ class _YearlyNodeRow extends StatelessWidget {
                     ),
                   ),
 
-                  // VERBRAUCH (Absolut)
+                  // Consumption (absolute)
                   Expanded(
                     flex: 3,
                     child: Column(
@@ -399,7 +398,7 @@ class _YearlyNodeRow extends StatelessWidget {
                     ),
                   ),
 
-                  // PROZENT
+                  // Percentage
                   Expanded(
                     flex: 2,
                     child: Text(
@@ -448,7 +447,7 @@ class _YearlyNodeRow extends StatelessWidget {
   }
 }
 
-// Spezial Widget für den gestapelten Balken (Grau + Farbe)
+// Special widget for stacked progress bar (grey + color)
 class _StackedProgressBar extends StatelessWidget {
   final double offsetPercent;
   final double actualPercent;
@@ -462,21 +461,21 @@ class _StackedProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Normalisieren, damit wir nicht über 100% zeichnen (Overflow)
+    // Normalize so we don't exceed 100% for drawing (no overflow)
     double pOffset = offsetPercent.clamp(0.0, 1.0);
     double pActual = actualPercent.clamp(
       0.0,
       1.0 - pOffset,
-    ); // Restplatz nutzen
+    ); // Use remaining space
 
-    // Farbe Logik: Wenn Gesamt > 100% -> Rot, sonst Teal
-    // (Hier vereinfacht: Der Actual Teil wird rot, wenn er das Budget sprengt)
+    // Color logic: if total > 100% -> red, else teal
+    // (Here simplified: actual part turns red if it exceeds budget)
     final total = offsetPercent + actualPercent;
     final color = total > 1.0 ? Colors.red : Colors.teal;
-    final offsetColor = Colors.grey.shade400; // Farbe für "Virtuell"
+    final offsetColor = Colors.grey.shade400; // Color for "virtual"
 
-    // Falls total > 1.0, müssen wir die Flex Werte anpassen, sonst crasht Row
-    // Wir cappen die Anzeige visuell bei 100%
+    // If total > 1.0, we need to adjust flex values or the Row will crash
+    // We cap the display at 100%
     if (pOffset + pActual > 1.0) {
       double scale = 1.0 / (pOffset + pActual);
       pOffset *= scale;
@@ -490,9 +489,9 @@ class _StackedProgressBar extends StatelessWidget {
           color: backgroundColor,
           child: Row(
             children: [
-              // 1. Offset Teil (Grau / Schraffiert)
+              // 1. Offset part (grey / hatched)
               Container(width: width * pOffset, color: offsetColor),
-              // 2. Actual Teil (Farbe)
+              // 2. Actual part (color)
               Container(width: width * pActual, color: color),
             ],
           ),
