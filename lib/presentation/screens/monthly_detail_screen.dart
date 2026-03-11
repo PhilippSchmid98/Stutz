@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/presentation/providers/monthly_detail_provider.dart';
+import 'package:stutz/presentation/screens/category_transactions_screen.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 
 class MonthlyDetailScreen extends ConsumerWidget {
@@ -99,7 +100,13 @@ class MonthlyDetailScreen extends ConsumerWidget {
                 child: ListView(
                   padding: const EdgeInsets.only(bottom: 20),
                   children: roots
-                      .map((node) => _ComparisonNodeRow(node: node, depth: 0))
+                      .map(
+                        (node) => _ComparisonNodeRow(
+                          node: node,
+                          depth: 0,
+                          month: month,
+                        ),
+                      )
                       .toList(),
                 ),
               ),
@@ -191,11 +198,30 @@ class MonthlyDetailScreen extends ConsumerWidget {
   }
 }
 
+List<String> _collectMonthlyNodeIds(BudgetVsActualNode node) {
+  return [
+    node.node.id,
+    ...node.children.expand((c) => _collectMonthlyNodeIds(c)),
+  ];
+}
+
+Map<String, String> _buildMonthlyNodeNameMap(BudgetVsActualNode node) {
+  return {
+    node.node.id: node.node.name,
+    for (final c in node.children) ..._buildMonthlyNodeNameMap(c),
+  };
+}
+
 class _ComparisonNodeRow extends StatelessWidget {
   final BudgetVsActualNode node;
   final int depth;
+  final DateTime month;
 
-  const _ComparisonNodeRow({required this.node, required this.depth});
+  const _ComparisonNodeRow({
+    required this.node,
+    required this.depth,
+    required this.month,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -212,90 +238,106 @@ class _ComparisonNodeRow extends StatelessWidget {
       barColor = Colors.orange;
     }
 
-    Widget content = Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: isRoot ? Colors.white : Colors.transparent,
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Name
-              Expanded(
-                flex: 4,
-                child: Row(
-                  children: [
-                    SizedBox(width: depth * 16.0),
-                    if (depth > 0)
-                      Icon(
-                        Icons.subdirectory_arrow_right,
-                        size: 16,
-                        color: Colors.grey.shade400,
-                      ),
-                    if (depth > 0) const SizedBox(width: 4),
-
-                    Expanded(
-                      child: Text(
-                        node.node.name,
-                        style: TextStyle(
-                          fontWeight: isGroup || isRoot
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: isRoot ? 16 : 14,
+    Widget content = GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CategoryTransactionsScreen(
+              nodeName: node.node.name,
+              nodeIds: _collectMonthlyNodeIds(node),
+              nodeNames: _buildMonthlyNodeNameMap(node),
+              year: month.year,
+              month: month.month,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        decoration: BoxDecoration(
+          color: isRoot ? Colors.white : Colors.transparent,
+          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                // Name
+                Expanded(
+                  flex: 4,
+                  child: Row(
+                    children: [
+                      SizedBox(width: depth * 16.0),
+                      if (depth > 0)
+                        Icon(
+                          Icons.subdirectory_arrow_right,
+                          size: 16,
+                          color: Colors.grey.shade400,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      if (depth > 0) const SizedBox(width: 4),
 
-              // Actual
-              Expanded(
-                flex: 2,
-                child: Text(
-                  node.actual.toStringAsFixed(2),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isOverBudget && node.planned > 0
-                        ? Colors.red
-                        : Colors.black87,
+                      Expanded(
+                        child: Text(
+                          node.node.name,
+                          style: TextStyle(
+                            fontWeight: isGroup || isRoot
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: isRoot ? 16 : 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
 
-              // Budget
-              Expanded(
-                flex: 2,
-                child: Text(
-                  node.planned.toStringAsFixed(2),
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(color: Colors.grey),
+                // Actual
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    node.actual.toStringAsFixed(2),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isOverBudget && node.planned > 0
+                          ? Colors.red
+                          : Colors.black87,
+                    ),
+                  ),
+                ),
+
+                // Budget
+                Expanded(
+                  flex: 2,
+                  child: Text(
+                    node.planned.toStringAsFixed(2),
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ],
+            ),
+
+            // Progress bar
+            if (node.planned > 0 || node.actual > 0) ...[
+              const SizedBox(height: 6),
+              Padding(
+                padding: EdgeInsets.only(left: depth * 16.0),
+                child: LinearPercentIndicator(
+                  lineHeight: 4.0,
+                  percent: percent,
+                  backgroundColor: Colors.grey.shade200,
+                  progressColor: barColor,
+                  barRadius: const Radius.circular(2),
+                  padding: EdgeInsets.zero,
                 ),
               ),
             ],
-          ),
-
-          // Progress bar
-          if (node.planned > 0 || node.actual > 0) ...[
-            const SizedBox(height: 6),
-            Padding(
-              padding: EdgeInsets.only(left: depth * 16.0),
-              child: LinearPercentIndicator(
-                lineHeight: 4.0,
-                percent: percent,
-                backgroundColor: Colors.grey.shade200,
-                progressColor: barColor,
-                barRadius: const Radius.circular(2),
-                padding: EdgeInsets.zero,
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
 
@@ -304,7 +346,8 @@ class _ComparisonNodeRow extends StatelessWidget {
         children: [
           content,
           ...node.children.map(
-            (child) => _ComparisonNodeRow(node: child, depth: depth + 1),
+            (child) =>
+                _ComparisonNodeRow(node: child, depth: depth + 1, month: month),
           ),
         ],
       );

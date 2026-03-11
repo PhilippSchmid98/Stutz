@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
+import 'package:stutz/presentation/screens/category_transactions_screen.dart';
 
 class YearlyDetailScreen extends ConsumerStatefulWidget {
   const YearlyDetailScreen({super.key});
@@ -205,6 +206,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                           node: node,
                           depth: 0,
                           showOffset: _includeOffset && hasOffset,
+                          year: _selectedYear,
                         ),
                       )
                       .toList(),
@@ -308,15 +310,31 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
   }
 }
 
+List<String> _collectYearlyNodeIds(YearlyBudgetNode node) {
+  return [
+    node.node.id,
+    ...node.children.expand((c) => _collectYearlyNodeIds(c)),
+  ];
+}
+
+Map<String, String> _buildYearlyNodeNameMap(YearlyBudgetNode node) {
+  return {
+    node.node.id: node.node.name,
+    for (final c in node.children) ..._buildYearlyNodeNameMap(c),
+  };
+}
+
 class _YearlyNodeRow extends StatelessWidget {
   final YearlyBudgetNode node;
   final int depth;
   final bool showOffset;
+  final int year;
 
   const _YearlyNodeRow({
     required this.node,
     required this.depth,
     required this.showOffset,
+    required this.year,
   });
 
   @override
@@ -334,104 +352,121 @@ class _YearlyNodeRow extends StatelessWidget {
 
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-          decoration: BoxDecoration(
-            color: isRoot ? Colors.white : Colors.transparent,
-            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  // NAME
-                  Expanded(
-                    flex: 4,
-                    child: Row(
-                      children: [
-                        SizedBox(width: depth * 16.0),
-                        if (depth > 0)
-                          Icon(
-                            Icons.subdirectory_arrow_right,
-                            size: 16,
-                            color: Colors.grey.shade400,
-                          ),
-                        if (depth > 0) const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            node.node.name,
-                            style: TextStyle(
-                              fontWeight: isGroup || isRoot
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CategoryTransactionsScreen(
+                  nodeName: node.node.name,
+                  nodeIds: _collectYearlyNodeIds(node),
+                  nodeNames: _buildYearlyNodeNameMap(node),
+                  year: year,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            decoration: BoxDecoration(
+              color: isRoot ? Colors.white : Colors.transparent,
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    // NAME
+                    Expanded(
+                      flex: 4,
+                      child: Row(
+                        children: [
+                          SizedBox(width: depth * 16.0),
+                          if (depth > 0)
+                            Icon(
+                              Icons.subdirectory_arrow_right,
+                              size: 16,
+                              color: Colors.grey.shade400,
                             ),
-                            overflow: TextOverflow.ellipsis,
+                          if (depth > 0) const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              node.node.name,
+                              style: TextStyle(
+                                fontWeight: isGroup || isRoot
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // Consumption (absolute)
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          (showOffset ? node.totalUsageWithOffset : node.actual)
-                              .toStringAsFixed(0),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                    // Consumption (absolute)
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            (showOffset
+                                    ? node.totalUsageWithOffset
+                                    : node.actual)
+                                .toStringAsFixed(0),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
                           ),
-                        ),
-                        Text(
-                          "/ ${node.planned.toStringAsFixed(0)}",
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey.shade500,
+                          Text(
+                            "/ ${node.planned.toStringAsFixed(0)}",
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey.shade500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  // Percentage
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      "${(percentTotalDisplay * 100).toStringAsFixed(0)}%",
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: percentTotalDisplay > 1.0
-                            ? Colors.red
-                            : Colors.teal,
+                    // Percentage
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        "${(percentTotalDisplay * 100).toStringAsFixed(0)}%",
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: percentTotalDisplay > 1.0
+                              ? Colors.red
+                              : Colors.teal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+
+                // Progress Bar
+                Padding(
+                  padding: EdgeInsets.only(left: depth * 16.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: SizedBox(
+                      height: 4,
+                      child: _StackedProgressBar(
+                        offsetPercent: percentOffset,
+                        actualPercent: percentActual,
+                        backgroundColor: Colors.grey.shade200,
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 6),
-
-              // Progress Bar
-              Padding(
-                padding: EdgeInsets.only(left: depth * 16.0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: SizedBox(
-                    height: 4,
-                    child: _StackedProgressBar(
-                      offsetPercent: percentOffset,
-                      actualPercent: percentActual,
-                      backgroundColor: Colors.grey.shade200,
-                    ),
-                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (isGroup)
@@ -440,6 +475,7 @@ class _YearlyNodeRow extends StatelessWidget {
               node: child,
               depth: depth + 1,
               showOffset: showOffset,
+              year: year,
             ),
           ),
       ],
