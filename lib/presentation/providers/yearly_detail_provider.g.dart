@@ -66,7 +66,7 @@ final class YearlyDetailTreeProvider
   }
 }
 
-String _$yearlyDetailTreeHash() => r'34799d13d371084beeaadf4c7616d7c5d070040e';
+String _$yearlyDetailTreeHash() => r'fab86709ce8ab7f6e245c28005824dc6ab0a3da7';
 
 final class YearlyDetailTreeFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<YearlyBudgetNode>>, int> {

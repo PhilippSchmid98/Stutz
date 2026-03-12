@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stutz/presentation/providers/transaction_providers.dart';
+import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
 import 'package:stutz/presentation/screens/widgets/cloud_status_icon.dart';
 

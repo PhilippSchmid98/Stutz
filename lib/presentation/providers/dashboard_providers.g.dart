@@ -49,4 +49,4 @@ final class DashboardMonthlyStatsProvider
 }
 
 String _$dashboardMonthlyStatsHash() =>
-    r'f36dc17613dff9178f703b24a6550c0bc072d55f';
+    r'edae34d36022b03c3da0309bc72027ae5ce05417';

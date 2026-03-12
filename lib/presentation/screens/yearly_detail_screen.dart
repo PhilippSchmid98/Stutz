@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
+import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/category_transactions_screen.dart';
 
 class YearlyDetailScreen extends ConsumerStatefulWidget {

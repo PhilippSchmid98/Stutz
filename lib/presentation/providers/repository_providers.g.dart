@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'firestore_repositories.dart';
+part of 'repository_providers.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -96,7 +96,7 @@ final class TransactionRepositoryProvider
 }
 
 String _$transactionRepositoryHash() =>
-    r'4f3685f76cefc20110b5cf72e6fa6085e8ede256';
+    r'f64d86c54950c4703e4943b43efd26bec062e63e';
 
 @ProviderFor(expenseNodeRepository)
 const expenseNodeRepositoryProvider = ExpenseNodeRepositoryProvider._();
@@ -144,7 +144,7 @@ final class ExpenseNodeRepositoryProvider
 }
 
 String _$expenseNodeRepositoryHash() =>
-    r'bf716843e4839b561464d1b395ef0688274da265';
+    r'edf78320685302466d0d1dca52f2aaaea342863e';
 
 @ProviderFor(incomeSourceRepository)
 const incomeSourceRepositoryProvider = IncomeSourceRepositoryProvider._();
@@ -192,4 +192,4 @@ final class IncomeSourceRepositoryProvider
 }
 
 String _$incomeSourceRepositoryHash() =>
-    r'76fe0b3b068594be367d8343331f771ae9c023be';
+    r'4967b3753dd28839b4d3a4844cfdd096fc56bbb1';

@@ -1,3 +1,9 @@
 export 'income_source.dart';
 export 'expense_node.dart';
 export 'transaction.dart';
+export 'budget_health.dart';
+export 'monthly_budget_status.dart';
+export 'budget_vs_actual_node.dart';
+export 'yearly_budget_node.dart';
+export 'transaction_with_category.dart';
+export 'daily_transactions.dart';

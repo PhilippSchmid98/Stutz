@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/presentation/providers/dashboard_providers.dart';
+import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/monthly_detail_screen.dart';
 import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
 import 'package:percent_indicator/percent_indicator.dart';

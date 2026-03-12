@@ -1,18 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/data/mappers/expense_node_mapper.dart';
 import 'package:stutz/data/mappers/income_mapper.dart';
 import 'package:stutz/data/mappers/transaction_mapper.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/domain/repositories.dart';
-
-part 'firestore_repositories.g.dart';
-
-@riverpod
-String? currentUserId(Ref ref) {
-  return FirebaseAuth.instance.currentUser?.uid;
-}
+import 'package:stutz/domain/services/tree_builder.dart';
 
 // -----------------------------------------------------------------------------
 // TRANSACTION REPOSITORY
@@ -82,7 +74,7 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
     final flatNodes = snapshot.docs
         .map((doc) => ExpenseNodeMapper.fromFirestore(doc))
         .toList();
-    return _buildTree(flatNodes);
+    return _treeBuilder.buildTree(flatNodes);
   }
 
   @override
@@ -126,46 +118,11 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
       final flatNodes = snapshot.docs
           .map((doc) => ExpenseNodeMapper.fromFirestore(doc))
           .toList();
-      return _buildTree(flatNodes);
+      return _treeBuilder.buildTree(flatNodes);
     });
   }
 
-  // Internal logic: build tree and sort.
-  // Extracted to domain/services/tree_builder.dart in Phase 2.
-  List<ExpenseNode> _buildTree(List<ExpenseNode> flatNodes) {
-    // 1. Group children by parent ID
-    final Map<String, List<ExpenseNode>> childrenMap = {};
-    for (var node in flatNodes) {
-      if (node.parentId != null) {
-        childrenMap.putIfAbsent(node.parentId!, () => []).add(node);
-      }
-    }
-
-    // 2. Recursively attach sorted children using Freezed copyWith
-    ExpenseNode attachChildren(ExpenseNode parent) {
-      final children = childrenMap[parent.id] ?? [];
-
-      children.sort((a, b) {
-        final res = a.sortOrder.compareTo(b.sortOrder);
-        if (res == 0) return a.name.compareTo(b.name);
-        return res;
-      });
-
-      return parent.copyWith(
-        children: children.map((c) => attachChildren(c)).toList(),
-      );
-    }
-
-    // Find and sort root nodes
-    final roots = flatNodes.where((n) => n.parentId == null).toList();
-    roots.sort((a, b) {
-      final res = a.sortOrder.compareTo(b.sortOrder);
-      if (res == 0) return a.name.compareTo(b.name);
-      return res;
-    });
-
-    return roots.map((root) => attachChildren(root)).toList();
-  }
+  static const _treeBuilder = TreeBuilder();
 }
 
 // -----------------------------------------------------------------------------
@@ -209,29 +166,4 @@ class FirestoreIncomeRepository implements IncomeSourceRepository {
       return s.docs.map((d) => IncomeMapper.fromFirestore(d)).toList();
     });
   }
-}
-
-// -----------------------------------------------------------------------------
-// RIVERPOD PROVIDERS
-// -----------------------------------------------------------------------------
-
-@riverpod
-TransactionRepository transactionRepository(Ref ref) {
-  final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Not logged in (TransactionRepo)");
-  return FirestoreTransactionRepository(uid);
-}
-
-@riverpod
-ExpenseNodeRepository expenseNodeRepository(Ref ref) {
-  final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Not logged in (ExpenseRepo)");
-  return FirestoreExpenseNodeRepository(uid);
-}
-
-@riverpod
-IncomeSourceRepository incomeSourceRepository(Ref ref) {
-  final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception("Not logged in (IncomeRepo)");
-  return FirestoreIncomeRepository(uid);
 }

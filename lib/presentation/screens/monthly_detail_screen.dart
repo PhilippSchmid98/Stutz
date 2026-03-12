@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/presentation/providers/monthly_detail_provider.dart';
+import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/category_transactions_screen.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
 

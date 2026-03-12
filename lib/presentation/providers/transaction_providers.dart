@@ -1,34 +1,11 @@
 // Datei: lib/presentation/providers/transaction_providers.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:collection/collection.dart';
-import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
+import 'package:stutz/domain/services/transaction_grouper.dart';
+import 'package:stutz/domain/services/tree_builder.dart';
+import 'package:stutz/presentation/providers/repository_providers.dart';
 
 part 'transaction_providers.g.dart';
-
-class TransactionWithCategory {
-  final AppTransaction transaction;
-  final String categoryName;
-  final String? groupName;
-
-  TransactionWithCategory({
-    required this.transaction,
-    required this.categoryName,
-    this.groupName,
-  });
-}
-
-class DailyTransactions {
-  final DateTime date;
-  final double totalAmount;
-  final List<TransactionWithCategory> transactions;
-
-  DailyTransactions({
-    required this.date,
-    required this.totalAmount,
-    required this.transactions,
-  });
-}
 
 @riverpod
 class CurrentVisibleMonth extends _$CurrentVisibleMonth {
@@ -82,47 +59,9 @@ class TransactionList extends _$TransactionList {
     final rootNodes = await ref
         .watch(expenseNodeRepositoryProvider)
         .getAllExpenseNodes();
-    final allNodesFlat = _flattenNodes(rootNodes);
+    final flatNodes = const TreeBuilder().flattenTree(rootNodes);
 
-    transactions.sort((a, b) => b.dateTime.compareTo(a.dateTime));
-
-    final enrichedList = transactions.map((txn) {
-      final node = allNodesFlat.firstWhereOrNull(
-        (n) => n.id == txn.expenseNodeId,
-      );
-      return TransactionWithCategory(
-        transaction: txn,
-        categoryName: node?.name ?? 'Unknown',
-        groupName: node?.parentId,
-      );
-    }).toList();
-
-    final groupedMap = groupBy(enrichedList, (item) {
-      final dt = item.transaction.dateTime;
-      return DateTime(dt.year, dt.month, dt.day);
-    });
-
-    return groupedMap.entries.map((entry) {
-      return DailyTransactions(
-        date: entry.key,
-        totalAmount: entry.value.fold(
-          0.0,
-          (sum, t) => sum + t.transaction.amount,
-        ),
-        transactions: entry.value,
-      );
-    }).toList();
-  }
-
-  List<ExpenseNode> _flattenNodes(List<ExpenseNode> nodes) {
-    final List<ExpenseNode> flatList = [];
-    for (var node in nodes) {
-      flatList.add(node);
-      if (node.children.isNotEmpty) {
-        flatList.addAll(_flattenNodes(node.children));
-      }
-    }
-    return flatList;
+    return const TransactionGrouper().groupByDay(transactions, flatNodes);
   }
 
   Future<void> addTransaction(AppTransaction txn) async {

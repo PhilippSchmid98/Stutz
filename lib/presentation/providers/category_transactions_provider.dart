@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
+import 'package:stutz/presentation/providers/repository_providers.dart';
 
 part 'category_transactions_provider.g.dart';
 

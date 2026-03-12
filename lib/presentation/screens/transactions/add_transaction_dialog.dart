@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:stutz/data/firestore_repositories.dart';
+import 'package:stutz/presentation/providers/repository_providers.dart';
 import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stutz/domain/models/models.dart';

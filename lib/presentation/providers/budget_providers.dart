@@ -1,7 +1,8 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/domain/logic_extensions.dart';
+import 'package:stutz/domain/services/budget_calculator.dart';
+import 'package:stutz/presentation/providers/repository_providers.dart';
 
 part 'budget_providers.g.dart';
 
@@ -30,23 +31,9 @@ Future<double> totalMonthlyExpenses(Ref ref) async {
   );
 }
 
-class BudgetHealthState {
-  final double income;
-  final double expenses;
-  final double balance;
-  final bool isDeficit;
-
-  BudgetHealthState({required this.income, required this.expenses})
-    : balance = income - expenses,
-      isDeficit = (income - expenses) < 0;
-}
-
 @riverpod
-Future<BudgetHealthState> budgetHealth(Ref ref) async {
-  final results = await Future.wait([
-    ref.watch(totalMonthlyIncomeProvider.future),
-    ref.watch(totalMonthlyExpensesProvider.future),
-  ]);
-
-  return BudgetHealthState(income: results[0], expenses: results[1]);
+Future<BudgetHealth> budgetHealth(Ref ref) async {
+  final sources = await ref.watch(incomeListProvider.future);
+  final roots = await ref.watch(expenseTreeProvider.future);
+  return const BudgetCalculator().calculateHealth(sources, roots);
 }

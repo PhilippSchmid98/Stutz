@@ -839,14 +839,14 @@ Nutzbar als Tracking während der Umsetzung:
 
 ### Phase 2: Domain-Logik
 
-- [ ] `domain/services/budget_calculator.dart` erstellen
-- [ ] `domain/services/tree_builder.dart` erstellen
-- [ ] `domain/services/transaction_grouper.dart` erstellen
-- [ ] `domain/services/yearly_calculator.dart` erstellen
-- [ ] Business-Logik-Code aus Providern in Services verschieben
-- [ ] `presentation/providers/repository_providers.dart` erstellen
-- [ ] Data-Imports aus Provider-Dateien durch Domain-Imports ersetzen
-- [ ] Unit-Tests für alle Domain-Services schreiben
+- [x] `domain/services/budget_calculator.dart` erstellen
+- [x] `domain/services/tree_builder.dart` erstellen
+- [x] `domain/services/transaction_grouper.dart` erstellen
+- [x] `domain/services/yearly_calculator.dart` erstellen
+- [x] Business-Logik-Code aus Providern in Services verschieben
+- [x] `presentation/providers/repository_providers.dart` erstellen
+- [x] Data-Imports aus Provider-Dateien durch Domain-Imports ersetzen
+- [x] Unit-Tests für alle Domain-Services schreiben
 
 ### Phase 3: Presentation
 

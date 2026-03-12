@@ -165,13 +165,11 @@ const budgetHealthProvider = BudgetHealthProvider._();
 final class BudgetHealthProvider
     extends
         $FunctionalProvider<
-          AsyncValue<BudgetHealthState>,
-          BudgetHealthState,
-          FutureOr<BudgetHealthState>
+          AsyncValue<BudgetHealth>,
+          BudgetHealth,
+          FutureOr<BudgetHealth>
         >
-    with
-        $FutureModifier<BudgetHealthState>,
-        $FutureProvider<BudgetHealthState> {
+    with $FutureModifier<BudgetHealth>, $FutureProvider<BudgetHealth> {
   const BudgetHealthProvider._()
     : super(
         from: null,
@@ -188,14 +186,14 @@ final class BudgetHealthProvider
 
   @$internal
   @override
-  $FutureProviderElement<BudgetHealthState> $createElement(
+  $FutureProviderElement<BudgetHealth> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<BudgetHealthState> create(Ref ref) {
+  FutureOr<BudgetHealth> create(Ref ref) {
     return budgetHealth(ref);
   }
 }
 
-String _$budgetHealthHash() => r'db2184a6826f3a92f3116389aab925bf2db1f7cc';
+String _$budgetHealthHash() => r'80b186a061d25385df3fdcb9a2e07b6877a40d6b';
