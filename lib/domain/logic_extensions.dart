@@ -1,13 +1,13 @@
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 
 extension IncomeLogic on IncomeSource {
   /// Returns the monthly amount.
-  /// Automatically divides 'Yearly' amounts by 12.
+  /// Automatically divides yearly amounts by 12.
   double get monthlyAmount {
-    if (interval == 'Yearly') {
+    if (interval == PaymentInterval.yearly) {
       return amount / 12;
     }
-    // Assume 'Monthly' as default
     return amount;
   }
 }
@@ -25,10 +25,9 @@ extension ExpenseLogic on ExpenseNode {
     }
 
     // Case 2: It is a leaf (no children) -> Calculate its own value
-    // If plannedAmount is null (should not happen for leaves, but just in case), use 0.0
     final amount = plannedAmount ?? 0.0;
 
-    if (interval == 'Yearly') {
+    if (interval == PaymentInterval.yearly) {
       return amount / 12;
     }
     return amount;

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 
 void main() {
@@ -8,8 +9,8 @@ void main() {
         id: '1',
         name: 'Job',
         amount: 1000,
-        interval: 'Monthly',
-        group: 'Main',
+        interval: PaymentInterval.monthly,
+        group: IncomeGroup.main,
       );
       expect(source.id, '1');
       expect(source.name, 'Job');
@@ -33,10 +34,10 @@ void main() {
     });
   });
 
-  group('Transaction', () {
+  group('AppTransaction', () {
     test('constructor assigns values', () {
       final now = DateTime.now();
-      final txn = Transaction(
+      final txn = AppTransaction(
         id: '1',
         expenseNodeId: '2',
         amount: 50,

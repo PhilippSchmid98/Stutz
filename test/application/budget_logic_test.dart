@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/domain/logic_extensions.dart';
 
@@ -9,7 +10,7 @@ void main() {
         id: '1',
         name: 'Netflix',
         plannedAmount: 15.0,
-        interval: 'Monthly',
+        interval: PaymentInterval.monthly,
       );
       expect(node.totalMonthlyCalculated, 15.0);
     });
@@ -19,7 +20,7 @@ void main() {
         id: '1',
         name: 'Insurance',
         plannedAmount: 1200.0,
-        interval: 'Yearly',
+        interval: PaymentInterval.yearly,
       );
       expect(node.totalMonthlyCalculated, 100.0); // 1200 / 12
     });
@@ -29,20 +30,20 @@ void main() {
         id: 'c1',
         name: 'Miete',
         plannedAmount: 1000.0,
-        interval: 'Monthly',
+        interval: PaymentInterval.monthly,
       );
       final child2 = ExpenseNode(
         id: 'c2',
         name: 'Strom',
         plannedAmount: 600.0,
-        interval: 'Yearly', // = 50 pro Monat
+        interval: PaymentInterval.yearly, // = 50 pro Monat
       );
 
       final group = ExpenseNode(
         id: 'root',
         name: 'Wohnen',
         plannedAmount: 99999.0, // Sollte ignoriert werden!
-        interval: 'Monthly',
+        interval: PaymentInterval.monthly,
         children: [child1, child2],
       );
 
@@ -55,7 +56,7 @@ void main() {
         id: 'gc',
         name: 'Spotify',
         plannedAmount: 10.0,
-        interval: 'Monthly',
+        interval: PaymentInterval.monthly,
       );
       final childGroup = ExpenseNode(
         id: 'c_group',

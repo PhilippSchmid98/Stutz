@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
 
@@ -42,7 +43,7 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
   }).toList();
 
   BudgetVsActualNode? processNode(ExpenseNode node) {
-    if (node.type == 'Fixed') {
+    if (node.type == ExpenseType.fixed) {
       return null;
     }
 
@@ -60,7 +61,7 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
 
     double ownPlanned = 0.0;
     if (node.plannedAmount != null) {
-      if (node.interval == 'Yearly') {
+      if (node.interval == PaymentInterval.yearly) {
         ownPlanned = node.plannedAmount! / 12;
       } else {
         ownPlanned = node.plannedAmount!;

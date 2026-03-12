@@ -66,7 +66,7 @@ final class MonthlyDetailTreeProvider
   }
 }
 
-String _$monthlyDetailTreeHash() => r'369b2bfcd710c0bb6ecab9dcbbff698058e32b6c';
+String _$monthlyDetailTreeHash() => r'50e4ffcd3bc40f930957d6d5003b26608bb39878';
 
 final class MonthlyDetailTreeFamily extends $Family
     with

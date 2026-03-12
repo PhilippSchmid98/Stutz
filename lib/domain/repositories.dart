@@ -21,10 +21,10 @@ abstract class ExpenseNodeRepository {
 }
 
 abstract class TransactionRepository {
-  Future<List<Transaction>> getAllTransactions();
-  Stream<List<Transaction>> watchAllTransactions();
+  Future<List<AppTransaction>> getAllTransactions();
+  Stream<List<AppTransaction>> watchAllTransactions();
 
-  Future<void> addTransaction(Transaction transaction);
-  Future<void> updateTransaction(Transaction transaction);
+  Future<void> addTransaction(AppTransaction transaction);
+  Future<void> updateTransaction(AppTransaction transaction);
   Future<void> deleteTransaction(String id);
 }

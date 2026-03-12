@@ -6,6 +6,7 @@ import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/providers/budget_providers.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/presentation/providers/transaction_providers.dart';
 
 class AddTransactionDialog extends ConsumerStatefulWidget {
@@ -470,7 +471,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
           ? widget.existingItem!.transaction.id
           : const Uuid().v4();
 
-      final txn = Transaction(
+      final txn = AppTransaction(
         id: id,
         expenseNodeId: _selectedNodeId!,
         amount: amount,
@@ -526,7 +527,7 @@ class _AddTransactionDialogState extends ConsumerState<AddTransactionDialog> {
   List<ExpenseNode> _flattenTreeVariableOnly(List<ExpenseNode> nodes) {
     final List<ExpenseNode> flat = [];
     for (var node in nodes) {
-      if (node.type == 'Variable') flat.add(node);
+      if (node.type == ExpenseType.variable) flat.add(node);
       if (node.children.isNotEmpty) {
         flat.addAll(_flattenTreeVariableOnly(node.children));
       }

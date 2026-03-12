@@ -1,4 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
 
@@ -36,7 +37,7 @@ Future<List<MonthlyBudgetStatus>> dashboardMonthlyStats(Ref ref) async {
   double totalVariablePlannedPerMonth = 0;
 
   void processNode(ExpenseNode node) {
-    if (node.type == 'Fixed') {
+    if (node.type == ExpenseType.fixed) {
       return;
     }
 
@@ -44,7 +45,7 @@ Future<List<MonthlyBudgetStatus>> dashboardMonthlyStats(Ref ref) async {
 
     if (node.plannedAmount != null) {
       double amount = node.plannedAmount!;
-      if (node.interval == 'Yearly') {
+      if (node.interval == PaymentInterval.yearly) {
         amount /= 12;
       }
       totalVariablePlannedPerMonth += amount;

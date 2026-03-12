@@ -7,7 +7,7 @@ import 'package:stutz/domain/models/models.dart';
 part 'transaction_providers.g.dart';
 
 class TransactionWithCategory {
-  final Transaction transaction;
+  final AppTransaction transaction;
   final String categoryName;
   final String? groupName;
 
@@ -125,7 +125,7 @@ class TransactionList extends _$TransactionList {
     return flatList;
   }
 
-  Future<void> addTransaction(Transaction txn) async {
+  Future<void> addTransaction(AppTransaction txn) async {
     await ref.read(transactionRepositoryProvider).addTransaction(txn);
     ref.invalidateSelf();
   }

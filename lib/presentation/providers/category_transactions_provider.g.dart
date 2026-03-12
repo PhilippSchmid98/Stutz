@@ -22,13 +22,13 @@ const categoryTransactionsProvider = CategoryTransactionsFamily._();
 final class CategoryTransactionsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<List<Transaction>>,
-          List<Transaction>,
-          FutureOr<List<Transaction>>
+          AsyncValue<List<AppTransaction>>,
+          List<AppTransaction>,
+          FutureOr<List<AppTransaction>>
         >
     with
-        $FutureModifier<List<Transaction>>,
-        $FutureProvider<List<Transaction>> {
+        $FutureModifier<List<AppTransaction>>,
+        $FutureProvider<List<AppTransaction>> {
   /// Returns all transactions for [nodeIds] within the given [year].
   /// If [month] is provided, filters to that specific month; otherwise the whole year.
   /// Results are sorted by date descending (newest first).
@@ -55,12 +55,12 @@ final class CategoryTransactionsProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<Transaction>> $createElement(
+  $FutureProviderElement<List<AppTransaction>> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<List<Transaction>> create(Ref ref) {
+  FutureOr<List<AppTransaction>> create(Ref ref) {
     final argument = this.argument as (List<String>, int, int?);
     return categoryTransactions(ref, argument.$1, argument.$2, argument.$3);
   }
@@ -77,7 +77,7 @@ final class CategoryTransactionsProvider
 }
 
 String _$categoryTransactionsHash() =>
-    r'd9dfbf5ef44446909f01107cff17347df7322e3f';
+    r'bb296e55356b58ea5d6618b8e7e90ae7c5397c5b';
 
 /// Returns all transactions for [nodeIds] within the given [year].
 /// If [month] is provided, filters to that specific month; otherwise the whole year.
@@ -86,7 +86,7 @@ String _$categoryTransactionsHash() =>
 final class CategoryTransactionsFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          FutureOr<List<Transaction>>,
+          FutureOr<List<AppTransaction>>,
           (List<String>, int, int?)
         > {
   const CategoryTransactionsFamily._()

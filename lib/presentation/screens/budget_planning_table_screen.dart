@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/providers/budget_providers.dart';
@@ -34,16 +35,16 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
               error: (e, _) => Text('Fehler: $e'),
               data: (incomes) {
                 final mainIncomes = incomes
-                    .where((i) => i.group == 'Main')
+                    .where((i) => i.group == IncomeGroup.main)
                     .toList();
                 final additionalIncomes = incomes
-                    .where((i) => i.group == 'Additional')
+                    .where((i) => i.group == IncomeGroup.additional)
                     .toList();
 
                 double rawMonthlySum = 0;
                 double rawYearlySum = 0;
                 for (final item in incomes) {
-                  if (item.interval == 'Monthly') {
+                  if (item.interval == PaymentInterval.monthly) {
                     rawMonthlySum += item.amount;
                   } else {
                     rawYearlySum += item.amount;
@@ -121,7 +122,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
                       // Recursive calculation for the card
                       double calcSum(
                         List<ExpenseNode> nodes,
-                        String targetInterval,
+                        PaymentInterval targetInterval,
                       ) {
                         double sum = 0;
                         for (var node in nodes) {
@@ -136,8 +137,14 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
                         return sum;
                       }
 
-                      final monthly = calcSum(rootNode.children, 'Monthly');
-                      final yearly = calcSum(rootNode.children, 'Yearly');
+                      final monthly = calcSum(
+                        rootNode.children,
+                        PaymentInterval.monthly,
+                      );
+                      final yearly = calcSum(
+                        rootNode.children,
+                        PaymentInterval.yearly,
+                      );
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
@@ -224,7 +231,7 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
     // 1. Total income (average monthly)
     double totalIncome = 0;
     for (var i in incomes) {
-      if (i.interval == 'Monthly') {
+      if (i.interval == PaymentInterval.monthly) {
         totalIncome += i.amount;
       } else {
         totalIncome += (i.amount / 12);
@@ -239,11 +246,11 @@ class BudgetPlanningTableScreen extends ConsumerWidget {
       for (var node in nodes) {
         if (node.plannedAmount != null) {
           double amount = node.plannedAmount!;
-          if (node.interval == 'Yearly') {
+          if (node.interval == PaymentInterval.yearly) {
             amount /= 12; // Convert to monthly
           }
 
-          if (node.type == 'Fixed') {
+          if (node.type == ExpenseType.fixed) {
             totalFixed += amount;
           } else {
             totalVariable += amount;
@@ -610,7 +617,7 @@ class _IncomeItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMonthly = item.interval == 'Monthly';
+    final isMonthly = item.interval == PaymentInterval.monthly;
 
     return InkWell(
       onTap: () => showDialog(
@@ -662,7 +669,7 @@ class _ExpenseItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasChildren = node.children.isNotEmpty;
-    final isFixed = node.type == 'Fixed';
+    final isFixed = node.type == ExpenseType.fixed;
 
     Widget rowContent = InkWell(
       onTap: () => showDialog(
@@ -713,7 +720,9 @@ class _ExpenseItemRow extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    node.interval == 'Monthly' ? "Monatlich" : "Jährlich",
+                    node.interval == PaymentInterval.monthly
+                        ? "Monatlich"
+                        : "Jährlich",
                     style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],
@@ -848,12 +857,12 @@ class _StyledTextField extends StatelessWidget {
 }
 
 // Helper widget for dropdowns
-class _StyledDropdown extends StatelessWidget {
-  final String value;
-  final Map<String, String> items; // Key: internal value, Value: display text
+class _StyledDropdown<T> extends StatelessWidget {
+  final T value;
+  final Map<T, String> items;
   final String label;
   final IconData icon;
-  final ValueChanged<String?> onChanged;
+  final ValueChanged<T?> onChanged;
 
   const _StyledDropdown({
     required this.value,
@@ -867,10 +876,10 @@ class _StyledDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: DropdownButtonFormField<String>(
+      child: DropdownButtonFormField<T>(
         initialValue: value,
         items: items.entries.map((e) {
-          return DropdownMenuItem(value: e.key, child: Text(e.value));
+          return DropdownMenuItem<T>(value: e.key, child: Text(e.value));
         }).toList(),
         onChanged: onChanged,
         decoration: InputDecoration(
@@ -992,8 +1001,8 @@ class _AddIncomeDialogState extends ConsumerState<_AddIncomeDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameCtrl;
   late TextEditingController _amountCtrl;
-  String _interval = 'Monthly';
-  String _group = 'Main';
+  PaymentInterval _interval = PaymentInterval.monthly;
+  IncomeGroup _group = IncomeGroup.main;
 
   @override
   void initState() {
@@ -1041,18 +1050,21 @@ class _AddIncomeDialogState extends ConsumerState<_AddIncomeDialog> {
                   keyboardType: TextInputType.number,
                   suffixText: 'CHF',
                 ),
-                _StyledDropdown(
+                _StyledDropdown<PaymentInterval>(
                   value: _interval,
-                  items: const {'Monthly': 'Monatlich', 'Yearly': 'Jährlich'},
+                  items: const {
+                    PaymentInterval.monthly: 'Monatlich',
+                    PaymentInterval.yearly: 'Jährlich',
+                  },
                   label: 'Intervall',
                   icon: Icons.calendar_today,
                   onChanged: (v) => setState(() => _interval = v!),
                 ),
-                _StyledDropdown(
+                _StyledDropdown<IncomeGroup>(
                   value: _group,
                   items: const {
-                    'Main': 'Haupteinnahmen',
-                    'Additional': 'Zusätzliche Einnahmen',
+                    IncomeGroup.main: 'Haupteinnahmen',
+                    IncomeGroup.additional: 'Zusätzliche Einnahmen',
                   },
                   label: 'Gruppe',
                   icon: Icons.category_outlined,
@@ -1167,8 +1179,8 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
   late TextEditingController _amountCtrl;
 
   bool _isGroup = false;
-  String _interval = 'Monthly';
-  String _type = 'Fixed';
+  PaymentInterval _interval = PaymentInterval.monthly;
+  ExpenseType _type = ExpenseType.fixed;
 
   @override
   void initState() {
@@ -1264,16 +1276,22 @@ class _AddExpenseNodeDialogState extends ConsumerState<_AddExpenseNodeDialog> {
                     keyboardType: TextInputType.number,
                     suffixText: 'CHF',
                   ),
-                  _StyledDropdown(
+                  _StyledDropdown<PaymentInterval>(
                     value: _interval,
-                    items: const {'Monthly': 'Monatlich', 'Yearly': 'Jährlich'},
+                    items: const {
+                      PaymentInterval.monthly: 'Monatlich',
+                      PaymentInterval.yearly: 'Jährlich',
+                    },
                     label: 'Intervall',
                     icon: Icons.calendar_today,
                     onChanged: (v) => setState(() => _interval = v!),
                   ),
-                  _StyledDropdown(
+                  _StyledDropdown<ExpenseType>(
                     value: _type,
-                    items: const {'Fixed': 'Fix', 'Variable': 'Variabel'},
+                    items: const {
+                      ExpenseType.fixed: 'Fix',
+                      ExpenseType.variable: 'Variabel',
+                    },
                     label: 'Typ',
                     icon: Icons.tune,
                     onChanged: (v) => setState(() => _type = v!),

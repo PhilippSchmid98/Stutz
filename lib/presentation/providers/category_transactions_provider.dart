@@ -8,7 +8,7 @@ part 'category_transactions_provider.g.dart';
 /// If [month] is provided, filters to that specific month; otherwise the whole year.
 /// Results are sorted by date descending (newest first).
 @riverpod
-Future<List<Transaction>> categoryTransactions(
+Future<List<AppTransaction>> categoryTransactions(
   Ref ref,
   List<String> nodeIds,
   int year,

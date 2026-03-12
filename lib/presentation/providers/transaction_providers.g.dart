@@ -128,7 +128,7 @@ final class TransactionListProvider
   TransactionList create() => TransactionList();
 }
 
-String _$transactionListHash() => r'f673bf2aa41a1e14d64eb21c5582ec872bdbd5cc';
+String _$transactionListHash() => r'1be7d95ae3aecfb17279715c4d75e33231717847';
 
 abstract class _$TransactionList
     extends $AsyncNotifier<List<DailyTransactions>> {

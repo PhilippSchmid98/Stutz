@@ -828,14 +828,14 @@ Nutzbar als Tracking während der Umsetzung:
 
 ### Phase 1: Foundation
 
-- [ ] `lib/core/enums/enums.dart` erstellen (`PaymentInterval`, `ExpenseType`, `IncomeGroup`)
-- [ ] `IncomeSource` auf Freezed migrieren
-- [ ] `ExpenseNode` auf Freezed migrieren
-- [ ] `Transaction` auf Freezed migrieren (Namenskonflikt mit `cloud_firestore.Transaction` beachten → ggf. `AppTransaction` oder Type-Alias)
-- [ ] `data/mappers/` erstellen (je Model eine Mapper-Klasse)
-- [ ] Alle `cloud_firestore`-Imports aus `domain/` entfernen
-- [ ] `dart run build_runner build --delete-conflicting-outputs` ausführen
-- [ ] Bestehende Tests anpassen und bestätigen, dass sie grün sind
+- [x] `lib/core/enums/enums.dart` erstellen (`PaymentInterval`, `ExpenseType`, `IncomeGroup`)
+- [x] `IncomeSource` auf Freezed migrieren
+- [x] `ExpenseNode` auf Freezed migrieren
+- [x] `Transaction` auf Freezed migrieren (Namenskonflikt mit `cloud_firestore.Transaction` beachten → `AppTransaction`)
+- [x] `data/mappers/` erstellen (je Model eine Mapper-Klasse)
+- [x] Alle `cloud_firestore`-Imports aus `domain/` entfernen
+- [x] `dart run build_runner build --delete-conflicting-outputs` ausführen
+- [x] Bestehende Tests anpassen und bestätigen, dass sie grün sind
 
 ### Phase 2: Domain-Logik
 

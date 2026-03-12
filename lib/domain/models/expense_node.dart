@@ -1,60 +1,25 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stutz/core/enums/enums.dart';
 
-class ExpenseNode {
-  final String id;
-  final String? parentId;
-  final String name;
-  final double? plannedAmount;
-  final double? actualAmount; // Calculated field (not in DB)
-  final String? type; // 'Fixed' or 'Variable'
-  final String? interval; // 'Monthly' or 'Yearly'
-  final List<ExpenseNode> children;
+part 'expense_node.freezed.dart';
 
-  // NEW: Field for sorting
-  final int sortOrder;
+@freezed
+abstract class ExpenseNode with _$ExpenseNode {
+  const ExpenseNode._();
 
-  ExpenseNode({
-    required this.id,
-    this.parentId,
-    required this.name,
-    this.plannedAmount,
-    this.actualAmount,
-    this.type,
-    this.interval,
-    this.children = const [],
-    this.sortOrder = 0, // Default value when created in code
-  });
+  const factory ExpenseNode({
+    required String id,
+    String? parentId,
+    required String name,
+    double? plannedAmount,
+    /// Calculated field — not persisted in DB.
+    double? actualAmount,
+    ExpenseType? type,
+    PaymentInterval? interval,
+    @Default([]) List<ExpenseNode> children,
+    /// [sortOrder] 99999 is a lazy-migration sentinel for old documents without sorting.
+    @Default(99999) int sortOrder,
+  }) = _ExpenseNode;
 
   bool get isGroup => children.isNotEmpty;
-
-  Map<String, dynamic> toFirestore() {
-    return {
-      'parentId': parentId,
-      'name': name,
-      'plannedAmount': plannedAmount,
-      'interval': interval,
-      'type': type,
-      'sortOrder': sortOrder, // NEW: Save
-    };
-  }
-
-  factory ExpenseNode.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data()!;
-    return ExpenseNode(
-      id: doc.id,
-      parentId: data['parentId'],
-      name: data['name'] ?? 'Unknown',
-      plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
-      interval: data['interval'],
-      type: data['type'],
-
-      // NEW: Lazy migration.
-      // If null (old document), set to 99999 (to end).
-      sortOrder: data['sortOrder'] ?? 99999,
-
-      children: [], // Filled recursively later in repository
-    );
-  }
 }

@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stutz/data/mappers/expense_node_mapper.dart';
+import 'package:stutz/data/mappers/income_mapper.dart';
+import 'package:stutz/data/mappers/transaction_mapper.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/domain/repositories.dart';
 
@@ -24,22 +27,24 @@ class FirestoreTransactionRepository implements TransactionRepository {
       _firestore.collection('users').doc(userId).collection('transactions');
 
   @override
-  Future<List<Transaction>> getAllTransactions() async {
+  Future<List<AppTransaction>> getAllTransactions() async {
     final snapshot = await _collection
         .orderBy('dateTime', descending: true)
         .get();
-    return snapshot.docs.map((doc) => Transaction.fromFirestore(doc)).toList();
+    return snapshot.docs
+        .map((doc) => TransactionMapper.fromFirestore(doc))
+        .toList();
   }
 
   @override
-  Future<void> addTransaction(Transaction t) async {
+  Future<void> addTransaction(AppTransaction t) async {
     // Use .set(t.id) to retain the ID (UUID) generated in the UI
-    await _collection.doc(t.id).set(t.toFirestore());
+    await _collection.doc(t.id).set(TransactionMapper.toFirestore(t));
   }
 
   @override
-  Future<void> updateTransaction(Transaction t) async {
-    await _collection.doc(t.id).update(t.toFirestore());
+  Future<void> updateTransaction(AppTransaction t) async {
+    await _collection.doc(t.id).update(TransactionMapper.toFirestore(t));
   }
 
   @override
@@ -48,11 +53,13 @@ class FirestoreTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Stream<List<Transaction>> watchAllTransactions() {
+  Stream<List<AppTransaction>> watchAllTransactions() {
     return _collection.orderBy('dateTime', descending: true).snapshots().map((
       s,
     ) {
-      return s.docs.map((d) => Transaction.fromFirestore(d)).toList();
+      return s.docs
+          .map((d) => TransactionMapper.fromFirestore(d))
+          .toList();
     });
   }
 }
@@ -73,21 +80,21 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
   Future<List<ExpenseNode>> getAllExpenseNodes() async {
     final snapshot = await _collection.get();
     final flatNodes = snapshot.docs
-        .map((doc) => ExpenseNode.fromFirestore(doc))
+        .map((doc) => ExpenseNodeMapper.fromFirestore(doc))
         .toList();
     return _buildTree(flatNodes);
   }
 
   @override
   Future<void> addExpenseNode(ExpenseNode node) async {
-    await _collection.doc(node.id).set(node.toFirestore());
+    await _collection.doc(node.id).set(ExpenseNodeMapper.toFirestore(node));
   }
 
   @override
   Future<void> updateExpenseNode(ExpenseNode node) async {
     await _collection
         .doc(node.id)
-        .set(node.toFirestore(), SetOptions(merge: true));
+        .set(ExpenseNodeMapper.toFirestore(node), SetOptions(merge: true));
   }
 
   @override
@@ -117,55 +124,42 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
   Stream<List<ExpenseNode>> watchAllExpenseNodes() {
     return _collection.snapshots().map((snapshot) {
       final flatNodes = snapshot.docs
-          .map((doc) => ExpenseNode.fromFirestore(doc))
+          .map((doc) => ExpenseNodeMapper.fromFirestore(doc))
           .toList();
       return _buildTree(flatNodes);
     });
   }
 
-  // Internal logic: build tree and sort
+  // Internal logic: build tree and sort.
+  // Extracted to domain/services/tree_builder.dart in Phase 2.
   List<ExpenseNode> _buildTree(List<ExpenseNode> flatNodes) {
     // 1. Group children by parent ID
-    Map<String, List<ExpenseNode>> childrenMap = {};
+    final Map<String, List<ExpenseNode>> childrenMap = {};
     for (var node in flatNodes) {
       if (node.parentId != null) {
         childrenMap.putIfAbsent(node.parentId!, () => []).add(node);
       }
     }
 
-    // 2. Recursive function to attach children
+    // 2. Recursively attach sorted children using Freezed copyWith
     ExpenseNode attachChildren(ExpenseNode parent) {
       final children = childrenMap[parent.id] ?? [];
 
-      // IMPORTANT: Sort children!
       children.sort((a, b) {
-        // First by sortOrder
-        int res = a.sortOrder.compareTo(b.sortOrder);
-        // Fallback: alphabetically if sortOrder is same (e.g., for old data)
+        final res = a.sortOrder.compareTo(b.sortOrder);
         if (res == 0) return a.name.compareTo(b.name);
         return res;
       });
 
-      return ExpenseNode(
-        id: parent.id,
-        parentId: parent.parentId,
-        name: parent.name,
-        plannedAmount: parent.plannedAmount,
-        interval: parent.interval,
-        type: parent.type,
-        sortOrder:
-            parent.sortOrder, // IMPORTANT: sortOrder must be passed through!
-        // Recursion for children
+      return parent.copyWith(
         children: children.map((c) => attachChildren(c)).toList(),
       );
     }
 
-    // Find root nodes
+    // Find and sort root nodes
     final roots = flatNodes.where((n) => n.parentId == null).toList();
-
-    // IMPORTANT: Sort root nodes!
     roots.sort((a, b) {
-      int res = a.sortOrder.compareTo(b.sortOrder);
+      final res = a.sortOrder.compareTo(b.sortOrder);
       if (res == 0) return a.name.compareTo(b.name);
       return res;
     });
@@ -189,17 +183,19 @@ class FirestoreIncomeRepository implements IncomeSourceRepository {
   @override
   Future<List<IncomeSource>> getAllIncomeSources() async {
     final snapshot = await _collection.get();
-    return snapshot.docs.map((doc) => IncomeSource.fromFirestore(doc)).toList();
+    return snapshot.docs
+        .map((doc) => IncomeMapper.fromFirestore(doc))
+        .toList();
   }
 
   @override
   Future<void> addIncomeSource(IncomeSource source) async {
-    await _collection.doc(source.id).set(source.toFirestore());
+    await _collection.doc(source.id).set(IncomeMapper.toFirestore(source));
   }
 
   @override
   Future<void> updateIncomeSource(IncomeSource source) async {
-    await _collection.doc(source.id).update(source.toFirestore());
+    await _collection.doc(source.id).update(IncomeMapper.toFirestore(source));
   }
 
   @override
@@ -210,7 +206,7 @@ class FirestoreIncomeRepository implements IncomeSourceRepository {
   @override
   Stream<List<IncomeSource>> watchAllIncomeSources() {
     return _collection.snapshots().map((s) {
-      return s.docs.map((d) => IncomeSource.fromFirestore(d)).toList();
+      return s.docs.map((d) => IncomeMapper.fromFirestore(d)).toList();
     });
   }
 }

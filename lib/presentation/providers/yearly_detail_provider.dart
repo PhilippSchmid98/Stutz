@@ -1,5 +1,6 @@
 // Datei: lib/presentation/providers/yearly_detail_provider.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/data/firestore_repositories.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:intl/intl.dart';
@@ -61,7 +62,7 @@ Future<List<YearlyBudgetNode>> yearlyDetailTree(Ref ref, int year) async {
   final txnsInYear = allTxns.where((t) => t.dateTime.year == year).toList();
 
   YearlyBudgetNode? processNode(ExpenseNode node) {
-    if (node.type == 'Fixed') return null;
+    if (node.type == ExpenseType.fixed) return null;
 
     List<YearlyBudgetNode> keptChildren = [];
     for (var child in node.children) {
@@ -75,7 +76,7 @@ Future<List<YearlyBudgetNode>> yearlyDetailTree(Ref ref, int year) async {
 
     double ownPlanned = 0.0;
     if (node.plannedAmount != null) {
-      if (node.interval == 'Yearly') {
+      if (node.interval == PaymentInterval.yearly) {
         ownPlanned = node.plannedAmount!;
       } else {
         ownPlanned = node.plannedAmount! * 12;
