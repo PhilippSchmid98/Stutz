@@ -1,39 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/presentation/providers/transaction_providers.dart';
 
-class CleanMonthSelector extends ConsumerStatefulWidget {
+class CleanMonthSelector extends HookConsumerWidget {
   final Function(DateTime) onMonthSelected;
 
   const CleanMonthSelector({super.key, required this.onMonthSelected});
 
   @override
-  ConsumerState<CleanMonthSelector> createState() => _CleanMonthSelectorState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scrollController = useScrollController();
+    const itemWidth = 80.0;
 
-class _CleanMonthSelectorState extends ConsumerState<CleanMonthSelector> {
-  final ScrollController _scrollController = ScrollController();
-  final double _itemWidth = 80.0;
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final months = ref.watch(availableMonthsProvider);
     final currentMonth = ref.watch(currentVisibleMonthProvider);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final totalContentWidth = months.length * _itemWidth;
+    final totalContentWidth = months.length * itemWidth;
     final isScrollable = totalContentWidth > screenWidth;
 
     if (isScrollable) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_scrollController.hasClients) return;
+        if (!scrollController.hasClients) return;
 
         final index = months.indexWhere(
           (m) => m.year == currentMonth.year && m.month == currentMonth.month,
@@ -41,12 +31,12 @@ class _CleanMonthSelectorState extends ConsumerState<CleanMonthSelector> {
 
         if (index != -1) {
           final targetOffset =
-              (index * _itemWidth) - (screenWidth / 2) + (_itemWidth / 2);
-          final maxScroll = _scrollController.position.maxScrollExtent;
+              (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+          final maxScroll = scrollController.position.maxScrollExtent;
           final offset = targetOffset.clamp(0.0, maxScroll);
 
-          if ((_scrollController.offset - offset).abs() > 5) {
-            _scrollController.animateTo(
+          if ((scrollController.offset - offset).abs() > 5) {
+            scrollController.animateTo(
               offset,
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutCubic,
@@ -59,7 +49,7 @@ class _CleanMonthSelectorState extends ConsumerState<CleanMonthSelector> {
     return SizedBox(
       height: 50,
       child: isScrollable
-          ? _buildScrollableList(months, currentMonth, screenWidth)
+          ? _buildScrollableList(months, currentMonth, scrollController)
           : _buildCenteredList(months, currentMonth),
     );
   }
@@ -67,10 +57,10 @@ class _CleanMonthSelectorState extends ConsumerState<CleanMonthSelector> {
   Widget _buildScrollableList(
     List<DateTime> months,
     DateTime currentMonth,
-    double screenWidth,
+    ScrollController scrollController,
   ) {
     return ListView.builder(
-      controller: _scrollController,
+      controller: scrollController,
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: months.length,
@@ -95,10 +85,10 @@ class _CleanMonthSelectorState extends ConsumerState<CleanMonthSelector> {
         date.year == currentMonth.year && date.month == currentMonth.month;
 
     return GestureDetector(
-      onTap: () => widget.onMonthSelected(date),
+      onTap: () => onMonthSelected(date),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        width: _itemWidth,
+        width: 80,
         alignment: Alignment.center,
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),

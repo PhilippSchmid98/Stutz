@@ -1,31 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/providers/budget_providers.dart';
 import 'package:stutz/presentation/providers/repository_providers.dart';
 import 'package:stutz/presentation/screens/shared/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
 
-class AddMainCategoryDialog extends ConsumerStatefulWidget {
+class AddMainCategoryDialog extends HookConsumerWidget {
   const AddMainCategoryDialog({super.key});
 
   @override
-  ConsumerState<AddMainCategoryDialog> createState() =>
-      _AddMainCategoryDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(GlobalKey<FormState>.new);
+    final nameCtrl = useTextEditingController();
 
-class _AddMainCategoryDialogState extends ConsumerState<AddMainCategoryDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController();
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text(
@@ -35,7 +23,7 @@ class _AddMainCategoryDialogState extends ConsumerState<AddMainCategoryDialog> {
       content: SizedBox(
         width: double.maxFinite,
         child: Form(
-          key: _formKey,
+          key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -45,7 +33,7 @@ class _AddMainCategoryDialogState extends ConsumerState<AddMainCategoryDialog> {
               ),
               const SizedBox(height: 20),
               StyledTextField(
-                controller: _nameCtrl,
+                controller: nameCtrl,
                 label: 'Name der Kategorie',
                 icon: Icons.folder_open,
               ),
@@ -70,11 +58,11 @@ class _AddMainCategoryDialogState extends ConsumerState<AddMainCategoryDialog> {
             ),
           ),
           onPressed: () async {
-            if (_formKey.currentState!.validate()) {
+            if (formKey.currentState!.validate()) {
               final node = ExpenseNode(
                 id: const Uuid().v4(),
                 parentId: null,
-                name: _nameCtrl.text,
+                name: nameCtrl.text,
                 plannedAmount: null,
                 interval: null,
                 type: null,
@@ -83,8 +71,6 @@ class _AddMainCategoryDialogState extends ConsumerState<AddMainCategoryDialog> {
               await ref
                   .read(expenseNodeRepositoryProvider)
                   .addExpenseNode(node);
-              ref.invalidate(expenseTreeProvider);
-              ref.invalidate(totalMonthlyExpensesProvider);
               if (context.mounted) Navigator.pop(context);
             }
           },

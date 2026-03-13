@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:stutz/core/constants/firebase_config.dart';
 
 part 'auth_service.g.dart';
 
@@ -27,11 +28,10 @@ class AuthService {
   }
 
   Future<User?> signInWithGoogle() async {
-    const webClientId =
-        "78877647203-vc4uh88pqqb317ied0apm4tckkpk0bbi.apps.googleusercontent.com";
-
-    // Initialize GoogleSignIn with Firebase server client ID to avoid errors
-    await _googleSignIn.initialize(serverClientId: webClientId);
+    // Initialize GoogleSignIn with Firebase server client ID
+    await _googleSignIn.initialize(
+      serverClientId: FirebaseConfig.googleSignInWebClientId,
+    );
 
     try {
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();

@@ -8,20 +8,27 @@ part of 'budget_providers.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Streams income sources directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
 
 @ProviderFor(incomeList)
 const incomeListProvider = IncomeListProvider._();
+
+/// Streams income sources directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
 
 final class IncomeListProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<IncomeSource>>,
           List<IncomeSource>,
-          FutureOr<List<IncomeSource>>
+          Stream<List<IncomeSource>>
         >
     with
         $FutureModifier<List<IncomeSource>>,
-        $FutureProvider<List<IncomeSource>> {
+        $StreamProvider<List<IncomeSource>> {
+  /// Streams income sources directly from Firestore — auto-updates on any change
+  /// without requiring manual [ref.invalidate] calls after mutations.
   const IncomeListProvider._()
     : super(
         from: null,
@@ -38,17 +45,17 @@ final class IncomeListProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<IncomeSource>> $createElement(
+  $StreamProviderElement<List<IncomeSource>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<IncomeSource>> create(Ref ref) {
+  Stream<List<IncomeSource>> create(Ref ref) {
     return incomeList(ref);
   }
 }
 
-String _$incomeListHash() => r'883769cd24b2f6fee40b443a66098ff22ea8fea2';
+String _$incomeListHash() => r'5406652a87c545b12c93e044b1659a668b69292c';
 
 @ProviderFor(totalMonthlyIncome)
 const totalMonthlyIncomeProvider = TotalMonthlyIncomeProvider._();
@@ -84,19 +91,27 @@ final class TotalMonthlyIncomeProvider
 String _$totalMonthlyIncomeHash() =>
     r'a925ddfa7046efc8d6f3190de5c277f39cb1ae69';
 
+/// Streams expense nodes directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
+
 @ProviderFor(expenseTree)
 const expenseTreeProvider = ExpenseTreeProvider._();
+
+/// Streams expense nodes directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
 
 final class ExpenseTreeProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<ExpenseNode>>,
           List<ExpenseNode>,
-          FutureOr<List<ExpenseNode>>
+          Stream<List<ExpenseNode>>
         >
     with
         $FutureModifier<List<ExpenseNode>>,
-        $FutureProvider<List<ExpenseNode>> {
+        $StreamProvider<List<ExpenseNode>> {
+  /// Streams expense nodes directly from Firestore — auto-updates on any change
+  /// without requiring manual [ref.invalidate] calls after mutations.
   const ExpenseTreeProvider._()
     : super(
         from: null,
@@ -113,17 +128,17 @@ final class ExpenseTreeProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<ExpenseNode>> $createElement(
+  $StreamProviderElement<List<ExpenseNode>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<ExpenseNode>> create(Ref ref) {
+  Stream<List<ExpenseNode>> create(Ref ref) {
     return expenseTree(ref);
   }
 }
 
-String _$expenseTreeHash() => r'b459211c3974e86f477c4475a8f3adf908a33a94';
+String _$expenseTreeHash() => r'c0a0ba514cdbee400afe3b49d39414c2105d7d06';
 
 @ProviderFor(totalMonthlyExpenses)
 const totalMonthlyExpensesProvider = TotalMonthlyExpensesProvider._();

@@ -1,72 +1,42 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/providers/budget_providers.dart';
 import 'package:stutz/presentation/providers/repository_providers.dart';
 import 'package:stutz/presentation/screens/shared/styled_dropdown.dart';
 import 'package:stutz/presentation/screens/shared/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
 
-class AddExpenseNodeDialog extends ConsumerStatefulWidget {
+class AddExpenseNodeDialog extends HookConsumerWidget {
   final String? parentId;
   final ExpenseNode? existingNode;
 
   const AddExpenseNodeDialog({super.key, this.parentId, this.existingNode});
 
   @override
-  ConsumerState<AddExpenseNodeDialog> createState() =>
-      _AddExpenseNodeDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(GlobalKey<FormState>.new);
 
-class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl;
-  late TextEditingController _amountCtrl;
+    // Derive initial values from existingNode once at widget creation.
+    final initialIsGroup =
+        existingNode != null && existingNode!.plannedAmount == null;
+    final nameCtrl = useTextEditingController(text: existingNode?.name ?? '');
+    final amountCtrl = useTextEditingController(
+      text: existingNode?.plannedAmount?.toString() ?? '',
+    );
+    final isGroup = useState(initialIsGroup);
+    final interval = useState(
+      existingNode?.interval ?? PaymentInterval.monthly,
+    );
+    final type = useState(existingNode?.type ?? ExpenseType.fixed);
 
-  bool _isGroup = false;
-  PaymentInterval _interval = PaymentInterval.monthly;
-  ExpenseType _type = ExpenseType.fixed;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.existingNode != null) {
-      final node = widget.existingNode!;
-      _nameCtrl = TextEditingController(text: node.name);
-      if (node.plannedAmount == null) {
-        _isGroup = true;
-        _amountCtrl = TextEditingController();
-      } else {
-        _isGroup = false;
-        _amountCtrl = TextEditingController(
-          text: node.plannedAmount.toString(),
-        );
-        if (node.interval != null) _interval = node.interval!;
-        if (node.type != null) _type = node.type!;
-      }
-    } else {
-      _nameCtrl = TextEditingController();
-      _amountCtrl = TextEditingController();
-      _isGroup = false;
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _amountCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEdit = widget.existingNode != null;
+    final isEdit = existingNode != null;
 
     String title = "Neuer Eintrag";
     if (isEdit) {
-      title = _isGroup ? "Gruppe bearbeiten" : "Eintrag bearbeiten";
-    } else if (widget.parentId == null) {
+      title = isGroup.value ? "Gruppe bearbeiten" : "Eintrag bearbeiten";
+    } else if (parentId == null) {
       title = "Hinzufügen";
     }
 
@@ -77,7 +47,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
         width: double.maxFinite,
         child: SingleChildScrollView(
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -95,8 +65,8 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
                           child: _TypeSelectorButton(
                             label: "Eintrag",
                             icon: Icons.receipt_long,
-                            isSelected: !_isGroup,
-                            onTap: () => setState(() => _isGroup = false),
+                            isSelected: !isGroup.value,
+                            onTap: () => isGroup.value = false,
                           ),
                         ),
                         const SizedBox(width: 4),
@@ -104,8 +74,8 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
                           child: _TypeSelectorButton(
                             label: "Gruppe",
                             icon: Icons.folder_open,
-                            isSelected: _isGroup,
-                            onTap: () => setState(() => _isGroup = true),
+                            isSelected: isGroup.value,
+                            onTap: () => isGroup.value = true,
                           ),
                         ),
                       ],
@@ -114,37 +84,37 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
                   const SizedBox(height: 20),
                 ],
                 StyledTextField(
-                  controller: _nameCtrl,
+                  controller: nameCtrl,
                   label: 'Bezeichnung',
-                  icon: _isGroup ? Icons.folder_outlined : Icons.tag,
+                  icon: isGroup.value ? Icons.folder_outlined : Icons.tag,
                 ),
-                if (!_isGroup) ...[
+                if (!isGroup.value) ...[
                   StyledTextField(
-                    controller: _amountCtrl,
+                    controller: amountCtrl,
                     label: 'Betrag',
                     icon: Icons.attach_money,
                     keyboardType: TextInputType.number,
                     suffixText: 'CHF',
                   ),
                   StyledDropdown<PaymentInterval>(
-                    value: _interval,
+                    value: interval.value,
                     items: const {
                       PaymentInterval.monthly: 'Monatlich',
                       PaymentInterval.yearly: 'Jährlich',
                     },
                     label: 'Intervall',
                     icon: Icons.calendar_today,
-                    onChanged: (v) => setState(() => _interval = v!),
+                    onChanged: (v) => interval.value = v!,
                   ),
                   StyledDropdown<ExpenseType>(
-                    value: _type,
+                    value: type.value,
                     items: const {
                       ExpenseType.fixed: 'Fix',
                       ExpenseType.variable: 'Variabel',
                     },
                     label: 'Typ',
                     icon: Icons.tune,
-                    onChanged: (v) => setState(() => _type = v!),
+                    onChanged: (v) => type.value = v!,
                   ),
                 ] else ...[
                   Container(
@@ -185,7 +155,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             onPressed: () async {
-              final hasChildren = widget.existingNode!.children.isNotEmpty;
+              final hasChildren = existingNode!.children.isNotEmpty;
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -213,9 +183,7 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
               if (confirm == true) {
                 await ref
                     .read(expenseNodeRepositoryProvider)
-                    .deleteExpenseNode(widget.existingNode!.id);
-                ref.invalidate(expenseTreeProvider);
-                ref.invalidate(totalMonthlyExpensesProvider);
+                    .deleteExpenseNode(existingNode!.id);
                 if (context.mounted) Navigator.pop(context);
               }
             },
@@ -236,31 +204,28 @@ class _AddExpenseNodeDialogState extends ConsumerState<AddExpenseNodeDialog> {
             ),
           ),
           onPressed: () async {
-            if (_formKey.currentState!.validate()) {
+            if (formKey.currentState!.validate()) {
               final repo = ref.read(expenseNodeRepositoryProvider);
-              final parentId = isEdit
-                  ? widget.existingNode!.parentId
-                  : widget.parentId;
-              final id = isEdit ? widget.existingNode!.id : const Uuid().v4();
+              final resolvedParentId =
+                  isEdit ? existingNode!.parentId : parentId;
+              final id = isEdit ? existingNode!.id : const Uuid().v4();
 
               final node = ExpenseNode(
                 id: id,
-                parentId: parentId,
-                name: _nameCtrl.text,
-                plannedAmount: _isGroup
+                parentId: resolvedParentId,
+                name: nameCtrl.text,
+                plannedAmount: isGroup.value
                     ? null
-                    : double.parse(_amountCtrl.text.replaceAll(',', '.')),
-                interval: _isGroup ? null : _interval,
-                type: _isGroup ? null : _type,
-                children: isEdit ? widget.existingNode!.children : [],
+                    : double.parse(amountCtrl.text.replaceAll(',', '.')),
+                interval: isGroup.value ? null : interval.value,
+                type: isGroup.value ? null : type.value,
+                children: isEdit ? existingNode!.children : [],
               );
               if (isEdit) {
                 await repo.updateExpenseNode(node);
               } else {
                 await repo.addExpenseNode(node);
               }
-              ref.invalidate(expenseTreeProvider);
-              ref.invalidate(totalMonthlyExpensesProvider);
               if (context.mounted) Navigator.pop(context);
             }
           },

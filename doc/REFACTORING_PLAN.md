@@ -859,10 +859,10 @@ Nutzbar als Tracking während der Umsetzung:
 
 ### Phase 4: Infrastruktur
 
-- [ ] Auth-Provider erstellen, `main.dart`-Logik verschieben
-- [ ] `webClientId` in Konfigurationsdatei auslagern
-- [ ] Stream-basierte Provider evaluieren (Firestore-Streams statt `invalidate`)
-- [ ] `HookConsumerWidget` in neuen/refactored Screens nutzen
+- [x] Auth-Provider erstellen, `main.dart`-Logik verschieben
+- [x] `webClientId` in Konfigurationsdatei auslagern
+- [x] Stream-basierte Provider evaluieren (Firestore-Streams statt `invalidate`)
+- [x] `HookConsumerWidget` in neuen/refactored Screens nutzen
 
 ---
 

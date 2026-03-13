@@ -1,55 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/providers/budget_providers.dart';
 import 'package:stutz/presentation/providers/repository_providers.dart';
 import 'package:stutz/presentation/screens/shared/styled_dropdown.dart';
 import 'package:stutz/presentation/screens/shared/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
 
-class AddIncomeDialog extends ConsumerStatefulWidget {
+class AddIncomeDialog extends HookConsumerWidget {
   final IncomeSource? existingItem;
 
   const AddIncomeDialog({super.key, this.existingItem});
 
   @override
-  ConsumerState<AddIncomeDialog> createState() => _AddIncomeDialogState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final formKey = useMemoized(GlobalKey<FormState>.new);
+    final nameCtrl = useTextEditingController(
+      text: existingItem?.name ?? '',
+    );
+    final amountCtrl = useTextEditingController(
+      text: existingItem?.amount.toString() ?? '',
+    );
+    final interval = useState(existingItem?.interval ?? PaymentInterval.monthly);
+    final group = useState(existingItem?.group ?? IncomeGroup.main);
 
-class _AddIncomeDialogState extends ConsumerState<AddIncomeDialog> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl;
-  late TextEditingController _amountCtrl;
-  PaymentInterval _interval = PaymentInterval.monthly;
-  IncomeGroup _group = IncomeGroup.main;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.existingItem != null) {
-      _nameCtrl = TextEditingController(text: widget.existingItem!.name);
-      _amountCtrl = TextEditingController(
-        text: widget.existingItem!.amount.toString(),
-      );
-      _interval = widget.existingItem!.interval;
-      _group = widget.existingItem!.group;
-    } else {
-      _nameCtrl = TextEditingController();
-      _amountCtrl = TextEditingController();
-    }
-  }
-
-  @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _amountCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEdit = widget.existingItem != null;
+    final isEdit = existingItem != null;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -61,41 +37,41 @@ class _AddIncomeDialogState extends ConsumerState<AddIncomeDialog> {
         width: double.maxFinite,
         child: SingleChildScrollView(
           child: Form(
-            key: _formKey,
+            key: formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 StyledTextField(
-                  controller: _nameCtrl,
+                  controller: nameCtrl,
                   label: 'Bezeichnung',
                   icon: Icons.description_outlined,
                 ),
                 StyledTextField(
-                  controller: _amountCtrl,
+                  controller: amountCtrl,
                   label: 'Betrag',
                   icon: Icons.attach_money,
                   keyboardType: TextInputType.number,
                   suffixText: 'CHF',
                 ),
                 StyledDropdown<PaymentInterval>(
-                  value: _interval,
+                  value: interval.value,
                   items: const {
                     PaymentInterval.monthly: 'Monatlich',
                     PaymentInterval.yearly: 'Jährlich',
                   },
                   label: 'Intervall',
                   icon: Icons.calendar_today,
-                  onChanged: (v) => setState(() => _interval = v!),
+                  onChanged: (v) => interval.value = v!,
                 ),
                 StyledDropdown<IncomeGroup>(
-                  value: _group,
+                  value: group.value,
                   items: const {
                     IncomeGroup.main: 'Haupteinnahmen',
                     IncomeGroup.additional: 'Zusätzliche Einnahmen',
                   },
                   label: 'Gruppe',
                   icon: Icons.category_outlined,
-                  onChanged: (v) => setState(() => _group = v!),
+                  onChanged: (v) => group.value = v!,
                 ),
               ],
             ),
@@ -133,8 +109,7 @@ class _AddIncomeDialogState extends ConsumerState<AddIncomeDialog> {
               if (confirm == true) {
                 await ref
                     .read(incomeSourceRepositoryProvider)
-                    .deleteIncomeSource(widget.existingItem!.id);
-                ref.invalidate(incomeListProvider);
+                    .deleteIncomeSource(existingItem!.id);
                 if (context.mounted) Navigator.pop(context);
               }
             },
@@ -155,31 +130,30 @@ class _AddIncomeDialogState extends ConsumerState<AddIncomeDialog> {
             ),
           ),
           onPressed: () {
-            if (_formKey.currentState!.validate()) {
+            if (formKey.currentState!.validate()) {
               final newAmount = double.parse(
-                _amountCtrl.text.replaceAll(',', '.'),
+                amountCtrl.text.replaceAll(',', '.'),
               );
               final repo = ref.read(incomeSourceRepositoryProvider);
               if (isEdit) {
                 final updated = IncomeSource(
-                  id: widget.existingItem!.id,
-                  name: _nameCtrl.text,
+                  id: existingItem!.id,
+                  name: nameCtrl.text,
                   amount: newAmount,
-                  interval: _interval,
-                  group: _group,
+                  interval: interval.value,
+                  group: group.value,
                 );
                 repo.updateIncomeSource(updated);
               } else {
                 final src = IncomeSource(
                   id: const Uuid().v4(),
-                  name: _nameCtrl.text,
+                  name: nameCtrl.text,
                   amount: newAmount,
-                  interval: _interval,
-                  group: _group,
+                  interval: interval.value,
+                  group: group.value,
                 );
                 repo.addIncomeSource(src);
               }
-              ref.invalidate(incomeListProvider);
               Navigator.pop(context);
             }
           },

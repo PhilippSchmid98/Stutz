@@ -1,34 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/data/auth_service.dart';
 import 'package:stutz/presentation/screens/home_screen.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
+class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isLoading = useState(false);
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
-  bool _isLoading = false;
+    Future<void> onLoginSuccess() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('seenOnboarding', true);
 
-  // Save flag and navigate to the dashboard upon successful login
-  Future<void> _onLoginSuccess() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('seenOnboarding', true);
+      if (!context.mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    }
 
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => const HomeScreen()),
-      (route) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -55,7 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               const SizedBox(height: 48),
 
-              if (_isLoading)
+              if (isLoading.value)
                 const CircularProgressIndicator()
               else ...[
                 // GOOGLE LOGIN BUTTON
@@ -79,17 +74,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: TextStyle(fontSize: 18, color: Colors.black),
                     ),
                     onPressed: () async {
-                      setState(() => _isLoading = true);
-                      // Hier rufen wir deine gefixte AuthService Methode auf
+                      isLoading.value = true;
                       final user = await ref
                           .read(authServiceProvider)
                           .signInWithGoogle();
 
                       if (user != null) {
-                        await _onLoginSuccess();
+                        await onLoginSuccess();
                       } else {
-                        setState(() => _isLoading = false);
-                        // Optional: SnackBar mit Fehlermeldung anzeigen
+                        isLoading.value = false;
                       }
                     },
                   ),
@@ -103,14 +96,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   height: 56,
                   child: TextButton(
                     onPressed: () async {
-                      setState(() => _isLoading = true);
+                      isLoading.value = true;
                       final user = await ref
                           .read(authServiceProvider)
                           .signInAnonymously();
                       if (user != null) {
-                        await _onLoginSuccess();
+                        await onLoginSuccess();
                       } else {
-                        setState(() => _isLoading = false);
+                        isLoading.value = false;
                       }
                     },
                     child: Text(

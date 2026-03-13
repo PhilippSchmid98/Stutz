@@ -6,9 +6,11 @@ import 'package:stutz/presentation/providers/repository_providers.dart';
 
 part 'budget_providers.g.dart';
 
+/// Streams income sources directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
 @riverpod
-Future<List<IncomeSource>> incomeList(Ref ref) {
-  return ref.watch(incomeSourceRepositoryProvider).getAllIncomeSources();
+Stream<List<IncomeSource>> incomeList(Ref ref) {
+  return ref.watch(incomeSourceRepositoryProvider).watchAllIncomeSources();
 }
 
 @riverpod
@@ -17,9 +19,11 @@ Future<double> totalMonthlyIncome(Ref ref) async {
   return sources.fold<double>(0.0, (sum, item) => sum + item.monthlyAmount);
 }
 
+/// Streams expense nodes directly from Firestore — auto-updates on any change
+/// without requiring manual [ref.invalidate] calls after mutations.
 @riverpod
-Future<List<ExpenseNode>> expenseTree(Ref ref) {
-  return ref.watch(expenseNodeRepositoryProvider).getAllExpenseNodes();
+Stream<List<ExpenseNode>> expenseTree(Ref ref) {
+  return ref.watch(expenseNodeRepositoryProvider).watchAllExpenseNodes();
 }
 
 @riverpod
