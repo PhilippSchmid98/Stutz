@@ -1,33 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/presentation/providers/yearly_detail_provider.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/category_transactions_screen.dart';
 
-class YearlyDetailScreen extends ConsumerStatefulWidget {
+class YearlyDetailScreen extends HookConsumerWidget {
   const YearlyDetailScreen({super.key});
 
   @override
-  ConsumerState<YearlyDetailScreen> createState() => _YearlyDetailScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedYear = useState(DateTime.now().year);
+    final includeOffset = useState(true);
 
-class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
-  int _selectedYear = DateTime.now().year;
-  bool _includeOffset = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final treeAsync = ref.watch(yearlyDetailTreeProvider(_selectedYear));
+    final treeAsync = ref.watch(yearlyDetailTreeProvider(selectedYear.value));
 
     // Calculate year progress
     final now = DateTime.now();
     double yearProgress = 0.0;
-    if (_selectedYear == now.year) {
-      final startOfYear = DateTime(_selectedYear, 1, 1);
+    if (selectedYear.value == now.year) {
+      final startOfYear = DateTime(selectedYear.value, 1, 1);
       final daysPassed = now.difference(startOfYear).inDays;
-      final daysInYear = (_selectedYear % 4 == 0) ? 366 : 365;
+      final daysInYear = (selectedYear.value % 4 == 0) ? 366 : 365;
       yearProgress = daysPassed / daysInYear;
-    } else if (_selectedYear < now.year) {
+    } else if (selectedYear.value < now.year) {
       yearProgress = 1.0; // Past year is 100% complete
     } else {
       yearProgress = 0.0; // Future
@@ -45,15 +41,15 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.chevron_left),
-              onPressed: () => setState(() => _selectedYear--),
+              onPressed: () => selectedYear.value--,
             ),
             Text(
-              "$_selectedYear (Variabel)",
+              "${selectedYear.value} (Variabel)",
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             IconButton(
               icon: const Icon(Icons.chevron_right),
-              onPressed: () => setState(() => _selectedYear++),
+              onPressed: () => selectedYear.value++,
             ),
           ],
         ),
@@ -104,7 +100,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
           }
 
           final hasOffset = totalOffset > 0;
-          final displayUsage = _includeOffset
+          final displayUsage = includeOffset.value
               ? (totalActual + totalOffset)
               : totalActual;
           final totalRemaining = totalPlanned - displayUsage;
@@ -146,10 +142,9 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                               ),
                             ),
                             Switch(
-                              value: _includeOffset,
+                              value: includeOffset.value,
                               activeThumbColor: Colors.teal,
-                              onChanged: (val) =>
-                                  setState(() => _includeOffset = val),
+                              onChanged: (val) => includeOffset.value = val,
                             ),
                           ],
                         ),
@@ -206,8 +201,8 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                         (node) => _YearlyNodeRow(
                           node: node,
                           depth: 0,
-                          showOffset: _includeOffset && hasOffset,
-                          year: _selectedYear,
+                          showOffset: includeOffset.value && hasOffset,
+                          year: selectedYear.value,
                         ),
                       )
                       .toList(),
@@ -247,7 +242,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                                   fontSize: 16,
                                 ),
                               ),
-                              if (_includeOffset && hasOffset)
+                              if (includeOffset.value && hasOffset)
                                 Text(
                                   "(inkl. ${totalOffset.toStringAsFixed(0)} Offset)",
                                   style: const TextStyle(
@@ -267,7 +262,7 @@ class _YearlyDetailScreenState extends ConsumerState<YearlyDetailScreen> {
                         child: SizedBox(
                           height: 12,
                           child: _StackedProgressBar(
-                            offsetPercent: _includeOffset
+                            offsetPercent: includeOffset.value
                                 ? (totalOffset / totalPlanned)
                                 : 0,
                             actualPercent: totalActual / totalPlanned,
