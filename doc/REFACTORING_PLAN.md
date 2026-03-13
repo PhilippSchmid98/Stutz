@@ -46,10 +46,6 @@
 | **Code-Generatoren** | `freezed` | ^3.2.3 | Immutable Data Classes, Union Types, `copyWith` |
 | | `freezed_annotation` | ^3.1.0 | Annotationen für Freezed |
 | | `build_runner` | ^2.10.5 | Build-System für Code-Generatoren |
-| **Datenbank (lokal)** | `drift` | ^2.30.1 | Typsicheres SQLite ORM |
-| | `drift_flutter` | ^0.2.8 | Flutter-Integration für Drift |
-| | `drift_dev` | ^2.30.1 | Code-Generator für Drift |
-| | `sqlite3_flutter_libs` | ^0.5.41 | Native SQLite-Bibliotheken |
 | **Backend/Cloud** | `firebase_core` | ^4.4.0 | Firebase-Grundlage |
 | | `firebase_auth` | ^6.1.4 | Authentifizierung |
 | | `cloud_firestore` | ^6.1.2 | Cloud-Datenbank |
@@ -102,21 +98,13 @@ class IncomeSource with _$IncomeSource {
 }
 ```
 
-#### B) Drift als Offline-First-Layer einsetzen
-
-**Status:** `drift` und `drift_flutter` sind als Dependency vorhanden, werden aber **nicht genutzt**. Die App kommuniziert direkt mit Firestore ohne lokalen Cache.
-
-**Empfehlung:** Drift als lokale SQLite-Datenbank einführen und als Single Source of Truth verwenden. Firestore wird zum reinen Sync-Backend. Dies ermöglicht echtes Offline-First-Verhalten (wird im Tutorial versprochen, aber aktuell nicht umgesetzt).
-
-> **Hinweis:** Die Drift-Migration ist ein separates, größeres Feature-Projekt. Dieses Refactoring-Dokument legt die architektonische Grundlage. Die konkrete Drift-Integration wird als Phase 2 empfohlen.
-
-#### C) Riverpod Generator konsequent nutzen
+#### B) Riverpod Generator konsequent nutzen
 
 **Status:** Wird bereits teilweise genutzt (`@riverpod`-Annotationen in Providers und Repositories). Wird aber inkonsistent angewandt.
 
 **Empfehlung:** Alle Provider einheitlich über `@riverpod` / `@Riverpod(keepAlive: true)` definieren. Keine manuellen `Provider()`-Definitionen mischen.
 
-#### D) Flutter Hooks nutzen
+#### C) Flutter Hooks nutzen
 
 **Status:** `flutter_hooks` und `hooks_riverpod` sind vorhanden, werden aber **nirgends genutzt**. Alle Screens verwenden `ConsumerStatefulWidget`.
 
@@ -138,7 +126,7 @@ class MyScreen extends HookConsumerWidget {
 }
 ```
 
-#### E) ShowcaseView nutzen
+#### D) ShowcaseView nutzen
 
 **Status:** `showcaseview` ist als Dependency vorhanden, wird aber nicht genutzt.
 
@@ -630,12 +618,6 @@ Phase 4: Infrastruktur-Verbesserungen
 16. `webClientId` in Konfiguration auslagern
 17. Hooks einführen (neue Screens / schrittweise Migration)
 18. Stream-basierte Providers (statt invalidate)
-
-Phase 5: Offline-First (separates Projekt)
-──────────────────────────────────────────
-19. Drift-Datenbankschema definieren
-20. Lokale Repositories implementieren
-21. Sync-Mechanismus Drift ↔ Firestore
 ```
 
 ---
