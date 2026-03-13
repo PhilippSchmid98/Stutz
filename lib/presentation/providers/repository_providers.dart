@@ -7,8 +7,12 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stutz/data/firestore_repositories.dart';
-import 'package:stutz/domain/repositories.dart';
+import 'package:stutz/data/repositories/firestore_expense_repository.dart';
+import 'package:stutz/data/repositories/firestore_income_repository.dart';
+import 'package:stutz/data/repositories/firestore_transaction_repository.dart';
+import 'package:stutz/domain/repositories/expense_repository.dart';
+import 'package:stutz/domain/repositories/income_repository.dart';
+import 'package:stutz/domain/repositories/transaction_repository.dart';
 
 part 'repository_providers.g.dart';
 

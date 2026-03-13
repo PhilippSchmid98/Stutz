@@ -31,9 +31,7 @@ class AddTransactionDialog extends HookConsumerWidget {
     final selectedNodeId = useState<String?>(
       existingItem?.transaction.expenseNodeId,
     );
-    final selectedNodeName = useState<String>(
-      existingItem?.categoryName ?? '',
-    );
+    final selectedNodeName = useState<String>(existingItem?.categoryName ?? '');
 
     final expenseTreeAsync = ref.watch(expenseTreeProvider);
     final isEdit = existingItem != null;
@@ -47,8 +45,10 @@ class AddTransactionDialog extends HookConsumerWidget {
         prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 20),
         filled: true,
         fillColor: Colors.grey.shade50,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -120,9 +120,7 @@ class AddTransactionDialog extends HookConsumerWidget {
             double.tryParse(amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
         if (amount <= 0) return;
 
-        final id = isEdit
-            ? existingItem!.transaction.id
-            : const Uuid().v4();
+        final id = isEdit ? existingItem!.transaction.id : const Uuid().v4();
 
         final txn = AppTransaction(
           id: id,
@@ -161,8 +159,7 @@ class AddTransactionDialog extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child:
-                  const Text("Löschen", style: TextStyle(color: Colors.red)),
+              child: const Text("Löschen", style: TextStyle(color: Colors.red)),
             ),
           ],
         ),
@@ -272,17 +269,20 @@ class AddTransactionDialog extends HookConsumerWidget {
                                     : null,
                                 optionsBuilder:
                                     (TextEditingValue textEditingValue) {
-                                  if (textEditingValue.text == '') {
-                                    return allNodes;
-                                  }
-                                  return allNodes.where((ExpenseNode option) {
-                                    return option.name
-                                        .toLowerCase()
-                                        .contains(
-                                          textEditingValue.text.toLowerCase(),
-                                        );
-                                  });
-                                },
+                                      if (textEditingValue.text == '') {
+                                        return allNodes;
+                                      }
+                                      return allNodes.where((
+                                        ExpenseNode option,
+                                      ) {
+                                        return option.name
+                                            .toLowerCase()
+                                            .contains(
+                                              textEditingValue.text
+                                                  .toLowerCase(),
+                                            );
+                                      });
+                                    },
                                 onSelected: (ExpenseNode selection) {
                                   selectedNodeId.value = selection.id;
                                   selectedNodeName.value = selection.name;
@@ -290,45 +290,47 @@ class AddTransactionDialog extends HookConsumerWidget {
                                 },
                                 displayStringForOption: (ExpenseNode option) =>
                                     option.name,
-                                fieldViewBuilder: (
-                                  context,
-                                  textController,
-                                  focusNode,
-                                  onFieldSubmitted,
-                                ) {
-                                  if (selectedNodeId.value != null &&
-                                      textController.text.isEmpty) {
-                                    textController.text =
-                                        selectedNodeName.value;
-                                  }
+                                fieldViewBuilder:
+                                    (
+                                      context,
+                                      textController,
+                                      focusNode,
+                                      onFieldSubmitted,
+                                    ) {
+                                      if (selectedNodeId.value != null &&
+                                          textController.text.isEmpty) {
+                                        textController.text =
+                                            selectedNodeName.value;
+                                      }
 
-                                  return TextFormField(
-                                    controller: textController,
-                                    focusNode: focusNode,
-                                    decoration: inputDecoration(
-                                      "Kategorie (Suchen...)",
-                                      Icons.category_outlined,
-                                    ).copyWith(
-                                      suffixIcon: const Icon(
-                                        Icons.keyboard_arrow_down_rounded,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    validator: (v) {
-                                      if (selectedNodeId.value == null) {
-                                        return 'Bitte Kategorie wählen';
-                                      }
-                                      return null;
+                                      return TextFormField(
+                                        controller: textController,
+                                        focusNode: focusNode,
+                                        decoration:
+                                            inputDecoration(
+                                              "Kategorie (Suchen...)",
+                                              Icons.category_outlined,
+                                            ).copyWith(
+                                              suffixIcon: const Icon(
+                                                Icons
+                                                    .keyboard_arrow_down_rounded,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                        validator: (v) {
+                                          if (selectedNodeId.value == null) {
+                                            return 'Bitte Kategorie wählen';
+                                          }
+                                          return null;
+                                        },
+                                        onChanged: (text) {
+                                          if (selectedNodeId.value != null) {
+                                            selectedNodeId.value = null;
+                                          }
+                                        },
+                                      );
                                     },
-                                    onChanged: (text) {
-                                      if (selectedNodeId.value != null) {
-                                        selectedNodeId.value = null;
-                                      }
-                                    },
-                                  );
-                                },
-                                optionsViewBuilder:
-                                    (context, onSelected, options) {
+                                optionsViewBuilder: (context, onSelected, options) {
                                   return Align(
                                     alignment: Alignment.topLeft,
                                     child: Material(
@@ -346,33 +348,35 @@ class AddTransactionDialog extends HookConsumerWidget {
                                           itemCount: options.length,
                                           separatorBuilder: (_, __) =>
                                               const Divider(
-                                            height: 1,
-                                            indent: 16,
-                                            endIndent: 16,
-                                          ),
-                                          itemBuilder: (
-                                            BuildContext context,
-                                            int index,
-                                          ) {
-                                            final option =
-                                                options.elementAt(index);
-                                            return InkWell(
-                                              onTap: () => onSelected(option),
-                                              child: Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 16,
-                                                  vertical: 12,
-                                                ),
-                                                child: Text(
-                                                  option.name,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                  ),
-                                                ),
+                                                height: 1,
+                                                indent: 16,
+                                                endIndent: 16,
                                               ),
-                                            );
-                                          },
+                                          itemBuilder:
+                                              (
+                                                BuildContext context,
+                                                int index,
+                                              ) {
+                                                final option = options
+                                                    .elementAt(index);
+                                                return InkWell(
+                                                  onTap: () =>
+                                                      onSelected(option),
+                                                  child: Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 16,
+                                                          vertical: 12,
+                                                        ),
+                                                    child: Text(
+                                                      option.name,
+                                                      style: const TextStyle(
+                                                        fontSize: 16,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
                                         ),
                                       ),
                                     ),

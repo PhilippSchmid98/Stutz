@@ -14,8 +14,7 @@ class TransactionScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemScrollController = useMemoized(ItemScrollController.new);
-    final itemPositionsListener =
-        useMemoized(ItemPositionsListener.create);
+    final itemPositionsListener = useMemoized(ItemPositionsListener.create);
     // Mutable flag that does not trigger a rebuild – avoids circular updates
     // when _scrollToMonth drives the list programmatically.
     final isProgrammaticScroll = useRef(false);
