@@ -27,9 +27,7 @@ class MainApp extends StatelessWidget {
     return MaterialApp(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
-      supportedLocales: const [
-        Locale('de', 'CH'),
-      ],
+      supportedLocales: const [Locale('de', 'CH')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

@@ -16,13 +16,13 @@ class AddIncomeDialog extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(GlobalKey<FormState>.new);
-    final nameCtrl = useTextEditingController(
-      text: existingItem?.name ?? '',
-    );
+    final nameCtrl = useTextEditingController(text: existingItem?.name ?? '');
     final amountCtrl = useTextEditingController(
       text: existingItem?.amount.toString() ?? '',
     );
-    final interval = useState(existingItem?.interval ?? PaymentInterval.monthly);
+    final interval = useState(
+      existingItem?.interval ?? PaymentInterval.monthly,
+    );
     final group = useState(existingItem?.group ?? IncomeGroup.main);
 
     final isEdit = existingItem != null;

@@ -206,8 +206,9 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
           onPressed: () async {
             if (formKey.currentState!.validate()) {
               final repo = ref.read(expenseNodeRepositoryProvider);
-              final resolvedParentId =
-                  isEdit ? existingNode!.parentId : parentId;
+              final resolvedParentId = isEdit
+                  ? existingNode!.parentId
+                  : parentId;
               final id = isEdit ? existingNode!.id : const Uuid().v4();
 
               final node = ExpenseNode(
