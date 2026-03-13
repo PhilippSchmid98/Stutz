@@ -850,12 +850,12 @@ Nutzbar als Tracking während der Umsetzung:
 
 ### Phase 3: Presentation
 
-- [ ] `budget_planning_table_screen.dart` in 8+ Dateien aufsplitten
-- [ ] `dashboard_screen.dart` in 4 Dateien aufsplitten
-- [ ] `transaction_screen.dart` Widgets extrahieren
-- [ ] Shared Widgets (`_StyledTextField`, `_StyledDropdown`, etc.) nach `shared/` verschieben
-- [ ] Dialoge in `dialogs/`-Unterordner verschieben
-- [ ] Alle Screens kompilieren und manuell testen
+- [x] `budget_planning_table_screen.dart` in 8+ Dateien aufsplitten
+- [x] `dashboard_screen.dart` in 4 Dateien aufsplitten
+- [x] `transaction_screen.dart` Widgets extrahieren
+- [x] Shared Widgets (`_StyledTextField`, `_StyledDropdown`, etc.) nach `shared/` verschieben
+- [x] Dialoge in `dialogs/`-Unterordner verschieben
+- [x] Alle Screens kompilieren und manuell testen
 
 ### Phase 4: Infrastruktur
 

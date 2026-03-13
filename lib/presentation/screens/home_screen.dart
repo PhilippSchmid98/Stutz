@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:stutz/presentation/screens/dashboard_screen.dart';
-import 'package:stutz/presentation/screens/budget_planning_table_screen.dart';
+import 'package:stutz/presentation/screens/budget/budget_planning_screen.dart';
+import 'package:stutz/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:stutz/presentation/screens/transactions/transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Screens we switch between
     const screens = [
       DashboardScreen(),
-      BudgetPlanningTableScreen(),
+      BudgetPlanningScreen(),
       TransactionScreen(),
     ];
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stutz/presentation/providers/transaction_providers.dart';
-import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
+import 'package:stutz/presentation/screens/transactions/widgets/daily_transaction_group.dart';
+import 'package:stutz/presentation/screens/transactions/widgets/month_selector.dart';
 import 'package:stutz/presentation/screens/widgets/cloud_status_icon.dart';
 
 class TransactionScreen extends ConsumerStatefulWidget {
@@ -157,7 +157,7 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
         children: [
           // New: Clean month selector
           const SizedBox(height: 8),
-          _CleanMonthSelector(onMonthSelected: _scrollToMonth),
+          CleanMonthSelector(onMonthSelected: _scrollToMonth),
           const SizedBox(height: 8),
           Divider(height: 1, color: Colors.grey.shade100),
 
@@ -176,275 +176,13 @@ class _TransactionScreenState extends ConsumerState<TransactionScreen> {
                   itemCount: allGroups.length,
                   itemBuilder: (context, index) {
                     final group = allGroups[index];
-                    return _DailyTransactionGroup(group: group);
+                    return DailyTransactionGroup(group: group);
                   },
                 );
               },
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// NEW: Intelligent clean month selector
-// -----------------------------------------------------------------------------
-
-class _CleanMonthSelector extends ConsumerStatefulWidget {
-  final Function(DateTime) onMonthSelected;
-
-  const _CleanMonthSelector({required this.onMonthSelected});
-
-  @override
-  ConsumerState<_CleanMonthSelector> createState() =>
-      _CleanMonthSelectorState();
-}
-
-class _CleanMonthSelectorState extends ConsumerState<_CleanMonthSelector> {
-  final ScrollController _scrollController = ScrollController();
-
-  // Design constant: width of an item
-  final double _itemWidth = 80.0;
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final months = ref.watch(availableMonthsProvider);
-    final currentMonth = ref.watch(currentVisibleMonthProvider);
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    // Compute: do we need to enable scrolling?
-    final totalContentWidth = months.length * _itemWidth;
-    final isScrollable = totalContentWidth > screenWidth;
-
-    // Auto-scroll logic (only run when the list is scrollable)
-    if (isScrollable) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!_scrollController.hasClients) return;
-
-        final index = months.indexWhere(
-          (m) => m.year == currentMonth.year && m.month == currentMonth.month,
-        );
-
-        if (index != -1) {
-          final targetOffset =
-              (index * _itemWidth) - (screenWidth / 2) + (_itemWidth / 2);
-          final maxScroll = _scrollController.position.maxScrollExtent;
-          final offset = targetOffset.clamp(0.0, maxScroll);
-
-          if ((_scrollController.offset - offset).abs() > 5) {
-            _scrollController.animateTo(
-              offset,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutCubic,
-            );
-          }
-        }
-      });
-    }
-
-    return SizedBox(
-      height: 50,
-      child: isScrollable
-          ? _buildScrollableList(months, currentMonth, screenWidth)
-          : _buildCenteredList(months, currentMonth),
-    );
-  }
-
-  // Variant A: Many items -> scrollable
-  Widget _buildScrollableList(
-    List<DateTime> months,
-    DateTime currentMonth,
-    double screenWidth,
-  ) {
-    return ListView.builder(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      // Padding ensures first/last item can be centered
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: months.length,
-      itemBuilder: (context, index) {
-        return _buildItem(months[index], currentMonth);
-      },
-    );
-  }
-
-  // Variant B: Few items -> centered & static
-  Widget _buildCenteredList(List<DateTime> months, DateTime currentMonth) {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min, // Takes only as much space as needed
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: months.map((date) {
-          return _buildItem(date, currentMonth);
-        }).toList(),
-      ),
-    );
-  }
-
-  // Item text design (reused)
-  Widget _buildItem(DateTime date, DateTime currentMonth) {
-    final isSelected =
-        date.year == currentMonth.year && date.month == currentMonth.month;
-
-    return GestureDetector(
-      onTap: () => widget.onMonthSelected(date),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        width: _itemWidth,
-        alignment: Alignment.center,
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            // Active: larger & black. Inactive: smaller & grey
-            fontSize: isSelected ? 18 : 15,
-            fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
-            color: isSelected ? Colors.black : Colors.grey.shade400,
-          ),
-          child: Text(
-            DateFormat('MMM yy', 'de_DE').format(date).replaceAll('.', ''),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// -----------------------------------------------------------------------------
-// HELPER WIDGETS
-// --------------------------------------------------------------------------
-
-class _DailyTransactionGroup extends StatelessWidget {
-  final DailyTransactions group;
-  const _DailyTransactionGroup({required this.group});
-
-  @override
-  Widget build(BuildContext context) {
-    final dayFormat = DateFormat('dd.MM', 'de_DE');
-    final weekDayFormat = DateFormat('EEEE', 'de_DE');
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 8), // More padding
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    dayFormat.format(group.date),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    weekDayFormat.format(group.date),
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-                  ),
-                ],
-              ),
-              Text(
-                '-${group.totalAmount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 0), // Full width look
-          child: Column(
-            children: group.transactions
-                .map((item) => _TransactionItem(item: item))
-                .toList(),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TransactionItem extends ConsumerWidget {
-  final TransactionWithCategory item;
-  const _TransactionItem({required this.item});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return InkWell(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (_) => AddTransactionDialog(existingItem: item),
-        );
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100, // Very subtle icon
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.shopping_bag_outlined,
-                color: Colors.black,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.categoryName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
-                    ),
-                  ),
-                  if (item.transaction.note != null &&
-                      item.transaction.note!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        item.transaction.note!,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            Text(
-              '-${item.transaction.amount.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
-            ),
-          ],
-        ),
       ),
     );
   }
