@@ -1,25 +1,32 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "stutz",
-            "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "stutz (profile mode)",
+            "name": "stutz (debug)",
             "request": "launch",
             "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "debug"
+        },
+        {
+            "name": "stutz (profile)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
             "flutterMode": "profile"
         },
         {
-            "name": "stutz (release mode)",
+            "name": "stutz (release)",
             "request": "launch",
             "type": "dart",
+            "program": "lib/main.dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "Run All Tests",
+            "request": "launch",
+            "type": "dart",
+            "program": "test"
         }
     ]
 }
