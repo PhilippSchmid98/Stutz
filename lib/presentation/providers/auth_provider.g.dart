@@ -8,6 +8,61 @@ part of 'auth_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// Handles auth mutations (sign-in, sign-out) as a single entry point for
+/// all screens. Screens must never import [AuthService] directly.
+
+@ProviderFor(AuthController)
+const authControllerProvider = AuthControllerProvider._();
+
+/// Handles auth mutations (sign-in, sign-out) as a single entry point for
+/// all screens. Screens must never import [AuthService] directly.
+final class AuthControllerProvider
+    extends $AsyncNotifierProvider<AuthController, void> {
+  /// Handles auth mutations (sign-in, sign-out) as a single entry point for
+  /// all screens. Screens must never import [AuthService] directly.
+  const AuthControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authControllerHash();
+
+  @$internal
+  @override
+  AuthController create() => AuthController();
+}
+
+String _$authControllerHash() => r'859275534bdb64f36b99ddd52e2af9edaa512c0f';
+
+/// Handles auth mutations (sign-in, sign-out) as a single entry point for
+/// all screens. Screens must never import [AuthService] directly.
+
+abstract class _$AuthController extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build();
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
+}
+
 /// Subscribes to Firebase's real-time auth state.
 /// Emits [null] when signed out, a [User] when signed in.
 

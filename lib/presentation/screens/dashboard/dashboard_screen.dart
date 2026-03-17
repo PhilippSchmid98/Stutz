@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stutz/data/auth_service.dart';
+import 'package:stutz/presentation/providers/auth_provider.dart';
 import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:stutz/presentation/screens/dashboard/widgets/current_month_card.dart';
 import 'package:stutz/presentation/screens/dashboard/widgets/past_month_tile.dart';
-import 'package:stutz/presentation/screens/onboarding/welcome_screen.dart';
 import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
 import 'package:stutz/presentation/screens/widgets/cloud_status_icon.dart';
 import 'package:stutz/presentation/screens/yearly_detail_screen.dart';
@@ -38,20 +36,8 @@ class DashboardScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              final auth = ref.read(authServiceProvider);
-              await auth.signOut();
-
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-
-              if (context.mounted) {
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(
-                    builder: (context) => const WelcomeScreen(),
-                  ),
-                  (route) => false,
-                );
-              }
+              await ref.read(authControllerProvider.notifier).signOut();
+              // AppRouter reacts to authStateProvider and navigates automatically.
             },
           ),
         ],

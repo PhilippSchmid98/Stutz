@@ -63,6 +63,104 @@ abstract class _$CurrentVisibleMonth extends $Notifier<DateTime> {
   }
 }
 
+/// Streams all transactions directly from Firestore — auto-updates on any
+/// change without requiring manual [ref.invalidate] calls after mutations.
+
+@ProviderFor(allTransactions)
+const allTransactionsProvider = AllTransactionsProvider._();
+
+/// Streams all transactions directly from Firestore — auto-updates on any
+/// change without requiring manual [ref.invalidate] calls after mutations.
+
+final class AllTransactionsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<AppTransaction>>,
+          List<AppTransaction>,
+          Stream<List<AppTransaction>>
+        >
+    with
+        $FutureModifier<List<AppTransaction>>,
+        $StreamProvider<List<AppTransaction>> {
+  /// Streams all transactions directly from Firestore — auto-updates on any
+  /// change without requiring manual [ref.invalidate] calls after mutations.
+  const AllTransactionsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allTransactionsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allTransactionsHash();
+
+  @$internal
+  @override
+  $StreamProviderElement<List<AppTransaction>> $createElement(
+    $ProviderPointer pointer,
+  ) => $StreamProviderElement(pointer);
+
+  @override
+  Stream<List<AppTransaction>> create(Ref ref) {
+    return allTransactions(ref);
+  }
+}
+
+String _$allTransactionsHash() => r'ec84642372f6cacb5f6df77387701e84918de184';
+
+/// Groups transactions by day, derived from the reactive [allTransactionsProvider]
+/// stream. Rebuilds automatically whenever Firestore data changes.
+
+@ProviderFor(transactionList)
+const transactionListProvider = TransactionListProvider._();
+
+/// Groups transactions by day, derived from the reactive [allTransactionsProvider]
+/// stream. Rebuilds automatically whenever Firestore data changes.
+
+final class TransactionListProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DailyTransactions>>,
+          List<DailyTransactions>,
+          FutureOr<List<DailyTransactions>>
+        >
+    with
+        $FutureModifier<List<DailyTransactions>>,
+        $FutureProvider<List<DailyTransactions>> {
+  /// Groups transactions by day, derived from the reactive [allTransactionsProvider]
+  /// stream. Rebuilds automatically whenever Firestore data changes.
+  const TransactionListProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'transactionListProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$transactionListHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<DailyTransactions>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<DailyTransactions>> create(Ref ref) {
+    return transactionList(ref);
+  }
+}
+
+String _$transactionListHash() => r'd750641ca1f82049f7c86964f585f6a1b971b73f';
+
 @ProviderFor(availableMonths)
 const availableMonthsProvider = AvailableMonthsProvider._();
 
@@ -104,56 +202,62 @@ final class AvailableMonthsProvider
 
 String _$availableMonthsHash() => r'2b4cf9e43d270b41c001caa1544c5f5f005a01ab';
 
-@ProviderFor(TransactionList)
-const transactionListProvider = TransactionListProvider._();
+/// Handles transaction mutations (add, update, delete).
+/// The [allTransactionsProvider] stream refreshes automatically after each
+/// mutation — no manual [ref.invalidate] needed anywhere.
 
-final class TransactionListProvider
-    extends $AsyncNotifierProvider<TransactionList, List<DailyTransactions>> {
-  const TransactionListProvider._()
+@ProviderFor(TransactionMutations)
+const transactionMutationsProvider = TransactionMutationsProvider._();
+
+/// Handles transaction mutations (add, update, delete).
+/// The [allTransactionsProvider] stream refreshes automatically after each
+/// mutation — no manual [ref.invalidate] needed anywhere.
+final class TransactionMutationsProvider
+    extends $AsyncNotifierProvider<TransactionMutations, void> {
+  /// Handles transaction mutations (add, update, delete).
+  /// The [allTransactionsProvider] stream refreshes automatically after each
+  /// mutation — no manual [ref.invalidate] needed anywhere.
+  const TransactionMutationsProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'transactionListProvider',
+        name: r'transactionMutationsProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$transactionListHash();
+  String debugGetCreateSourceHash() => _$transactionMutationsHash();
 
   @$internal
   @override
-  TransactionList create() => TransactionList();
+  TransactionMutations create() => TransactionMutations();
 }
 
-String _$transactionListHash() => r'1794f9d866f4dc29c927545be6ae34467beaeee0';
+String _$transactionMutationsHash() =>
+    r'fb806308cd0dc294a732148f44ffb1d3e302c667';
 
-abstract class _$TransactionList
-    extends $AsyncNotifier<List<DailyTransactions>> {
-  FutureOr<List<DailyTransactions>> build();
+/// Handles transaction mutations (add, update, delete).
+/// The [allTransactionsProvider] stream refreshes automatically after each
+/// mutation — no manual [ref.invalidate] needed anywhere.
+
+abstract class _$TransactionMutations extends $AsyncNotifier<void> {
+  FutureOr<void> build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final created = build();
-    final ref =
-        this.ref
-            as $Ref<
-              AsyncValue<List<DailyTransactions>>,
-              List<DailyTransactions>
-            >;
+    build();
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<
-                AsyncValue<List<DailyTransactions>>,
-                List<DailyTransactions>
-              >,
-              AsyncValue<List<DailyTransactions>>,
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
               Object?,
               Object?
             >;
-    element.handleValue(ref, created);
+    element.handleValue(ref, null);
   }
 }

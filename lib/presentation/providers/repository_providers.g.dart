@@ -48,7 +48,7 @@ final class CurrentUserIdProvider
   }
 }
 
-String _$currentUserIdHash() => r'e72cfb0559323475253e573efd2f5ab2c0dadabb';
+String _$currentUserIdHash() => r'bf0c3288a8ba46c2dbd77015c61125dc151c15a1';
 
 @ProviderFor(transactionRepository)
 const transactionRepositoryProvider = TransactionRepositoryProvider._();

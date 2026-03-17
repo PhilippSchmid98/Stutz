@@ -5,9 +5,9 @@
 // implementations) with the presentation layer. All other presentation files
 // import from here — never from data/ directly.
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/data/repositories/firestore_expense_repository.dart';
+import 'package:stutz/presentation/providers/auth_provider.dart';
 import 'package:stutz/data/repositories/firestore_income_repository.dart';
 import 'package:stutz/data/repositories/firestore_transaction_repository.dart';
 import 'package:stutz/domain/repositories/expense_repository.dart';
@@ -18,7 +18,7 @@ part 'repository_providers.g.dart';
 
 @riverpod
 String? currentUserId(Ref ref) {
-  return FirebaseAuth.instance.currentUser?.uid;
+  return ref.watch(authStateProvider).asData?.value?.uid;
 }
 
 @riverpod

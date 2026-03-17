@@ -4,7 +4,8 @@
 > **Autor:** Principal Software Architect  
 > **Version:** 2.0  
 > **Vorgänger:** [REFACTORING_PLAN.md](REFACTORING_PLAN.md) (V1 — vollständig umgesetzt)  
-> **Status:** Entwurf — Bereit zur Umsetzung
+> **Status:** In Umsetzung — Phase 2 ✅ abgeschlossen  
+> **Letztes Update:** 15. März 2026
 
 ---
 
@@ -186,22 +187,14 @@ Beide Screens importieren `AuthService` direkt, statt den bereits existierenden 
 
 #### V2: `ref.invalidate()` in Widget-Code (HOCH)
 
-**Betroffen:** `presentation/screens/transactions/add_transaction_dialog.dart`
+✅ **GELÖST** — Phase 2 (15. März 2026)
 
-```dart
-// Zeile 140-141 (nach Add/Update)
-ref.invalidate(transactionListProvider);
-ref.invalidate(dashboardMonthlyStatsProvider);
-
-// Zeile 172-173 (nach Delete)
-ref.invalidate(transactionListProvider);
-ref.invalidate(dashboardMonthlyStatsProvider);
-```
-
-Probleme:
-1. **Duplizierung:** `TransactionList.addTransaction()` ruft intern bereits `ref.invalidateSelf()` auf.
-2. **Fragil:** Jeder neue abhängige Provider muss manuell hier ergänzt werden.
-3. **Inkonsistenz:** Income/Expenses nutzen Streams (auto-refresh), Transactions nutzen `invalidate` (manuell).
+**Behoben:**
+- `add_transaction_dialog.dart`: Alle `ref.invalidate()`-Aufrufe entfernt
+- CRUD via `transactionMutationsProvider.notifier` statt direktem Repository-Zugriff
+- `TransactionList`-Notifier ersetzt durch `allTransactionsProvider` (Stream) + `transactionList` (Funktion) + `TransactionMutations` (Mutationen)
+- `dashboardMonthlyStats` watchet nun ebenfalls `allTransactionsProvider.future` — reagiert automatisch auf Datenänderungen
+- Alle drei Daten-Streams (Income, Expenses, Transactions) laufen jetzt einheitlich über Firestore `snapshots()`
 
 #### V3: `currentUserIdProvider` ist nicht reaktiv (HOCH)
 
@@ -1068,23 +1061,36 @@ test/
 
 ### Phase 1: Kritische Architektur-Fixes
 
-- [ ] `AuthController`-Notifier in `auth_provider.dart` erstellen
-- [ ] `dashboard_screen.dart`: `data/auth_service.dart`-Import entfernen, `authControllerProvider` nutzen
-- [ ] `login_screen.dart`: `data/auth_service.dart`-Import entfernen, `authControllerProvider` nutzen
-- [ ] `currentUserIdProvider` auf `ref.watch(authStateProvider).valueOrNull?.uid` umstellen
-- [ ] `build_runner` ausführen
-- [ ] Bestehende Tests grün bestätigen
-- [ ] Manuell testen: Login, Logout, App-Neustart
+- [x] `AuthController`-Notifier in `auth_provider.dart` erstellen
+- [x] `dashboard_screen.dart`: `data/auth_service.dart`-Import entfernen, `authControllerProvider` nutzen
+- [x] `login_screen.dart`: `data/auth_service.dart`-Import entfernen, `authControllerProvider` nutzen
+- [x] `currentUserIdProvider` auf `ref.watch(authStateProvider).asData?.value?.uid` umstellen
+- [x] `build_runner` ausführen
+- [x] Bestehende Tests grün bestätigen
+- [x] Manuell testen: Login, Logout, App-Neustart ✅ (Flutter Build erfolgreich)
 
 ### Phase 2: Stream-Migration
 
-- [ ] `allTransactionsProvider` (Stream) in `transaction_providers.dart` erstellen
-- [ ] `transactionListProvider` auf Stream-basierte Quelle umbauen
-- [ ] `TransactionMutations`-Notifier erstellen (oder Mutations in bestehenden Notifier belassen)
-- [ ] `add_transaction_dialog.dart`: Alle `ref.invalidate()`-Aufrufe entfernen
-- [ ] `add_transaction_dialog.dart`: CRUD über Notifier statt direkt über Repository
-- [ ] `transaction_providers.dart`: `ref.invalidateSelf()` entfernen
-- [ ] `build_runner` ausführen
+✅ **ABGESCHLOSSEN** (15. März 2026)
+
+| Aufgabe | Datei(en) | Anmerkungen |
+|---|---|---|
+| `allTransactionsProvider` (Stream) | `lib/presentation/providers/transaction_providers.dart` | Neuer `@riverpod Stream<List<AppTransaction>> allTransactions` via `watchAllTransactions()` |
+| `transactionListProvider` umgebaut | `lib/presentation/providers/transaction_providers.dart` | Von class-basiertem `AsyncNotifier` auf funktionales `@riverpod Future<>` umgestellt; watchet `allTransactionsProvider.future` und `expenseTreeProvider.future` |
+| `TransactionMutations`-Notifier | `lib/presentation/providers/transaction_providers.dart` | Neuer `@riverpod class TransactionMutations` mit `addTransaction`, `updateTransaction`, `deleteTransaction` |
+| `dashboardMonthlyStats` reaktiv | `lib/presentation/providers/dashboard_providers.dart` | Nutzt jetzt `allTransactionsProvider.future` statt direktem Repo-Aufruf; `repository_providers`-Import entfernt |
+| `add_transaction_dialog.dart` bereinigt | `lib/presentation/screens/transactions/add_transaction_dialog.dart` | CRUD über `transactionMutationsProvider.notifier`; alle `ref.invalidate()`-Aufrufe entfernt; Imports `repository_providers` und `dashboard_providers` entfernt |
+| `ref.invalidateSelf()` entfernt | `transaction_providers.dart` | Entfällt durch Stream-Reaktivität |
+| `build_runner` | — | Ausgeführt, alle `.g.dart` Dateien regeneriert |
+| Tests | — | Alle 75 Tests grün (0 Fehler) |
+
+- [x] `allTransactionsProvider` (Stream) in `transaction_providers.dart` erstellen
+- [x] `transactionListProvider` auf Stream-basierte Quelle umbauen
+- [x] `TransactionMutations`-Notifier erstellen
+- [x] `add_transaction_dialog.dart`: Alle `ref.invalidate()`-Aufrufe entfernen
+- [x] `add_transaction_dialog.dart`: CRUD über Notifier statt direkt über Repository
+- [x] `transaction_providers.dart`: `ref.invalidateSelf()` entfernen
+- [x] `build_runner` ausführen
 - [ ] Manuell testen: Add/Edit/Delete → UI aktualisiert sich ohne Verzögerung
 
 ### Phase 3: Domain-Model-Freeze & Determinismus

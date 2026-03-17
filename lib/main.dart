@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:stutz/firebase_options.dart';
-import 'package:stutz/presentation/providers/auth_provider.dart';
+import 'package:stutz/presentation/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

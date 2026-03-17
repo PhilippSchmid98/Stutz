@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:stutz/presentation/providers/repository_providers.dart';
-import 'package:stutz/presentation/providers/dashboard_providers.dart';
 import 'package:uuid/uuid.dart';
 import 'package:stutz/domain/models/models.dart';
 import 'package:stutz/presentation/providers/budget_providers.dart';
@@ -130,15 +128,13 @@ class AddTransactionDialog extends HookConsumerWidget {
           note: noteCtrl.text.isEmpty ? null : noteCtrl.text,
         );
 
-        final repo = ref.read(transactionRepositoryProvider);
+        final mutations = ref.read(transactionMutationsProvider.notifier);
         if (isEdit) {
-          await repo.updateTransaction(txn);
+          await mutations.updateTransaction(txn);
         } else {
-          await repo.addTransaction(txn);
+          await mutations.addTransaction(txn);
         }
-
-        ref.invalidate(transactionListProvider);
-        ref.invalidate(dashboardMonthlyStatsProvider);
+        // Stream auto-refreshes — no ref.invalidate needed.
         if (context.mounted) Navigator.pop(context);
       }
     }
@@ -167,10 +163,9 @@ class AddTransactionDialog extends HookConsumerWidget {
 
       if (confirm == true && existingItem != null) {
         await ref
-            .read(transactionRepositoryProvider)
+            .read(transactionMutationsProvider.notifier)
             .deleteTransaction(existingItem!.transaction.id);
-        ref.invalidate(transactionListProvider);
-        ref.invalidate(dashboardMonthlyStatsProvider);
+        // Stream auto-refreshes — no ref.invalidate needed.
         if (context.mounted) Navigator.pop(context);
       }
     }

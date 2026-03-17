@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:stutz/data/auth_service.dart';
-import 'package:stutz/presentation/screens/home_screen.dart';
+import 'package:stutz/presentation/providers/auth_provider.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -11,18 +9,6 @@ class LoginScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = useState(false);
-
-    Future<void> onLoginSuccess() async {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('seenOnboarding', true);
-
-      if (!context.mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-        (route) => false,
-      );
-    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -75,15 +61,12 @@ class LoginScreen extends HookConsumerWidget {
                     ),
                     onPressed: () async {
                       isLoading.value = true;
-                      final user = await ref
-                          .read(authServiceProvider)
+                      await ref
+                          .read(authControllerProvider.notifier)
                           .signInWithGoogle();
-
-                      if (user != null) {
-                        await onLoginSuccess();
-                      } else {
-                        isLoading.value = false;
-                      }
+                      // AppRouter reacts to authStateProvider on success.
+                      // Reset loading only if still mounted (login failed).
+                      if (context.mounted) isLoading.value = false;
                     },
                   ),
                 ),
@@ -97,14 +80,11 @@ class LoginScreen extends HookConsumerWidget {
                   child: TextButton(
                     onPressed: () async {
                       isLoading.value = true;
-                      final user = await ref
-                          .read(authServiceProvider)
+                      await ref
+                          .read(authControllerProvider.notifier)
                           .signInAnonymously();
-                      if (user != null) {
-                        await onLoginSuccess();
-                      } else {
-                        isLoading.value = false;
-                      }
+                      // AppRouter reacts to authStateProvider on success.
+                      if (context.mounted) isLoading.value = false;
                     },
                     child: Text(
                       "Ohne Account fortfahren (Gast)",
