@@ -3,17 +3,20 @@ import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 
 class IncomeMapper {
-  static IncomeSource fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data()!;
+  static IncomeSource fromMap(String id, Map<String, dynamic> data) {
     return IncomeSource(
-      id: doc.id,
+      id: id,
       name: data['name'] ?? '',
       amount: (data['amount'] as num).toDouble(),
       interval: _parseInterval(data['interval']),
       group: _parseGroup(data['group']),
     );
+  }
+
+  static IncomeSource fromFirestore(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    return fromMap(doc.id, doc.data()!);
   }
 
   static Map<String, dynamic> toFirestore(IncomeSource source) {

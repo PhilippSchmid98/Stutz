@@ -4,7 +4,7 @@
 > **Autor:** Principal Software Architect  
 > **Version:** 2.0  
 > **Vorgänger:** [REFACTORING_PLAN.md](REFACTORING_PLAN.md) (V1 — vollständig umgesetzt)  
-> **Status:** In Umsetzung — Phase 4 ✅ abgeschlossen  
+> **Status:** ✅ Vollständig abgeschlossen  
 > **Letztes Update:** 17. März 2026
 
 ---
@@ -1116,18 +1116,18 @@ test/
 
 ### Phase 5: Test-Offensive
 
-- [ ] Mapper-Refactoring: `fromFirestore` → `fromMap` + `fromFirestore`-Wrapper
-- [ ] `expense_node_mapper_test.dart` schreiben
-- [ ] `income_mapper_test.dart` schreiben
-- [ ] `transaction_mapper_test.dart` schreiben
-- [ ] `domain_entities_test.dart` aufwerten (Equality, Defaults, `isGroup`, `copyWith`)
-- [ ] `budget_calculator_test.dart` Determinismus-Tests ergänzen
-- [ ] `transaction_grouper_test.dart` Sortier-Tests ergänzen
-- [ ] `test/helpers/fake_repositories.dart` erstellen
-- [ ] `budget_providers_test.dart` schreiben
-- [ ] `repository_providers_test.dart` schreiben
+- [x] Mapper-Refactoring: `fromFirestore` → `fromMap` + `fromFirestore`-Wrapper
+- [x] `expense_node_mapper_test.dart` schreiben
+- [x] `income_mapper_test.dart` schreiben
+- [x] `transaction_mapper_test.dart` schreiben
+- [x] `domain_entities_test.dart` aufwerten (Equality, Defaults, `isGroup`, `copyWith`)
+- [x] `budget_calculator_test.dart` Determinismus-Tests ergänzen
+- [x] `transaction_grouper_test.dart` Sortier-Tests ergänzen
+- [x] `test/helpers/fake_repositories.dart` erstellen
+- [x] `budget_providers_test.dart` schreiben
+- [x] `repository_providers_test.dart` schreiben
 - [ ] (Optional) `AddTransactionDialog` Widget-Test
-- [ ] Alle Tests grün bestätigen
+- [x] Alle Tests grün bestätigen
 - [ ] Coverage-Report generieren und gegen Ziele prüfen
 
 ---

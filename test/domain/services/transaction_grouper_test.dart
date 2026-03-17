@@ -22,8 +22,16 @@ void main() {
     });
 
     test('two transactions on the same day are grouped together', () {
-      final t1 = makeTransaction(id: 't1', amount: 30, dateTime: DateTime(2025, 6, 15));
-      final t2 = makeTransaction(id: 't2', amount: 20, dateTime: DateTime(2025, 6, 15));
+      final t1 = makeTransaction(
+        id: 't1',
+        amount: 30,
+        dateTime: DateTime(2025, 6, 15),
+      );
+      final t2 = makeTransaction(
+        id: 't2',
+        amount: 20,
+        dateTime: DateTime(2025, 6, 15),
+      );
       final result = grouper.groupByDay([t1, t2], []);
       expect(result, hasLength(1));
       expect(result.first.totalAmount, 50.0);
@@ -39,20 +47,29 @@ void main() {
 
     test('enriches transaction with category name from flatNodes', () {
       final node = makeExpense(id: 'e1', name: 'Groceries');
-      final txn = makeTransaction(expenseNodeId: 'e1', dateTime: DateTime(2025, 6, 15));
+      final txn = makeTransaction(
+        expenseNodeId: 'e1',
+        dateTime: DateTime(2025, 6, 15),
+      );
       final result = grouper.groupByDay([txn], [node]);
       expect(result.first.transactions.first.categoryName, 'Groceries');
     });
 
     test('unknown expenseNodeId gets categoryName "Unknown"', () {
-      final txn = makeTransaction(expenseNodeId: 'nonexistent', dateTime: DateTime(2025, 6, 15));
+      final txn = makeTransaction(
+        expenseNodeId: 'nonexistent',
+        dateTime: DateTime(2025, 6, 15),
+      );
       final result = grouper.groupByDay([txn], []);
       expect(result.first.transactions.first.categoryName, 'Unknown');
     });
 
     test('groupName matches node parentId', () {
       final node = makeExpense(id: 'e1', parentId: 'parent1');
-      final txn = makeTransaction(expenseNodeId: 'e1', dateTime: DateTime(2025, 6, 15));
+      final txn = makeTransaction(
+        expenseNodeId: 'e1',
+        dateTime: DateTime(2025, 6, 15),
+      );
       final result = grouper.groupByDay([txn], [node]);
       expect(result.first.transactions.first.groupName, 'parent1');
     });
@@ -99,6 +116,33 @@ void main() {
         categoryName: 'Food',
       );
       expect(twc.groupName, isNull);
+    });
+  });
+
+  group('groupByDay day ordering', () {
+    test('days are sorted newest first', () {
+      final txns = [
+        makeTransaction(id: 't1', dateTime: DateTime(2025, 6, 10)),
+        makeTransaction(id: 't2', dateTime: DateTime(2025, 6, 15)),
+        makeTransaction(id: 't3', dateTime: DateTime(2025, 6, 12)),
+      ];
+      final result = grouper.groupByDay(txns, []);
+      final dates = result.map((d) => d.date).toList();
+      expect(dates, [
+        DateTime(2025, 6, 15),
+        DateTime(2025, 6, 12),
+        DateTime(2025, 6, 10),
+      ]);
+    });
+
+    test('single day is returned unchanged', () {
+      final txns = [
+        makeTransaction(id: 't1', amount: 10, dateTime: DateTime(2025, 6, 10)),
+        makeTransaction(id: 't2', amount: 20, dateTime: DateTime(2025, 6, 10)),
+      ];
+      final result = grouper.groupByDay(txns, []);
+      expect(result, hasLength(1));
+      expect(result.first.date, DateTime(2025, 6, 10));
     });
   });
 }

@@ -36,7 +36,11 @@ void main() {
     test('mixes monthly and yearly incomes correctly', () {
       final sources = [
         makeIncome(id: '1', amount: 3000, interval: PaymentInterval.monthly),
-        makeIncome(id: '2', amount: 2400, interval: PaymentInterval.yearly), // = 200/month
+        makeIncome(
+          id: '2',
+          amount: 2400,
+          interval: PaymentInterval.yearly,
+        ), // = 200/month
       ];
       expect(calc.totalMonthlyIncome(sources), 3200.0);
     });
@@ -53,8 +57,16 @@ void main() {
 
     test('sums monthly leaf node amounts', () {
       final nodes = [
-        makeExpense(id: 'e1', plannedAmount: 100, interval: PaymentInterval.monthly),
-        makeExpense(id: 'e2', plannedAmount: 200, interval: PaymentInterval.monthly),
+        makeExpense(
+          id: 'e1',
+          plannedAmount: 100,
+          interval: PaymentInterval.monthly,
+        ),
+        makeExpense(
+          id: 'e2',
+          plannedAmount: 200,
+          interval: PaymentInterval.monthly,
+        ),
       ];
       expect(calc.totalMonthlyExpenses(nodes), 300.0);
     });
@@ -69,8 +81,16 @@ void main() {
     });
 
     test('group node sums its children (ignores own amount)', () {
-      final child1 = makeExpense(id: 'c1', plannedAmount: 400.0, interval: PaymentInterval.monthly);
-      final child2 = makeExpense(id: 'c2', plannedAmount: 600.0, interval: PaymentInterval.yearly); // 50/month
+      final child1 = makeExpense(
+        id: 'c1',
+        plannedAmount: 400.0,
+        interval: PaymentInterval.monthly,
+      );
+      final child2 = makeExpense(
+        id: 'c2',
+        plannedAmount: 600.0,
+        interval: PaymentInterval.yearly,
+      ); // 50/month
       final group = makeExpense(
         id: 'g',
         plannedAmount: 9999.0, // Should be ignored
@@ -172,8 +192,16 @@ void main() {
     });
 
     test('children totals are aggregated into parent', () {
-      final child = makeExpense(id: 'child', parentId: 'root', plannedAmount: 100);
-      final root = makeExpense(id: 'root', plannedAmount: null, children: [child]);
+      final child = makeExpense(
+        id: 'child',
+        parentId: 'root',
+        plannedAmount: 100,
+      );
+      final root = makeExpense(
+        id: 'root',
+        plannedAmount: null,
+        children: [child],
+      );
       final txn = makeTransaction(expenseNodeId: 'child', amount: 60);
       final result = calc.buildMonthlyDetail([root], [txn]);
       expect(result.first.planned, 100.0);
@@ -247,6 +275,32 @@ void main() {
         totalSpent: 50,
       );
       expect(status.percentage, 1.0);
+    });
+
+    test('referenceDate controls which months are returned', () {
+      final node = makeExpense(
+        id: 'e1',
+        plannedAmount: 500,
+        type: ExpenseType.variable,
+      );
+      final txn = makeTransaction(
+        expenseNodeId: 'e1',
+        amount: 200,
+        dateTime: DateTime(2025, 3, 15),
+      );
+      final result = calc.calculateDashboardStats(
+        [node],
+        [txn],
+        monthCount: 3,
+        referenceDate: DateTime(2025, 4, 1),
+      );
+      expect(result.length, 3);
+      expect(result[0].month, DateTime(2025, 4));
+      expect(result[0].totalSpent, 0.0);
+      expect(result[1].month, DateTime(2025, 3));
+      expect(result[1].totalSpent, 200.0);
+      expect(result[2].month, DateTime(2025, 2));
+      expect(result[2].totalSpent, 0.0);
     });
   });
 }

@@ -3,10 +3,9 @@ import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 
 class ExpenseNodeMapper {
-  static ExpenseNode fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
+  static ExpenseNode fromMap(String id, Map<String, dynamic> data) {
     return ExpenseNode(
-      id: doc.id,
+      id: id,
       parentId: data['parentId'],
       name: data['name'] ?? 'Unknown',
       plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
@@ -16,6 +15,10 @@ class ExpenseNodeMapper {
       sortOrder: data['sortOrder'] ?? 99999,
       children: [],
     );
+  }
+
+  static ExpenseNode fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    return fromMap(doc.id, doc.data()!);
   }
 
   static Map<String, dynamic> toFirestore(ExpenseNode node) {
