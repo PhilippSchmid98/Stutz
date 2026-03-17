@@ -1,18 +1,26 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stutz/domain/models/expense_node.dart';
+
+part 'budget_vs_actual_node.freezed.dart';
 
 /// A node in the monthly budget vs. actual comparison tree.
 ///
 /// [planned] and [actual] are the totals including all descendants.
-class BudgetVsActualNode {
-  final ExpenseNode node;
+@freezed
+abstract class BudgetVsActualNode with _$BudgetVsActualNode {
+  const BudgetVsActualNode._();
 
-  /// Total planned budget (own + all children).
-  final double planned;
+  const factory BudgetVsActualNode({
+    required ExpenseNode node,
 
-  /// Total actual spending (own + all children).
-  final double actual;
+    /// Total planned budget (own + all children).
+    required double planned,
 
-  final List<BudgetVsActualNode> children;
+    /// Total actual spending (own + all children).
+    required double actual,
+
+    required List<BudgetVsActualNode> children,
+  }) = _BudgetVsActualNode;
 
   double get difference => planned - actual;
 
@@ -20,11 +28,4 @@ class BudgetVsActualNode {
     if (planned == 0) return actual > 0 ? 1.0 : 0.0;
     return actual / planned;
   }
-
-  const BudgetVsActualNode({
-    required this.node,
-    required this.planned,
-    required this.actual,
-    required this.children,
-  });
 }

@@ -1,16 +1,16 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stutz/domain/models/transaction.dart';
 
+part 'transaction_with_category.freezed.dart';
+
 /// An [AppTransaction] enriched with its category (expense node) name.
-class TransactionWithCategory {
-  final AppTransaction transaction;
-  final String categoryName;
+@freezed
+abstract class TransactionWithCategory with _$TransactionWithCategory {
+  const factory TransactionWithCategory({
+    required AppTransaction transaction,
+    required String categoryName,
 
-  /// The parent node's ID, used for grouping by category.
-  final String? groupName;
-
-  const TransactionWithCategory({
-    required this.transaction,
-    required this.categoryName,
-    this.groupName,
-  });
+    /// The parent node's ID, used for grouping by category.
+    String? groupName,
+  }) = _TransactionWithCategory;
 }

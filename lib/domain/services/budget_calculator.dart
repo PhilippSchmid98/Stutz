@@ -21,10 +21,7 @@ class BudgetCalculator {
   /// Total monthly planned expenses across all root [nodes]
   /// (yearly amounts divided by 12; groups sum their children).
   double totalMonthlyExpenses(List<ExpenseNode> nodes) {
-    return nodes.fold<double>(
-      0.0,
-      (sum, n) => sum + n.totalMonthlyCalculated,
-    );
+    return nodes.fold<double>(0.0, (sum, n) => sum + n.totalMonthlyCalculated);
   }
 
   /// Derives the overall [BudgetHealth] from income sources and expense tree.
@@ -72,10 +69,9 @@ class BudgetCalculator {
 
       return BudgetVsActualNode(
         node: node,
-        planned: ownPlanned +
-            keptChildren.fold(0.0, (sum, c) => sum + c.planned),
-        actual: ownActual +
-            keptChildren.fold(0.0, (sum, c) => sum + c.actual),
+        planned:
+            ownPlanned + keptChildren.fold(0.0, (sum, c) => sum + c.planned),
+        actual: ownActual + keptChildren.fold(0.0, (sum, c) => sum + c.actual),
         children: keptChildren,
       );
     }
@@ -96,6 +92,7 @@ class BudgetCalculator {
     List<ExpenseNode> rootNodes,
     List<AppTransaction> allTransactions, {
     int monthCount = 6,
+    DateTime? referenceDate,
   }) {
     final variableNodeIds = <String>{};
     var totalVariablePlannedPerMonth = 0.0;
@@ -117,7 +114,7 @@ class BudgetCalculator {
       collectVariableNodes(root);
     }
 
-    final now = DateTime.now();
+    final now = referenceDate ?? DateTime.now();
     final stats = <MonthlyBudgetStatus>[];
 
     for (int i = 0; i < monthCount; i++) {

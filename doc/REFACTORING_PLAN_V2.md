@@ -4,8 +4,8 @@
 > **Autor:** Principal Software Architect  
 > **Version:** 2.0  
 > **Vorgänger:** [REFACTORING_PLAN.md](REFACTORING_PLAN.md) (V1 — vollständig umgesetzt)  
-> **Status:** In Umsetzung — Phase 2 ✅ abgeschlossen  
-> **Letztes Update:** 15. März 2026
+> **Status:** In Umsetzung — Phase 3 ✅ abgeschlossen  
+> **Letztes Update:** 17. März 2026
 
 ---
 
@@ -1095,16 +1095,16 @@ test/
 
 ### Phase 3: Domain-Model-Freeze & Determinismus
 
-- [ ] `BudgetHealth` auf Freezed migrieren
-- [ ] `MonthlyBudgetStatus` auf Freezed migrieren
-- [ ] `TransactionWithCategory` auf Freezed migrieren
-- [ ] `DailyTransactions` auf Freezed migrieren
-- [ ] `BudgetVsActualNode` auf Freezed migrieren
-- [ ] `YearlyBudgetNode` auf Freezed migrieren
-- [ ] `BudgetCalculator.calculateDashboardStats`: `referenceDate`-Parameter hinzufügen
-- [ ] `TransactionGrouper.groupByDay`: Explizite Tagessortierung einbauen
-- [ ] `build_runner` ausführen
-- [ ] Alle bestehenden Tests grün bestätigen
+- [x] `BudgetHealth` auf Freezed migrieren
+- [x] `MonthlyBudgetStatus` auf Freezed migrieren
+- [x] `TransactionWithCategory` auf Freezed migrieren
+- [x] `DailyTransactions` auf Freezed migrieren
+- [x] `BudgetVsActualNode` auf Freezed migrieren
+- [x] `YearlyBudgetNode` auf Freezed migrieren
+- [x] `BudgetCalculator.calculateDashboardStats`: `referenceDate`-Parameter hinzufügen
+- [x] `TransactionGrouper.groupByDay`: Explizite Tagessortierung einbauen
+- [x] `build_runner` ausführen
+- [x] Alle bestehenden Tests grün bestätigen
 
 ### Phase 4: Infrastruktur-Polish
 

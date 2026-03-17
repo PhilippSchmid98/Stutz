@@ -1,11 +1,17 @@
-/// Summary of the user's financial health: income vs. planned expenses.
-class BudgetHealth {
-  final double income;
-  final double expenses;
-  final double balance;
-  final bool isDeficit;
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-  BudgetHealth({required this.income, required this.expenses})
-      : balance = income - expenses,
-        isDeficit = (income - expenses) < 0;
+part 'budget_health.freezed.dart';
+
+/// Summary of the user's financial health: income vs. planned expenses.
+@freezed
+abstract class BudgetHealth with _$BudgetHealth {
+  const BudgetHealth._();
+
+  const factory BudgetHealth({
+    required double income,
+    required double expenses,
+  }) = _BudgetHealth;
+
+  double get balance => income - expenses;
+  bool get isDeficit => balance < 0;
 }

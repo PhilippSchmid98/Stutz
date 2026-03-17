@@ -1,14 +1,14 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stutz/domain/models/transaction_with_category.dart';
 
-/// All enriched transactions for a single calendar day.
-class DailyTransactions {
-  final DateTime date;
-  final double totalAmount;
-  final List<TransactionWithCategory> transactions;
+part 'daily_transactions.freezed.dart';
 
-  const DailyTransactions({
-    required this.date,
-    required this.totalAmount,
-    required this.transactions,
-  });
+/// All enriched transactions for a single calendar day.
+@freezed
+abstract class DailyTransactions with _$DailyTransactions {
+  const factory DailyTransactions({
+    required DateTime date,
+    required double totalAmount,
+    required List<TransactionWithCategory> transactions,
+  }) = _DailyTransactions;
 }

@@ -34,7 +34,7 @@ class TransactionGrouper {
       return DateTime(dt.year, dt.month, dt.day);
     });
 
-    return groupedMap.entries.map((entry) {
+    final days = groupedMap.entries.map((entry) {
       return DailyTransactions(
         date: entry.key,
         totalAmount: entry.value.fold(
@@ -44,5 +44,8 @@ class TransactionGrouper {
         transactions: entry.value,
       );
     }).toList();
+
+    days.sort((a, b) => b.date.compareTo(a.date));
+    return days;
   }
 }
