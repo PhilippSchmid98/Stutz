@@ -1,5 +1,6 @@
+import 'dart:developer' as dev;
+
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/core/constants/firebase_config.dart';
@@ -20,9 +21,7 @@ class AuthService {
       final result = await _auth.signInAnonymously();
       return result.user;
     } catch (e) {
-      if (kDebugMode) {
-        print("Error Anonymous Login: $e");
-      }
+      dev.log('Anonymous login failed', error: e, name: 'AuthService');
       return null;
     }
   }
@@ -49,9 +48,7 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       return userCredential.user;
     } catch (e) {
-      if (kDebugMode) {
-        print("Error Google Login: $e");
-      }
+      dev.log('Google login failed', error: e, name: 'AuthService');
       return null;
     }
   }

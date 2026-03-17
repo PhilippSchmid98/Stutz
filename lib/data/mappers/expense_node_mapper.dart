@@ -3,9 +3,7 @@ import 'package:stutz/core/enums/enums.dart';
 import 'package:stutz/domain/models/models.dart';
 
 class ExpenseNodeMapper {
-  static ExpenseNode fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
+  static ExpenseNode fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return ExpenseNode(
       id: doc.id,
@@ -25,8 +23,9 @@ class ExpenseNodeMapper {
       'parentId': node.parentId,
       'name': node.name,
       'plannedAmount': node.plannedAmount,
-      'interval':
-          node.interval != null ? _serializeInterval(node.interval!) : null,
+      'interval': node.interval != null
+          ? _serializeInterval(node.interval!)
+          : null,
       'type': node.type != null ? _serializeType(node.type!) : null,
       'sortOrder': node.sortOrder,
     };
@@ -54,21 +53,7 @@ class ExpenseNodeMapper {
     }
   }
 
-  static String _serializeInterval(PaymentInterval interval) {
-    switch (interval) {
-      case PaymentInterval.yearly:
-        return 'Yearly';
-      case PaymentInterval.monthly:
-        return 'Monthly';
-    }
-  }
+  static String _serializeInterval(PaymentInterval interval) => interval.name;
 
-  static String _serializeType(ExpenseType type) {
-    switch (type) {
-      case ExpenseType.fixed:
-        return 'Fixed';
-      case ExpenseType.variable:
-        return 'Variable';
-    }
-  }
+  static String _serializeType(ExpenseType type) => type.name;
 }

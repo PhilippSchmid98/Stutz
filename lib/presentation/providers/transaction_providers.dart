@@ -40,27 +40,19 @@ Future<List<DailyTransactions>> transactionList(Ref ref) async {
 
 @riverpod
 List<DateTime> availableMonths(Ref ref) {
-  final transactionsAsync = ref.watch(transactionListProvider);
+  final transactionsAsync = ref.watch(allTransactionsProvider);
 
   return transactionsAsync.when(
-    data: (dailyGroups) {
-      if (dailyGroups.isEmpty) {
-        final now = DateTime.now();
-        return [DateTime(now.year, now.month)];
-      }
-
+    data: (transactions) {
       final uniqueMonths = <DateTime>{};
       final now = DateTime.now();
       uniqueMonths.add(DateTime(now.year, now.month));
 
-      for (var group in dailyGroups) {
-        uniqueMonths.add(DateTime(group.date.year, group.date.month));
+      for (var txn in transactions) {
+        uniqueMonths.add(DateTime(txn.dateTime.year, txn.dateTime.month));
       }
 
-      final sortedMonths = uniqueMonths.toList()
-        ..sort((a, b) => a.compareTo(b));
-
-      return sortedMonths;
+      return uniqueMonths.toList()..sort((a, b) => a.compareTo(b));
     },
     loading: () => [DateTime(DateTime.now().year, DateTime.now().month)],
     error: (_, __) => [DateTime(DateTime.now().year, DateTime.now().month)],

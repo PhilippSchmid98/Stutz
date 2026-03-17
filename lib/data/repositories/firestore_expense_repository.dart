@@ -6,9 +6,13 @@ import 'package:stutz/domain/services/tree_builder.dart';
 
 class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
   final String userId;
+  final TreeBuilder _treeBuilder;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  FirestoreExpenseNodeRepository(this.userId);
+  FirestoreExpenseNodeRepository(
+    this.userId, {
+    TreeBuilder treeBuilder = const TreeBuilder(),
+  }) : _treeBuilder = treeBuilder;
 
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(userId).collection('expense_nodes');
@@ -58,6 +62,4 @@ class FirestoreExpenseNodeRepository implements ExpenseNodeRepository {
       return _treeBuilder.buildTree(flatNodes);
     });
   }
-
-  static const _treeBuilder = TreeBuilder();
 }

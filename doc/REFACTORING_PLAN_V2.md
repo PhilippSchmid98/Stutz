@@ -4,7 +4,7 @@
 > **Autor:** Principal Software Architect  
 > **Version:** 2.0  
 > **Vorgänger:** [REFACTORING_PLAN.md](REFACTORING_PLAN.md) (V1 — vollständig umgesetzt)  
-> **Status:** In Umsetzung — Phase 3 ✅ abgeschlossen  
+> **Status:** In Umsetzung — Phase 4 ✅ abgeschlossen  
 > **Letztes Update:** 17. März 2026
 
 ---
@@ -1108,11 +1108,11 @@ test/
 
 ### Phase 4: Infrastruktur-Polish
 
-- [ ] `AuthService`: `print()` → `dev.log()`
-- [ ] `dashboard_screen.dart`: `WelcomeScreen`-Import und manuelle Navigation entfernen
-- [ ] Mapper-Serialisierung: PascalCase → `enum.name` (lowercase)
-- [ ] `FirestoreExpenseNodeRepository`: `TreeBuilder` als Constructor-Parameter (mit Default)
-- [ ] (Optional) `availableMonths`-Provider von `transactionList` entkoppeln
+- [x] `AuthService`: `print()` → `dev.log()`
+- [x] `dashboard_screen.dart`: `WelcomeScreen`-Import und manuelle Navigation entfernen
+- [x] Mapper-Serialisierung: PascalCase → `enum.name` (lowercase)
+- [x] `FirestoreExpenseNodeRepository`: `TreeBuilder` als Constructor-Parameter (mit Default)
+- [x] (Optional) `availableMonths`-Provider von `transactionList` entkoppeln
 
 ### Phase 5: Test-Offensive
 

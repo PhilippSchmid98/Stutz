@@ -43,21 +43,7 @@ class IncomeMapper {
     }
   }
 
-  static String _serializeInterval(PaymentInterval interval) {
-    switch (interval) {
-      case PaymentInterval.yearly:
-        return 'Yearly';
-      case PaymentInterval.monthly:
-        return 'Monthly';
-    }
-  }
+  static String _serializeInterval(PaymentInterval interval) => interval.name;
 
-  static String _serializeGroup(IncomeGroup group) {
-    switch (group) {
-      case IncomeGroup.additional:
-        return 'Additional';
-      case IncomeGroup.main:
-        return 'Main';
-    }
-  }
+  static String _serializeGroup(IncomeGroup group) => group.name;
 }

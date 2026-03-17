@@ -200,7 +200,7 @@ final class AvailableMonthsProvider
   }
 }
 
-String _$availableMonthsHash() => r'2b4cf9e43d270b41c001caa1544c5f5f005a01ab';
+String _$availableMonthsHash() => r'485e37c4ea93d362c05a36c6b1170f4eb0d4ea99';
 
 /// Handles transaction mutations (add, update, delete).
 /// The [allTransactionsProvider] stream refreshes automatically after each
