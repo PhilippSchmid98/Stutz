@@ -10,13 +10,11 @@ Future<List<BudgetVsActualNode>> monthlyDetailTree(
   Ref ref,
   DateTime month,
 ) async {
-  final rootNodes = await ref
-      .watch(expenseNodeRepositoryProvider)
-      .getAllExpenseNodes();
-
-  final allTxns = await ref
-      .watch(transactionRepositoryProvider)
-      .getAllTransactions();
+  // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
+  final expenseRepo = ref.watch(expenseNodeRepositoryProvider);
+  final txnRepo = ref.watch(transactionRepositoryProvider);
+  final rootNodes = await expenseRepo.getAllExpenseNodes();
+  final allTxns = await txnRepo.getAllTransactions();
   final txnsInMonth = allTxns.where((t) {
     return t.dateTime.year == month.year && t.dateTime.month == month.month;
   }).toList();

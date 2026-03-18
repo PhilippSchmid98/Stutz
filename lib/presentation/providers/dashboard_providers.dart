@@ -8,8 +8,11 @@ part 'dashboard_providers.g.dart';
 
 @riverpod
 Future<List<MonthlyBudgetStatus>> dashboardMonthlyStats(Ref ref) async {
-  final rootNodes = await ref.watch(expenseTreeProvider.future);
-  final allTransactions = await ref.watch(allTransactionsProvider.future);
+  // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
+  final rootNodesFuture = ref.watch(expenseTreeProvider.future);
+  final allTransactionsFuture = ref.watch(allTransactionsProvider.future);
+  final rootNodes = await rootNodesFuture;
+  final allTransactions = await allTransactionsFuture;
 
   return const BudgetCalculator().calculateDashboardStats(
     rootNodes,

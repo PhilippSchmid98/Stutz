@@ -211,4 +211,4 @@ final class BudgetHealthProvider
   }
 }
 
-String _$budgetHealthHash() => r'80b186a061d25385df3fdcb9a2e07b6877a40d6b';
+String _$budgetHealthHash() => r'dd9d39994f20f91aebb24ced77a662067fc114e1';

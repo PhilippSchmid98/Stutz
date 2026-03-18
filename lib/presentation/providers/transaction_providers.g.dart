@@ -159,7 +159,7 @@ final class TransactionListProvider
   }
 }
 
-String _$transactionListHash() => r'd750641ca1f82049f7c86964f585f6a1b971b73f';
+String _$transactionListHash() => r'1969812754fb98be542b94687623f1266f70717e';
 
 @ProviderFor(availableMonths)
 const availableMonthsProvider = AvailableMonthsProvider._();

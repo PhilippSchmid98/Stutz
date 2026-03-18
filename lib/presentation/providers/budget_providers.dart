@@ -37,7 +37,10 @@ Future<double> totalMonthlyExpenses(Ref ref) async {
 
 @riverpod
 Future<BudgetHealth> budgetHealth(Ref ref) async {
-  final sources = await ref.watch(incomeListProvider.future);
-  final roots = await ref.watch(expenseTreeProvider.future);
+  // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
+  final sourcesFuture = ref.watch(incomeListProvider.future);
+  final rootsFuture = ref.watch(expenseTreeProvider.future);
+  final sources = await sourcesFuture;
+  final roots = await rootsFuture;
   return const BudgetCalculator().calculateHealth(sources, roots);
 }

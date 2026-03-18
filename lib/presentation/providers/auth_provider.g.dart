@@ -10,23 +10,26 @@ part of 'auth_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
+/// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
 
 @ProviderFor(AuthController)
 const authControllerProvider = AuthControllerProvider._();
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
+/// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
 final class AuthControllerProvider
     extends $AsyncNotifierProvider<AuthController, void> {
   /// Handles auth mutations (sign-in, sign-out) as a single entry point for
   /// all screens. Screens must never import [AuthService] directly.
+  /// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
   const AuthControllerProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'authControllerProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -39,10 +42,11 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'859275534bdb64f36b99ddd52e2af9edaa512c0f';
+String _$authControllerHash() => r'38232a756b17c2c283821d3bd86a02512a79178c';
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
+/// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
 
 abstract class _$AuthController extends $AsyncNotifier<void> {
   FutureOr<void> build();
@@ -65,25 +69,28 @@ abstract class _$AuthController extends $AsyncNotifier<void> {
 
 /// Subscribes to Firebase's real-time auth state.
 /// Emits [null] when signed out, a [User] when signed in.
+/// keepAlive: Stream darf nie unterbrochen werden, da Routing darauf basiert.
 
 @ProviderFor(authState)
 const authStateProvider = AuthStateProvider._();
 
 /// Subscribes to Firebase's real-time auth state.
 /// Emits [null] when signed out, a [User] when signed in.
+/// keepAlive: Stream darf nie unterbrochen werden, da Routing darauf basiert.
 
 final class AuthStateProvider
     extends $FunctionalProvider<AsyncValue<User?>, User?, Stream<User?>>
     with $FutureModifier<User?>, $StreamProvider<User?> {
   /// Subscribes to Firebase's real-time auth state.
   /// Emits [null] when signed out, a [User] when signed in.
+  /// keepAlive: Stream darf nie unterbrochen werden, da Routing darauf basiert.
   const AuthStateProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'authStateProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -102,7 +109,7 @@ final class AuthStateProvider
   }
 }
 
-String _$authStateHash() => r'927895b94ff0712062703c206b12f21fe19a0288';
+String _$authStateHash() => r'717511aaf372cc1336681b0d5d9a60ee40e1fa23';
 
 /// Returns whether the user has completed the onboarding flow at least once.
 

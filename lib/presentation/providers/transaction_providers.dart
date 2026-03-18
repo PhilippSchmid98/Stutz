@@ -32,8 +32,11 @@ Stream<List<AppTransaction>> allTransactions(Ref ref) {
 /// stream. Rebuilds automatically whenever Firestore data changes.
 @riverpod
 Future<List<DailyTransactions>> transactionList(Ref ref) async {
-  final transactions = await ref.watch(allTransactionsProvider.future);
-  final rootNodes = await ref.watch(expenseTreeProvider.future);
+  // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
+  final transactionsFuture = ref.watch(allTransactionsProvider.future);
+  final rootNodesFuture = ref.watch(expenseTreeProvider.future);
+  final transactions = await transactionsFuture;
+  final rootNodes = await rootNodesFuture;
   final flatNodes = const TreeBuilder().flattenTree(rootNodes);
   return const TransactionGrouper().groupByDay(transactions, flatNodes);
 }

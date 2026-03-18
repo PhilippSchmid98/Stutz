@@ -8,12 +8,11 @@ part 'yearly_detail_provider.g.dart';
 
 @riverpod
 Future<List<YearlyBudgetNode>> yearlyDetailTree(Ref ref, int year) async {
-  final rootNodes = await ref
-      .watch(expenseNodeRepositoryProvider)
-      .getAllExpenseNodes();
-  final allTxns = await ref
-      .watch(transactionRepositoryProvider)
-      .getAllTransactions();
+  // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
+  final expenseRepo = ref.watch(expenseNodeRepositoryProvider);
+  final txnRepo = ref.watch(transactionRepositoryProvider);
+  final rootNodes = await expenseRepo.getAllExpenseNodes();
+  final allTxns = await txnRepo.getAllTransactions();
 
   return const YearlyCalculator().buildYearlyDetail(rootNodes, allTxns, year);
 }
