@@ -8,6 +8,77 @@ part of 'auth_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// True when the sign-out was explicitly triggered by the user.
+/// When the auth stream transitions to signed-out while this is false,
+/// [AppRouter] treats it as an involuntary logout (e.g. account disabled)
+/// and shows an explanatory message.
+
+@ProviderFor(VoluntarySignOut)
+const voluntarySignOutProvider = VoluntarySignOutProvider._();
+
+/// True when the sign-out was explicitly triggered by the user.
+/// When the auth stream transitions to signed-out while this is false,
+/// [AppRouter] treats it as an involuntary logout (e.g. account disabled)
+/// and shows an explanatory message.
+final class VoluntarySignOutProvider
+    extends $NotifierProvider<VoluntarySignOut, bool> {
+  /// True when the sign-out was explicitly triggered by the user.
+  /// When the auth stream transitions to signed-out while this is false,
+  /// [AppRouter] treats it as an involuntary logout (e.g. account disabled)
+  /// and shows an explanatory message.
+  const VoluntarySignOutProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'voluntarySignOutProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$voluntarySignOutHash();
+
+  @$internal
+  @override
+  VoluntarySignOut create() => VoluntarySignOut();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$voluntarySignOutHash() => r'f9a86d27d35a5dfee0654a2f1698c9b22506aa74';
+
+/// True when the sign-out was explicitly triggered by the user.
+/// When the auth stream transitions to signed-out while this is false,
+/// [AppRouter] treats it as an involuntary logout (e.g. account disabled)
+/// and shows an explanatory message.
+
+abstract class _$VoluntarySignOut extends $Notifier<bool> {
+  bool build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<bool, bool>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<bool, bool>,
+              bool,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
 /// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
@@ -42,7 +113,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'38232a756b17c2c283821d3bd86a02512a79178c';
+String _$authControllerHash() => r'd48b342c42891e9ab64f25041339389616bad99b';
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.

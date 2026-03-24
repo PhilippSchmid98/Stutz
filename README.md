@@ -3,10 +3,10 @@
 
 ### Dein Geld. Dein Vibe. Dein Stutz.
 
-**Stutz** ist ein moderner, minimalistischer Finanz-Tracker für iOS und Android, entwickelt mit Flutter.
+**Stutz** ist ein moderner, minimalistischer Finanz-Tracker für Android, entwickelt mit Flutter.
 Der Fokus der App liegt nicht auf reiner Buchhaltung, sondern auf **finanzieller Klarheit**: Wie viel Geld ist *wirklich* noch verfügbar, nachdem alle Fixkosten gedeckt sind?
 
-Stutz ersetzt komplexe Excel-Tabellen durch ein intuitives "Karten-Design" und bietet tiefgehende Einblicke in monatliche Budgets durch eine smarte Drill-Down-Analyse.
+Stutz ersetzt komplexe Excel-Tabellen durch ein intuitives "Karten-Design" und bietet tiefgehende Einblicke in monatliche und jährliche Budgets durch eine smarte Drill-Down-Analyse.
 
 ---
 
@@ -29,27 +29,52 @@ Lade dir hier die aktuellste Android-Version direkt herunter:
 
 ## ✨ Features
 
+### 🔐 Authentifizierung
+Sichere Anmeldung für deine Finanzdaten.
+* **Google Sign-In:** Melde dich mit deinem Google-Konto an – Daten werden sicher in der Cloud gespeichert.
+* **Gast-Modus:** Starte ohne Account mit anonymer Firebase-Authentifizierung.
+* **Onboarding:** Willkommens-Screen mit 3-seitiger Tutorial-Tour (Fix vs. Variabel, Intervalle, Cloud-Sync).
+
 ### 📊 Das Dashboard
 Der zentrale Hub. Auf einen Blick siehst du nicht nur, was du ausgegeben hast, sondern **was noch übrig ist**.
-* **Visualisierung:** Circular Indicators zeigen sofort, ob du im grünen Bereich bist.
-* **Historie:** Vergleiche deine Performance mit den letzten 6 Monaten durch interaktive Balkendiagramme.
-* **Smart Calculation:** Automatische Trennung von Fixkosten und variablem Budget.
+* **Visualisierung:** Circular Indicators zeigen sofort, ob du im grünen Bereich bist (Grün < 85%, Orange 85–100%, Rot > 100%).
+* **Historie:** Vergleiche deine Performance mit den vergangenen Monaten durch lineare Fortschrittsbalken.
+* **Smart Calculation:** Automatische Trennung von Fixkosten und variablem Budget – nur variable Ausgaben werden getrackt.
+* **Schnellzugriff:** FAB für sofortige Transaktionserfassung, Jahresansicht über AppBar-Icon.
 
 ### 💰 Budget Planung
 Weg vom Tabellen-Chaos, hin zu strukturierten Karten.
-* **Hierarchische Kategorien:** Erstelle Hauptkategorien und verschachtelte Untergruppen (beliebig tief).
+* **Hierarchische Kategorien:** Erstelle Hauptkategorien und verschachtelte Untergruppen (beliebig tief) als Baumstruktur.
 * **Fix vs. Variabel:** Markiere Ausgaben als Fixkosten (Miete, Netflix) oder Variabel (Essen, Ausgang).
 * **Intervalle:** Die App rechnet automatisch jährliche Zahlungen (z.B. KFZ-Steuer) auf den monatlichen Durchschnitt herunter.
+* **Einnahmen-Verwaltung:** Pflege Haupt- und Nebeneinnahmen mit monatlichen/jährlichen Intervallen.
+* **Budget-Übersicht:** Live-Anzeige von Überschuss/Defizit, getrennt nach Fix- und Variabel-Kosten.
+* **Sortierbare Kategorien:** Ändere die Reihenfolge deiner Ausgabenkategorien per Drag & Sort.
 
 ### ⚡ Transaktionen
-* **Schnellerfassung:** Füge neue Ausgaben in Sekunden hinzu – mit Datum, Kategorie und Notiz.
-* **Endlos-Liste:** Scrolle durch deine Historie, sauber gruppiert nach Tagen.
-* **Monats-Sprung:** Navigiere blitzschnell zu vergangenen Monaten über die horizontale Leiste.
+* **Schnellerfassung:** Füge neue Ausgaben in Sekunden hinzu – mit Betrag (CHF), Datum/Uhrzeit, Kategorie (Autocomplete) und optionaler Notiz.
+* **Endlos-Liste:** Scrolle durch deine gesamte Historie, sauber gruppiert nach Tagen mit Tagessummen.
+* **Monats-Sprung:** Navigiere blitzschnell zu vergangenen Monaten über die horizontale Monats-Leiste mit Smart-Scroll-Erkennung.
+* **Bearbeiten & Löschen:** Tippe auf eine Transaktion zum Bearbeiten oder Löschen.
 
-### 🔍 Detail-Analyse (Drill-Down)
-Klicke auf einen Monat, um zu sehen, wo das Geld wirklich hinfließt.
+### 🔍 Monatliche Detail-Analyse (Drill-Down)
+Klicke auf einen Monat im Dashboard, um zu sehen, wo das Geld wirklich hinfließt.
 * **Rekursiver Baum:** Die App aggregiert Ausgaben von den kleinsten Unterkategorien hoch zu den Hauptgruppen.
-* **Ist-Soll-Vergleich:** Balkendiagramme zeigen pro Kategorie, wie viel vom geplanten Budget verbraucht wurde.
+* **Ist-Soll-Vergleich:** Fortschrittsbalken zeigen pro Kategorie, wie viel vom geplanten Budget verbraucht wurde.
+* **Aufklappbare Gruppen:** Erweitere Kategorien, um Unterkategorien mit eigenen Fortschrittsanzeigen zu sehen.
+* **Transaktions-Drill-Down:** Tippe auf eine Kategorie, um alle zugehörigen Transaktionen des Monats zu sehen.
+
+### 📅 Jahresansicht
+Jahresübergreifende Analyse deiner variablen Ausgaben.
+* **Jahresnavigation:** Wechsle per Pfeil zwischen Jahren.
+* **Offset-Berechnung:** Berücksichtigt den Zeitpunkt, ab dem du die App nutzt (Mid-Year-Adoption).
+* **Gestapelte Fortschrittsbalken:** Zeigen Offset (blau) + tatsächliche Ausgaben (teal) an.
+* **Jahresfortschritt:** Wie viel % des Jahres bereits vergangen sind.
+
+### ☁️ Cloud & Offline
+* **Firebase Cloud Firestore:** Echtzeit-Synchronisation aller Daten.
+* **Offline-Erkennung:** Cloud-Status-Icon zeigt Verbindungsstatus in allen Screens.
+* **Reactive Streams:** Alle Daten werden über Firestore-Streams geladen – Änderungen werden sofort reflektiert.
 
 ---
 
@@ -67,33 +92,35 @@ Klicke auf einen Monat, um zu sehen, wo das Geld wirklich hinfließt.
 
 Die App wurde mit einem Fokus auf **Skalierbarkeit** und **Clean Architecture** entwickelt.
 
-* **Framework:** [Flutter](https://flutter.dev/) (Dart)
-* **State Management:** [Riverpod 2.x](https://riverpod.dev/) (mit Code Generation `@riverpod`)
-* **UI Komponenten:**
-    * `percent_indicator`: Für die visuellen Budget-Fortschritte.
-    * `scrollable_positioned_list`: Für die präzise Navigation in der Transaktionshistorie.
-    * `intl`: Für Datumsformatierung und Lokalisierung (De-CH).
-* **Architektur:** Feature-First / Repository Pattern. Trennung von `Domain` (Models), `Data` (Repositories) und `Presentation` (Screens & Providers).
+| Kategorie | Technologie | Details |
+|---|---|---|
+| **Framework** | [Flutter](https://flutter.dev/) | Dart, Material 3 |
+| **State Management** | [Riverpod 3.x](https://riverpod.dev/) | `@riverpod` Code Generation, `Notifier`, `AsyncNotifier` |
+| **Backend** | [Firebase](https://firebase.google.com/) | Cloud Firestore (Echtzeit-Streams), Firebase Auth (Google + Anonym) |
+| **Code Generation** | Freezed 3.x, Riverpod Generator 3.x | Immutable Models, Provider-Generation |
+| **UI Packages** | `percent_indicator`, `scrollable_positioned_list`, `intl` | Budget-Kreise, Transaktions-Scroll, Lokalisierung (de-CH) |
+| **Architektur** | Clean Architecture / Repository Pattern | Domain → Data → Presentation Layer-Trennung |
 
 ### Highlight: Rekursive Budget-Berechnung 🧮
 Eine der technischen Herausforderungen war die Berechnung der Budgets über verschachtelte Gruppen hinweg.
-Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
+Die Domain-Services (`BudgetCalculator`, `YearlyCalculator`) nutzen rekursive Algorithmen, um:
 1.  Den Kategorien-Baum zu durchlaufen.
 2.  Ausgaben (Transactions) den korrekten Blättern zuzuordnen.
 3.  Die Summen (Actual vs. Planned) von unten nach oben ("Bubbling up") zu den Hauptkategorien zu aggregieren.
-4.  Dabei intelligent zwischen "Fix" und "Variabel" zu filtern, je nach gewählter Ansicht.
+4.  Dabei intelligent zwischen "Fix" und "Variabel" zu filtern – nur variable Kosten werden analysiert.
+5.  Für die Jahresansicht einen Offset-Faktor für Mid-Year-Adoption zu berechnen.
 
 ---
 
 ## 🚀 Getting Started
 
 **Voraussetzungen:**
-* Flutter SDK installiert.
+* Flutter SDK (^3.10.7) installiert.
 * Ein Google/Firebase Account.
 
 1.  **Repository klonen:**
     ```bash
-    git clone [https://github.com/PhilippSchmid98/stutz.git](https://github.com/PhilippSchmid98/stutz.git)
+    git clone https://github.com/PhilippSchmid98/stutz.git
     cd stutz
     ```
 
@@ -108,7 +135,7 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
 
     **1. Firebase Setup:**
     1.  Erstelle ein neues Projekt in der [Firebase Console](https://console.firebase.google.com/).
-    2.  Füge eine **Android-App** hinzu (Package Name: `ch.stutz.app` – oder passe ihn in `android/app/build.gradle` an).
+    2.  Füge eine **Android-App** hinzu (Package Name: `ch.stutz.app`).
     3.  Aktiviere im Firebase Dashboard:
         * **Authentication:** Aktiviere "Google" und "Anonym".
         * **Firestore Database:** Erstelle eine Datenbank (starte im Test-Modus).
@@ -117,23 +144,21 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
     Damit der Login im Debug-Modus funktioniert, musst du deinen lokalen Fingerabdruck registrieren **bevor** du die Config herunterlädst.
     * **Mac/Linux:**
       ```bash
-      cd android
-      ./gradlew signingReport
+      cd android && ./gradlew signingReport
       ```
     * **Windows:**
       ```bash
-      cd android
-      gradlew signingReport
+      cd android && gradlew signingReport
       ```
-    Suche in der Ausgabe nach dem Eintrag **Variant: debug**, kopiere den **SHA1**-Schlüssel und füge ihn in den [Firebase Projekteinstellungen](https://console.firebase.google.com/project/_/settings/general/) unter "Apps" -> "Fingerabdruck hinzufügen" ein.
+    Suche in der Ausgabe nach dem Eintrag **Variant: debug**, kopiere den **SHA1**-Schlüssel und füge ihn in den [Firebase Projekteinstellungen](https://console.firebase.google.com/project/_/settings/general/) unter "Apps" → "Fingerabdruck hinzufügen" ein.
 
     **3. Config Datei integrieren:**
     1.  Lade **jetzt** (nachdem der SHA-1 drin ist) die `google-services.json` herunter.
-    2.  Verschiebe die Datei in diesen Ordner: `android/app/google-services.json`.
+    2.  Verschiebe die Datei nach: `android/app/google-services.json`.
 
     **4. (Optional) Release Signing:**
     Für `flutter run` (Debug Mode) ist dies nicht nötig. Wenn du jedoch eine **Release APK** bauen möchtest (`flutter build apk --release`), benötigst du einen Keystore.
-    1.  Erstelle eine Datei `android/key.properties` (siehe `android/key.properties.example` falls vorhanden, sonst Struktur wie folgt):
+    1.  Erstelle eine Datei `android/key.properties`:
         ```properties
         storePassword=DEIN_PASSWORT
         keyPassword=DEIN_PASSWORT
@@ -142,8 +167,7 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
         ```
     2.  Lege deinen Keystore unter `android/app/upload-keystore.jks` ab.
 
-4.  **Code Generierung (Riverpod & Freezed/JsonSerializable):**
-    Da wir Riverpod Generator nutzen, muss der Build Runner ausgeführt werden, um die Provider zu generieren:
+4.  **Code Generierung (Riverpod & Freezed):**
     ```bash
     dart run build_runner build --delete-conflicting-outputs
     ```
@@ -158,16 +182,29 @@ Der `monthlyDetailTreeProvider` nutzt einen rekursiven Algorithmus, um:
 ## 📂 Projektstruktur
 ```text
 lib/
-├── data/                  # Implementierung der Repositories, Datenbank
-├── domain/                # Models (Transaction, ExpenseNode, Income)
+├── core/
+│   ├── constants/           # Firebase Config (OAuth Client IDs)
+│   └── enums/               # PaymentInterval, ExpenseType, IncomeGroup
+├── data/
+│   ├── auth_service.dart    # Firebase Auth + Google Sign-In
+│   ├── mappers/             # Firestore ↔ Domain Model Mapper
+│   └── repositories/        # Firestore Repository Implementierungen
+├── domain/
+│   ├── logic_extensions.dart # Extensions auf IncomeSource & ExpenseNode
+│   ├── models/              # Freezed Domain Models
+│   ├── repositories/        # Abstrakte Repository Interfaces
+│   └── services/            # Stateless Business Logic (Calculator, Grouper, TreeBuilder)
 ├── presentation/
-│   ├── providers/         # Riverpod Provider (Logik & State)
-│   ├── screens/
-│   │   ├── budget/        # Planungs-Screen & Dialoge
-│   │   ├── dashboard/     # Dashboard & Widgets
-│   │   ├── transactions/  # Liste & Erfassungs-Screen
-│   │   └── detail/        # Monatliche Detailansicht
-│   └── widgets/           # Wiederverwendbare UI-Komponenten
+│   ├── app_router.dart      # Auth-basiertes Routing (Splash → Welcome → Login → Home)
+│   ├── providers/           # Riverpod 3 Provider (Generated, Streams, AsyncNotifiers)
+│   └── screens/
+│       ├── budget/          # Budget-Planung (Einnahmen, Ausgaben, Dialoge)
+│       ├── dashboard/       # Dashboard mit Monatsübersicht
+│       ├── onboarding/      # Welcome, Tutorial, Login Screens
+│       ├── shared/          # Wiederverwendbare Widgets (SectionCard, StyledTextField, etc.)
+│       ├── transactions/    # Transaktionsliste & Erfassungs-Dialog
+│       └── widgets/         # Cloud-Status-Icon
+├── firebase_options.dart
 └── main.dart
 ```
 
@@ -175,10 +212,11 @@ lib/
 
 ## 🔮 Roadmap
 
-* [ ] Daten-Export (CSV/PDF)
-* [ ] Synchronisierung via Cloud
 * [ ] Dark Mode Support
+* [ ] Daten-Export (CSV/PDF)
 * [ ] Unterstützung für wiederkehrende Transaktionen (Recurring)
+* [ ] Showcaseview-Integration für In-App-Tutorials
+* [ ] iOS Release
 
 ---
 
@@ -187,7 +225,13 @@ Erstellt mit ❤️ und Flutter.
 <details>
 <summary>🤖 CI/CD Pipeline Setup (für Forks)</summary>
 
-Diese App nutzt GitHub Actions für automatisierte Releases. Wenn du das Repository forkst, musst du folgende **Repository Secrets** in GitHub hinterlegen, damit die Pipeline funktioniert:
+Diese App nutzt **GitHub Actions** für automatisierte Releases. Die Pipeline (`deploy_android.yml`) führt folgende Schritte aus:
+
+1. **Unit Tests** auf jedem Push/PR
+2. **APK Build** (parallel) → GitHub Release
+3. **AAB Build** (parallel) → Google Play Store Upload (Internal Track)
+
+Wenn du das Repository forkst, musst du folgende **Repository Secrets** in GitHub hinterlegen:
 
 * `ANDROID_KEYSTORE_BASE64`: Dein Base64-encodierter Keystore (.jks).
 * `ANDROID_KEYSTORE_PASSWORD`: Passwort des Stores.
@@ -195,5 +239,7 @@ Diese App nutzt GitHub Actions für automatisierte Releases. Wenn du das Reposit
 * `ANDROID_KEY_ALIAS`: Alias Name.
 * `ANDROID_GOOGLE_SERVICES_JSON`: Base64-encodierte google-services.json.
 * `ANDROID_SERVICE_ACCOUNT_JSON`: JSON Key für Google Play Console Upload.
+
+Releases werden automatisch bei Tags im Format `v*` erstellt.
 
 </details>

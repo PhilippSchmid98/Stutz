@@ -10,6 +10,21 @@ class LoginScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isLoading = useState(false);
 
+    // Show a SnackBar whenever a sign-in attempt fails.
+    ref.listen(authControllerProvider, (_, next) {
+      next.whenOrNull(
+        error: (_, __) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Anmeldung fehlgeschlagen. Bitte versuche es erneut.',
+              ),
+            ),
+          );
+        },
+      );
+    });
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

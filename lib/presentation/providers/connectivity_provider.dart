@@ -3,13 +3,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'connectivity_provider.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 Stream<List<ConnectivityResult>> connectivityStatus(Ref ref) {
   // Returns a stream that triggers when WiFi/Mobile connectivity changes
   return Connectivity().onConnectivityChanged;
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 bool isOffline(Ref ref) {
   final statusAsync = ref.watch(connectivityStatusProvider);
 

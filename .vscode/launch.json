@@ -9,6 +9,14 @@
             "flutterMode": "debug"
         },
         {
+            "name": "stutz (Srccpy debug)",
+            "request": "launch",
+            "type": "dart",
+            "preLaunchTask": "start-scrcpy",
+            "program": "lib/main.dart",
+            "flutterMode": "debug"
+        },
+        {
             "name": "stutz (profile)",
             "request": "launch",
             "type": "dart",

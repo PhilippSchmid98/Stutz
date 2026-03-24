@@ -9,9 +9,8 @@ part 'auth_service.g.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  // Access GoogleSignIn instance via Singleton
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  bool _googleInitialized = false;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
@@ -22,15 +21,19 @@ class AuthService {
       return result.user;
     } catch (e) {
       dev.log('Anonymous login failed', error: e, name: 'AuthService');
-      return null;
+      rethrow;
     }
   }
 
   Future<User?> signInWithGoogle() async {
-    // Initialize GoogleSignIn with Firebase server client ID
-    await _googleSignIn.initialize(
-      serverClientId: FirebaseConfig.googleSignInWebClientId,
-    );
+    // Initialize GoogleSignIn lazily — re-calling initialize() on the singleton
+    // can reset state mid-flight and cause spurious cancellation errors.
+    if (!_googleInitialized) {
+      await _googleSignIn.initialize(
+        serverClientId: FirebaseConfig.googleSignInWebClientId,
+      );
+      _googleInitialized = true;
+    }
 
     try {
       final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
@@ -48,8 +51,14 @@ class AuthService {
       final userCredential = await _auth.signInWithCredential(credential);
       return userCredential.user;
     } catch (e) {
+      // User deliberately canceled the picker — suppress the error silently.
+      if (e is GoogleSignInException &&
+          e.code == GoogleSignInExceptionCode.canceled) {
+        dev.log('Google sign-in canceled by user', name: 'AuthService');
+        return null;
+      }
       dev.log('Google login failed', error: e, name: 'AuthService');
-      return null;
+      rethrow;
     }
   }
 
@@ -59,7 +68,7 @@ class AuthService {
   }
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 AuthService authService(Ref ref) {
   return AuthService();
 }

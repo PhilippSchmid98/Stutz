@@ -21,7 +21,7 @@ class ExpenseItemRow extends StatelessWidget {
             AddExpenseNodeDialog(parentId: node.parentId, existingNode: node),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        padding: EdgeInsets.only(left: 8.0 * depth),
         child: Row(
           children: [
             Icon(
@@ -84,15 +84,21 @@ class ExpenseItemRow extends StatelessWidget {
     );
 
     if (hasChildren) {
-      return Column(
-        children: [
-          rowContent,
-          ...node.children.map(
-            (child) => ExpenseItemRow(node: child, depth: depth + 1),
-          ),
-        ],
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: depth == 0 ? 8 : 0),
+        child: Column(
+          children: [
+            rowContent,
+            ...node.children.map(
+              (child) => ExpenseItemRow(node: child, depth: depth + 1),
+            ),
+          ],
+        ),
       );
     }
-    return rowContent;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: rowContent,
+    );
   }
 }

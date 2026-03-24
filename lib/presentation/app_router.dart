@@ -17,6 +17,27 @@ class AppRouter extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authStateProvider);
 
+    // Detect involuntary logouts (e.g. account disabled in Firebase Console).
+    // If the transition from signed-in → signed-out was NOT voluntary, show a
+    // message so the user knows what happened before hitting the login screen.
+    ref.listen(authStateProvider, (previous, next) {
+      final wasSignedIn = previous?.asData?.value != null;
+      final isSignedOut = next is AsyncData && next.value == null;
+
+      if (wasSignedIn && isSignedOut) {
+        final isVoluntary = ref.read(voluntarySignOutProvider);
+        if (!isVoluntary) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Es gab ein Problem. Bitte melde dich erneut an.'),
+            ),
+          );
+        }
+        // Always reset the flag after the transition is handled.
+        ref.read(voluntarySignOutProvider.notifier).setVoluntary(false);
+      }
+    });
+
     return authAsync.when(
       // Still initialising the Firebase auth stream — show nothing yet.
       loading: () => const _SplashScreen(),

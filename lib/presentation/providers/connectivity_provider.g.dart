@@ -28,7 +28,7 @@ final class ConnectivityStatusProvider
         argument: null,
         retry: null,
         name: r'connectivityStatusProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -49,7 +49,7 @@ final class ConnectivityStatusProvider
 }
 
 String _$connectivityStatusHash() =>
-    r'90eaa0e3dcd34395c28956279426a9a43e53e8d1';
+    r'6ae0edce3125ccff015d1ee79ef24c595cc92e7a';
 
 @ProviderFor(isOffline)
 const isOfflineProvider = IsOfflineProvider._();
@@ -62,7 +62,7 @@ final class IsOfflineProvider extends $FunctionalProvider<bool, bool, bool>
         argument: null,
         retry: null,
         name: r'isOfflineProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -89,4 +89,4 @@ final class IsOfflineProvider extends $FunctionalProvider<bool, bool, bool>
   }
 }
 
-String _$isOfflineHash() => r'9b6ee71b25d1940d4623c3945fe77553d0fdccad';
+String _$isOfflineHash() => r'00c3f7865dc9b007b4e3bcc965c869491e3b2726';
