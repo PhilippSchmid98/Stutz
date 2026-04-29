@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stutz/presentation/screens/budget/budget_planning_screen.dart';
+import 'package:stutz/presentation/screens/budget/new/budget_planning_screen_new.dart';
 import 'package:stutz/presentation/screens/dashboard/dashboard_screen.dart';
 import 'package:stutz/presentation/screens/transactions/transaction_screen.dart';
 
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const screens = [
       DashboardScreen(),
       BudgetPlanningScreen(),
+      BudgetPlanningScreenNew(),
       TransactionScreen(),
     ];
 
@@ -46,6 +48,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),
             label: 'Planung',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Planung Neu',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
