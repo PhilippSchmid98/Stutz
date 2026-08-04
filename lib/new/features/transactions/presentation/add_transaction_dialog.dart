@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:stutz/new/features/budget/application/selectable_categories_provider.dart';
 import 'package:uuid/uuid.dart';
+
+// TODO: Diese Imports musst du wahrscheinlich an deine neuen Feature-Pfade anpassen!
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/providers/budget_providers.dart';
+import 'package:stutz/presentation/providers/budget_providers.dart'; // Hier liegt jetzt dein selectableCategoriesProvider (bzw im application-layer)
 import 'package:stutz/core/enums/enums.dart';
-import 'package:stutz/presentation/providers/transaction_providers.dart';
+import 'package:stutz/presentation/providers/transaction_providers.dart'; // Hier liegt dein transactionMutationsProvider (bzw im application-layer)
 
 class AddTransactionDialog extends HookConsumerWidget {
   final TransactionWithCategory? existingItem;
@@ -25,13 +28,15 @@ class AddTransactionDialog extends HookConsumerWidget {
     final selectedDate = useState<DateTime>(
       existingItem?.transaction.dateTime ?? DateTime.now(),
     );
+
     // Store ID and name separately for autocomplete logic
     final selectedNodeId = useState<String?>(
       existingItem?.transaction.expenseNodeId,
     );
     final selectedNodeName = useState<String>(existingItem?.categoryName ?? '');
 
-    final expenseTreeAsync = ref.watch(expenseTreeProvider);
+    // 1. ÄNDERUNG: Wir lauschen nur noch auf den neuen, sauberen Provider
+    final selectableCategoriesAsync = ref.watch(selectableCategoriesProvider);
     final isEdit = existingItem != null;
 
     // --- HELPERS ---
@@ -134,7 +139,6 @@ class AddTransactionDialog extends HookConsumerWidget {
         } else {
           await mutations.addTransaction(txn);
         }
-        // Stream auto-refreshes — no ref.invalidate needed.
         if (context.mounted) Navigator.pop(context);
       }
     }
@@ -165,12 +169,9 @@ class AddTransactionDialog extends HookConsumerWidget {
         await ref
             .read(transactionMutationsProvider.notifier)
             .deleteTransaction(existingItem!.transaction.id);
-        // Stream auto-refreshes — no ref.invalidate needed.
         if (context.mounted) Navigator.pop(context);
       }
     }
-
-    // --- BUILD ---
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -248,12 +249,12 @@ class AddTransactionDialog extends HookConsumerWidget {
                       const SizedBox(height: 24),
 
                       // 2. Category (autocomplete / search)
-                      expenseTreeAsync.when(
+                      // 2. ÄNDERUNG: Wir rufen hier selectableCategoriesAsync auf!
+                      selectableCategoriesAsync.when(
                         loading: () => const LinearProgressIndicator(),
                         error: (_, __) => const SizedBox(),
-                        data: (roots) {
-                          final allNodes = _flattenTreeVariableOnly(roots);
-
+                        // 3. ÄNDERUNG: Die Daten sind bereits flach. _flattenTreeVariableOnly entfällt komplett!
+                        data: (allNodes) {
                           return LayoutBuilder(
                             builder: (context, constraints) {
                               return RawAutocomplete<ExpenseNode>(
@@ -475,14 +476,4 @@ class AddTransactionDialog extends HookConsumerWidget {
     );
   }
 }
-
-List<ExpenseNode> _flattenTreeVariableOnly(List<ExpenseNode> nodes) {
-  final List<ExpenseNode> flat = [];
-  for (var node in nodes) {
-    if (node.type == ExpenseType.variable) flat.add(node);
-    if (node.children.isNotEmpty) {
-      flat.addAll(_flattenTreeVariableOnly(node.children));
-    }
-  }
-  return flat;
-}
+// 4. ÄNDERUNG: Die _flattenTreeVariableOnly Methode wurde von hier ganz unten gelöscht!

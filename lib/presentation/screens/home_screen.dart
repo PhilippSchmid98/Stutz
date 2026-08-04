@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:stutz/presentation/screens/budget/budget_planning_screen.dart';
 import 'package:stutz/presentation/screens/budget/new/budget_planning_screen_new.dart';
 import 'package:stutz/presentation/screens/dashboard/dashboard_screen.dart';
-import 'package:stutz/presentation/screens/transactions/transaction_screen.dart';
+import 'package:stutz/presentation/screens/empty_screen.dart';
+import 'package:stutz/new/features/transactions/presentation/transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,10 +20,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     // Screens we switch between
     const screens = [
-      DashboardScreen(),
-      BudgetPlanningScreen(),
-      BudgetPlanningScreenNew(),
+      //DashboardScreen(),
+      //BudgetPlanningScreen(),
+      //BudgetPlanningScreenNew(),
       TransactionScreen(),
+      EmptyScreen(),
     ];
 
     return Scaffold(
@@ -39,25 +41,30 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Planung',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Planung Neu',
-          ),
+          // NavigationDestination(
+          //   icon: Icon(Icons.dashboard_outlined),
+          //   selectedIcon: Icon(Icons.dashboard),
+          //   label: 'Dashboard',
+          // ),
+          // NavigationDestination(
+          //   icon: Icon(Icons.account_balance_wallet_outlined),
+          //   selectedIcon: Icon(Icons.account_balance_wallet),
+          //   label: 'Planung',
+          // ),
+          // NavigationDestination(
+          //   icon: Icon(Icons.account_balance_wallet_outlined),
+          //   selectedIcon: Icon(Icons.account_balance_wallet),
+          //   label: 'Planung Neu',
+          // ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
             label: 'Ausgaben',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.error_outline),
+            selectedIcon: Icon(Icons.error),
+            label: 'Empty',
           ),
         ],
       ),

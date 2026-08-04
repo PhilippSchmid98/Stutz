@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/screens/transactions/widgets/transaction_item.dart';
+import 'package:stutz/new/features/transactions/presentation/widgets/transaction_item.dart';
 
 class DailyTransactionGroup extends StatelessWidget {
   final DailyTransactions group;

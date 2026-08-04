@@ -8,10 +8,10 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/data/repositories/firestore_expense_repository.dart';
 import 'package:stutz/presentation/providers/auth_provider.dart';
-import 'package:stutz/data/repositories/firestore_income_repository.dart';
+//import 'package:stutz/data/repositories/firestore_income_repository.dart';
 import 'package:stutz/data/repositories/firestore_transaction_repository.dart';
 import 'package:stutz/domain/repositories/expense_repository.dart';
-import 'package:stutz/domain/repositories/income_repository.dart';
+//import 'package:stutz/domain/repositories/income_repository.dart';
 import 'package:stutz/domain/repositories/transaction_repository.dart';
 
 part 'repository_providers.g.dart';
@@ -35,9 +35,9 @@ ExpenseNodeRepository expenseNodeRepository(Ref ref) {
   return FirestoreExpenseNodeRepository(uid);
 }
 
-@riverpod
-IncomeSourceRepository incomeSourceRepository(Ref ref) {
-  final uid = ref.watch(currentUserIdProvider);
-  if (uid == null) throw Exception('Not logged in (IncomeRepo)');
-  return FirestoreIncomeRepository(uid);
-}
+// @riverpod
+// IncomeSourceRepository incomeSourceRepository(Ref ref) {
+//   final uid = ref.watch(currentUserIdProvider);
+//   if (uid == null) throw Exception('Not logged in (IncomeRepo)');
+//   return FirestoreIncomeRepository(uid);
+// }

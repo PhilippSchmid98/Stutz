@@ -36,6 +36,7 @@ dependencies:
   animations: ^2.1.1
   flutter_native_splash: ^2.4.7
   google_fonts: ^8.0.2
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
@@ -46,6 +47,8 @@ dev_dependencies:
   drift_dev: ^2.30.1
   riverpod_generator: ^3.0.3
   flutter_launcher_icons: ^0.14.4
+  json_serializable: ^6.8.0
+
 
 flutter_launcher_icons:
   android: "launcher_icon"

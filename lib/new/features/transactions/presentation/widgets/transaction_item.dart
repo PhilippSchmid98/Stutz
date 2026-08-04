@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/domain/models/models.dart';
-import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
+import 'package:stutz/new/features/transactions/presentation/add_transaction_dialog.dart';
 
 class TransactionItem extends ConsumerWidget {
   final TransactionWithCategory item;

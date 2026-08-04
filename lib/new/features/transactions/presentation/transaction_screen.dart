@@ -3,10 +3,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:stutz/presentation/providers/transaction_providers.dart';
-import 'package:stutz/presentation/screens/transactions/add_transaction_dialog.dart';
-import 'package:stutz/presentation/screens/transactions/widgets/daily_transaction_group.dart';
-import 'package:stutz/presentation/screens/transactions/widgets/month_selector.dart';
-import 'package:stutz/presentation/screens/widgets/cloud_status_icon.dart';
+import 'package:stutz/new/features/transactions/presentation/add_transaction_dialog.dart';
+import 'package:stutz/new/features/transactions/presentation/widgets/daily_transaction_group.dart';
+import 'package:stutz/new/features/transactions/presentation/widgets/month_selector.dart';
+import 'package:stutz/presentation/screens/shared/cloud_status_icon.dart';
 
 class TransactionScreen extends HookConsumerWidget {
   const TransactionScreen({super.key});
