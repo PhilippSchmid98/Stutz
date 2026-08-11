@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stutz/app_theme.dart';
+import 'package:stutz/core/theme/app_theme.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:stutz/firebase_options.dart';
-import 'package:stutz/presentation/app_router.dart';
+import 'package:stutz/app/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
