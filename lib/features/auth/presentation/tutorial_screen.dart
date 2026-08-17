@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:stutz/features/auth/presentation/login_screen.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stutz/features/auth/application/auth_providers.dart';
 
-class TutorialScreen extends StatefulWidget {
+class TutorialScreen extends ConsumerStatefulWidget {
   const TutorialScreen({super.key});
 
   @override
-  State<TutorialScreen> createState() => _TutorialScreenState();
+  ConsumerState<TutorialScreen> createState() => _TutorialScreenState();
 }
 
-class _TutorialScreenState extends State<TutorialScreen> {
+class _TutorialScreenState extends ConsumerState<TutorialScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  bool _isCompleting = false;
 
   final List<Map<String, dynamic>> _pages = [
     {
@@ -34,6 +36,26 @@ class _TutorialScreenState extends State<TutorialScreen> {
   ];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _completeOnboarding() async {
+    if (_isCompleting) return;
+
+    setState(() => _isCompleting = true);
+    try {
+      await ref.read(onboardingControllerProvider.notifier).complete();
+      if (mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isCompleting = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -42,13 +64,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
         elevation: 0,
         actions: [
           TextButton(
-            onPressed: () {
-              // Skip -> Navigate directly to login
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
-            },
+            onPressed: _isCompleting ? null : _completeOnboarding,
             child: const Text(
               "Überspringen",
               style: TextStyle(color: Colors.grey),
@@ -105,13 +121,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       ),
                       onPressed: () {
                         if (_currentPage == _pages.length - 1) {
-                          // End -> Login Screen
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
+                          _completeOnboarding();
                         } else {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),

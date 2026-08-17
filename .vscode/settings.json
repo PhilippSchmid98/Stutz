@@ -13,5 +13,9 @@
         "editor.suggestSelection": "first",
         "editor.tabCompletion": "onlySnippets",
         "editor.wordBasedSuggestions": "off"
+    },
+    "chat.tools.terminal.autoApprove": {
+        "flutter": true,
+        "dart": true
     }
 }

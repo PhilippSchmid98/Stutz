@@ -9,87 +9,64 @@ part of 'transaction_service.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
-@ProviderFor(allTransactions)
-const allTransactionsProvider = AllTransactionsProvider._();
+@ProviderFor(PaginatedTransactionList)
+const paginatedTransactionListProvider = PaginatedTransactionListProvider._();
 
-final class AllTransactionsProvider
+final class PaginatedTransactionListProvider
     extends
-        $FunctionalProvider<
-          AsyncValue<List<AppTransaction>>,
-          List<AppTransaction>,
-          Stream<List<AppTransaction>>
-        >
-    with
-        $FutureModifier<List<AppTransaction>>,
-        $StreamProvider<List<AppTransaction>> {
-  const AllTransactionsProvider._()
+        $AsyncNotifierProvider<
+          PaginatedTransactionList,
+          PaginatedTransactionsState
+        > {
+  const PaginatedTransactionListProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'allTransactionsProvider',
+        name: r'paginatedTransactionListProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$allTransactionsHash();
+  String debugGetCreateSourceHash() => _$paginatedTransactionListHash();
 
   @$internal
   @override
-  $StreamProviderElement<List<AppTransaction>> $createElement(
-    $ProviderPointer pointer,
-  ) => $StreamProviderElement(pointer);
-
-  @override
-  Stream<List<AppTransaction>> create(Ref ref) {
-    return allTransactions(ref);
-  }
+  PaginatedTransactionList create() => PaginatedTransactionList();
 }
 
-String _$allTransactionsHash() => r'ec84642372f6cacb5f6df77387701e84918de184';
+String _$paginatedTransactionListHash() =>
+    r'5ae001d684fcf73dcd3b3168d03b302c99bda5b9';
 
-@ProviderFor(transactionList)
-const transactionListProvider = TransactionListProvider._();
-
-final class TransactionListProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<DailyTransactions>>,
-          List<DailyTransactions>,
-          FutureOr<List<DailyTransactions>>
-        >
-    with
-        $FutureModifier<List<DailyTransactions>>,
-        $FutureProvider<List<DailyTransactions>> {
-  const TransactionListProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'transactionListProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
+abstract class _$PaginatedTransactionList
+    extends $AsyncNotifier<PaginatedTransactionsState> {
+  FutureOr<PaginatedTransactionsState> build();
+  @$mustCallSuper
   @override
-  String debugGetCreateSourceHash() => _$transactionListHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<DailyTransactions>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<DailyTransactions>> create(Ref ref) {
-    return transactionList(ref);
+  void runBuild() {
+    final created = build();
+    final ref =
+        this.ref
+            as $Ref<
+              AsyncValue<PaginatedTransactionsState>,
+              PaginatedTransactionsState
+            >;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<
+                AsyncValue<PaginatedTransactionsState>,
+                PaginatedTransactionsState
+              >,
+              AsyncValue<PaginatedTransactionsState>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
   }
 }
-
-String _$transactionListHash() => r'528d6ab1355ce2c68ff8e14727438c5417dd9a84';
 
 @ProviderFor(TransactionMutations)
 const transactionMutationsProvider = TransactionMutationsProvider._();
@@ -116,7 +93,7 @@ final class TransactionMutationsProvider
 }
 
 String _$transactionMutationsHash() =>
-    r'fb806308cd0dc294a732148f44ffb1d3e302c667';
+    r'4e7969c1dec721a11fce0020f2f2b28752a59e59';
 
 abstract class _$TransactionMutations extends $AsyncNotifier<void> {
   FutureOr<void> build();

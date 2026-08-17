@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'transaction_service.dart'; // Importiert den Service von unten
+import '../data/transaction_repository.dart';
 
 part 'transaction_state.g.dart';
 
@@ -17,22 +17,30 @@ class CurrentVisibleMonth extends _$CurrentVisibleMonth {
 }
 
 @riverpod
-List<DateTime> availableMonths(Ref ref) {
-  final transactionsAsync = ref.watch(allTransactionsProvider);
+Future<List<DateTime>> availableMonths(Ref ref) async {
+  final repo = ref.watch(transactionRepositoryProvider);
+  final oldestTxn = await repo.getOldestTransaction();
 
-  return transactionsAsync.when(
-    data: (transactions) {
-      final uniqueMonths = <DateTime>{};
-      final now = DateTime.now();
-      uniqueMonths.add(DateTime(now.year, now.month));
+  final List<DateTime> months = [];
+  final now = DateTime.now();
+  final currentMonth = DateTime(now.year, now.month);
 
-      for (var txn in transactions) {
-        uniqueMonths.add(DateTime(txn.dateTime.year, txn.dateTime.month));
-      }
+  // Wenn keine Transaktionen existieren, nur den aktuellen Monat anzeigen
+  if (oldestTxn == null) {
+    return [currentMonth];
+  }
 
-      return uniqueMonths.toList()..sort((a, b) => a.compareTo(b));
-    },
-    loading: () => [DateTime(DateTime.now().year, DateTime.now().month)],
-    error: (_, __) => [DateTime(DateTime.now().year, DateTime.now().month)],
-  );
+  var runner = DateTime(oldestTxn.dateTime.year, oldestTxn.dateTime.month);
+  final end = DateTime(
+    now.year,
+    now.month + 1,
+  ); // Bis zum nächsten Monat laufen lassen
+
+  while (runner.isBefore(end)) {
+    months.add(DateTime(runner.year, runner.month));
+    runner = DateTime(runner.year, runner.month + 1);
+  }
+
+  // Aufsteigend sortieren (Januar -> Dezember)
+  return months..sort((a, b) => a.compareTo(b));
 }

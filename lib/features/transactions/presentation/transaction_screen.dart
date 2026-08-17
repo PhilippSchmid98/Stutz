@@ -20,45 +20,40 @@ class TransactionScreen extends HookConsumerWidget {
     // when _scrollToMonth drives the list programmatically.
     final isProgrammaticScroll = useRef(false);
 
-    final transactionListAsync = ref.watch(transactionListProvider);
+    // Auf den neuen paginierten Provider lauschen
+    final paginatedStateAsync = ref.watch(paginatedTransactionListProvider);
+    final availableMonthsAsync = ref.watch(availableMonthsProvider);
 
-    // Register / deregister the scroll-position listener exactly once.
     useEffect(() {
       void onListScroll() {
-        if (isProgrammaticScroll.value) return;
-
         final positions = itemPositionsListener.itemPositions.value;
         if (positions.isEmpty) return;
 
-        // 1. Filter: only items that are actually visible
-        final visibleItems = positions.where((pos) {
-          return pos.itemLeadingEdge < 1 && pos.itemTrailingEdge > 0;
-        }).toList();
+        // --- 1. LOGIK FÜR INF-SCROLL (NACHLADEN) ---
+        // Wenn das letzte Element sichtbar wird, nächste Seite laden
+        final maxIndex = positions
+            .map((e) => e.index)
+            .reduce((a, b) => a > b ? a : b);
+        final totalItems = paginatedStateAsync.value?.groupedDays.length ?? 0;
 
-        if (visibleItems.isEmpty) return;
-
-        // 2. Sort by index (so we know which item is top or bottom)
-        // index 0 = top
-        visibleItems.sort((a, b) => a.index.compareTo(b.index));
-
-        int targetIndex;
-
-        // --- Logic ---
-
-        // RULE 1: If we're at the very top of the list, choose index 0.
-        // This prevents incorrect month selection when few items are present near the top.
-        if (visibleItems.first.index == 0) {
-          targetIndex = 0;
-        } else {
-          // RULE 2: Otherwise, consider the bottom-most visible item.
-          // When a new month scrolls in at the bottom, update to that month.
-          targetIndex = visibleItems.last.index;
+        if (maxIndex >= totalItems - 2) {
+          // 2 Elemente Puffer vor dem Ende
+          ref.read(paginatedTransactionListProvider.notifier).loadNextPage();
         }
 
-        // --- STATE UPDATE ---
+        // --- 2. LOGIK FÜR MONATS-SELEKTION BEIM SCROLLEN ---
+        if (isProgrammaticScroll.value) return;
+        final visibleItems = positions
+            .where((pos) => pos.itemLeadingEdge < 1 && pos.itemTrailingEdge > 0)
+            .toList();
+        if (visibleItems.isEmpty) return;
 
-        final allGroups = ref.read(transactionListProvider).value;
+        visibleItems.sort((a, b) => a.index.compareTo(b.index));
+        int targetIndex = visibleItems.first.index == 0
+            ? 0
+            : visibleItems.last.index;
 
+        final allGroups = paginatedStateAsync.value?.groupedDays;
         if (allGroups != null && targetIndex < allGroups.length) {
           final visibleDate = allGroups[targetIndex].date;
           final currentMonth = ref.read(currentVisibleMonthProvider);
@@ -79,10 +74,10 @@ class TransactionScreen extends HookConsumerWidget {
       itemPositionsListener.itemPositions.addListener(onListScroll);
       return () =>
           itemPositionsListener.itemPositions.removeListener(onListScroll);
-    }, const []);
+    }, [paginatedStateAsync.value]);
 
     Future<void> scrollToMonth(DateTime month) async {
-      final allGroups = ref.read(transactionListProvider).value;
+      final allGroups = paginatedStateAsync.value?.groupedDays;
       if (allGroups == null) return;
 
       final index = allGroups.indexWhere(
@@ -104,11 +99,15 @@ class TransactionScreen extends HookConsumerWidget {
           if (context.mounted) isProgrammaticScroll.value = false;
         });
       } else {
+        // Falls der Monat noch nicht geladen wurde, weil er weiter hinten liegt,
+        // müsste man theoretisch tiefer nachladen. Für die UX reicht hier eine Info.
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text("Keine Transaktionen in diesem Monat"),
-              duration: Duration(seconds: 1),
+              content: Text(
+                "Bisher keine Transaktionen geladen. Scrolle nach unten!",
+              ),
+              duration: Duration(seconds: 2),
             ),
           );
         }
@@ -116,7 +115,7 @@ class TransactionScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white, // Cleaner background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Transaktionen'),
         actions: [const CloudStatusIcon()],
@@ -124,7 +123,6 @@ class TransactionScreen extends HookConsumerWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        // Hide AppBar divider for a seamless look with the month selector
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: Colors.grey.shade100, height: 1),
@@ -140,33 +138,47 @@ class TransactionScreen extends HookConsumerWidget {
         onPressed: () {
           showDialog(
             context: context,
-            // use builder to provide a dialog widget
             builder: (_) => const AddTransactionDialog(),
           );
         },
       ),
       body: Column(
         children: [
-          // New: Clean month selector
           const SizedBox(height: 8),
-          CleanMonthSelector(onMonthSelected: scrollToMonth),
+          // Month Selector wartet auf asynchrone Monate
+          availableMonthsAsync.when(
+            data: (_) => CleanMonthSelector(onMonthSelected: scrollToMonth),
+            loading: () => const SizedBox(
+              height: 50,
+              child: Center(child: LinearProgressIndicator()),
+            ),
+            error: (_, __) => const SizedBox(height: 50),
+          ),
           const SizedBox(height: 8),
           Divider(height: 1, color: Colors.grey.shade100),
 
-          // List
+          // Listeninhalt
           Expanded(
-            child: transactionListAsync.when(
+            child: paginatedStateAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Center(child: Text('Fehler: $err')),
-              data: (allGroups) {
+              data: (stateData) {
+                final allGroups = stateData.groupedDays;
                 if (allGroups.isEmpty) return const _EmptyState();
 
                 return ScrollablePositionedList.builder(
                   itemScrollController: itemScrollController,
                   itemPositionsListener: itemPositionsListener,
                   padding: const EdgeInsets.only(bottom: 80, top: 0),
-                  itemCount: allGroups.length,
+                  itemCount:
+                      allGroups.length + (stateData.hasReachedMax ? 0 : 1),
                   itemBuilder: (context, index) {
+                    if (index == allGroups.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 32.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
                     final group = allGroups[index];
                     return DailyTransactionGroup(group: group);
                   },

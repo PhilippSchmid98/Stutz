@@ -67,8 +67,13 @@ abstract class _$CurrentVisibleMonth extends $Notifier<DateTime> {
 const availableMonthsProvider = AvailableMonthsProvider._();
 
 final class AvailableMonthsProvider
-    extends $FunctionalProvider<List<DateTime>, List<DateTime>, List<DateTime>>
-    with $Provider<List<DateTime>> {
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<DateTime>>,
+          List<DateTime>,
+          FutureOr<List<DateTime>>
+        >
+    with $FutureModifier<List<DateTime>>, $FutureProvider<List<DateTime>> {
   const AvailableMonthsProvider._()
     : super(
         from: null,
@@ -85,21 +90,14 @@ final class AvailableMonthsProvider
 
   @$internal
   @override
-  $ProviderElement<List<DateTime>> $createElement($ProviderPointer pointer) =>
-      $ProviderElement(pointer);
+  $FutureProviderElement<List<DateTime>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
 
   @override
-  List<DateTime> create(Ref ref) {
+  FutureOr<List<DateTime>> create(Ref ref) {
     return availableMonths(ref);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(List<DateTime> value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<List<DateTime>>(value),
-    );
   }
 }
 
-String _$availableMonthsHash() => r'485e37c4ea93d362c05a36c6b1170f4eb0d4ea99';
+String _$availableMonthsHash() => r'f494cad622446c41d67198cd3734b819fb7641a2';

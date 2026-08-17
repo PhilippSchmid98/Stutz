@@ -113,13 +113,65 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'35dcabd0595de37d049c4a131e0f421349ed2e88';
+String _$authControllerHash() => r'73577612a7c4b4ddd8b5d6e5c018a527c54ebf66';
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
 /// keepAlive: Auth-Zustand muss über den gesamten App-Lebenszyklus bestehen.
 
 abstract class _$AuthController extends $AsyncNotifier<void> {
+  FutureOr<void> build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    build();
+    final ref = this.ref as $Ref<AsyncValue<void>, void>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<AsyncValue<void>, void>,
+              AsyncValue<void>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, null);
+  }
+}
+
+/// Persists completion of the device-local onboarding flow.
+
+@ProviderFor(OnboardingController)
+const onboardingControllerProvider = OnboardingControllerProvider._();
+
+/// Persists completion of the device-local onboarding flow.
+final class OnboardingControllerProvider
+    extends $AsyncNotifierProvider<OnboardingController, void> {
+  /// Persists completion of the device-local onboarding flow.
+  const OnboardingControllerProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'onboardingControllerProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$onboardingControllerHash();
+
+  @$internal
+  @override
+  OnboardingController create() => OnboardingController();
+}
+
+String _$onboardingControllerHash() =>
+    r'86db4ac0fa372bd4e25111199ccd894f137a9933';
+
+/// Persists completion of the device-local onboarding flow.
+
+abstract class _$OnboardingController extends $AsyncNotifier<void> {
   FutureOr<void> build();
   @$mustCallSuper
   @override

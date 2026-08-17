@@ -14,35 +14,39 @@ class TransactionRepository {
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(userId).collection('transactions');
 
-  Future<List<AppTransaction>> getAllTransactions() async {
+  /// Holt eine paginierte Liste von Dokumenten.
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+  getPagedTransactions({
+    required int limit,
+    QueryDocumentSnapshot? startAfter,
+  }) async {
+    var query = _collection.orderBy('dateTime', descending: true).limit(limit);
+
+    if (startAfter != null) {
+      query = query.startAfterDocument(startAfter);
+    }
+
+    final snapshot = await query.get();
+    return snapshot.docs;
+  }
+
+  /// Holt die absolut älteste Transaktion, um das Startdatum für die Monatsliste zu kennen.
+  Future<AppTransaction?> getOldestTransaction() async {
     final snapshot = await _collection
-        .orderBy('dateTime', descending: true)
+        .orderBy('dateTime', descending: false)
+        .limit(1)
         .get();
-    return snapshot.docs
-        .map((doc) => AppTransaction.fromFirestore(doc))
-        .toList();
+
+    if (snapshot.docs.isEmpty) return null;
+    return AppTransaction.fromFirestore(snapshot.docs.first);
   }
 
-  Stream<List<AppTransaction>> watchAllTransactions() {
-    return _collection
-        .orderBy('dateTime', descending: true)
-        .snapshots()
-        .map(
-          (s) => s.docs.map((d) => AppTransaction.fromFirestore(d)).toList(),
-        );
-  }
-
-  Future<void> addTransaction(AppTransaction t) async {
-    await _collection.doc(t.id).set(t.toFirestore());
-  }
-
-  Future<void> updateTransaction(AppTransaction t) async {
-    await _collection.doc(t.id).update(t.toFirestore());
-  }
-
-  Future<void> deleteTransaction(String id) async {
-    await _collection.doc(id).delete();
-  }
+  Future<void> addTransaction(AppTransaction t) async =>
+      await _collection.doc(t.id).set(t.toFirestore());
+  Future<void> updateTransaction(AppTransaction t) async =>
+      await _collection.doc(t.id).update(t.toFirestore());
+  Future<void> deleteTransaction(String id) async =>
+      await _collection.doc(id).delete();
 }
 
 // Der Provider lebt direkt beim Repository!

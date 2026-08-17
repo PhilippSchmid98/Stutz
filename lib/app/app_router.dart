@@ -41,7 +41,12 @@ class AppRouter extends ConsumerWidget {
     return authAsync.when(
       // Still initialising the Firebase auth stream — show nothing yet.
       loading: () => const _SplashScreen(),
-      error: (_, __) => const WelcomeScreen(),
+      error: (error, stackTrace) => _RouterErrorScreen(
+        message: 'Die Anmeldung konnte nicht geladen werden.',
+        error: error,
+        stackTrace: stackTrace,
+        onRetry: () => ref.invalidate(authStateProvider),
+      ),
       data: (user) {
         if (user != null) return const HomeScreen();
 
@@ -49,7 +54,12 @@ class AppRouter extends ConsumerWidget {
         final onboardingAsync = ref.watch(seenOnboardingProvider);
         return onboardingAsync.when(
           loading: () => const _SplashScreen(),
-          error: (_, __) => const WelcomeScreen(),
+          error: (error, stackTrace) => _RouterErrorScreen(
+            message: 'Die App-Einstellungen konnten nicht geladen werden.',
+            error: error,
+            stackTrace: stackTrace,
+            onRetry: () => ref.invalidate(seenOnboardingProvider),
+          ),
           data: (seen) => seen ? const LoginScreen() : const WelcomeScreen(),
         );
       },
@@ -65,6 +75,42 @@ class _SplashScreen extends StatelessWidget {
     return const Scaffold(
       backgroundColor: Colors.white,
       body: Center(child: CircularProgressIndicator(color: Colors.black)),
+    );
+  }
+}
+
+class _RouterErrorScreen extends StatelessWidget {
+  final String message;
+  final Object error;
+  final StackTrace stackTrace;
+  final VoidCallback onRetry;
+
+  const _RouterErrorScreen({
+    required this.message,
+    required this.error,
+    required this.stackTrace,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: onRetry,
+                child: const Text('Erneut versuchen'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

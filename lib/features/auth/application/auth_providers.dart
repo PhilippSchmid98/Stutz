@@ -58,10 +58,34 @@ class AuthController extends _$AuthController {
     // does not show the "involuntary logout" message.
     ref.read(voluntarySignOutProvider.notifier).setVoluntary(true);
 
-    final authService = ref.read(authServiceProvider);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('seenOnboarding', false);
-    await authService.signOut();
+    state = const AsyncLoading();
+    try {
+      await ref.read(authServiceProvider).signOut();
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+}
+
+/// Persists completion of the device-local onboarding flow.
+@riverpod
+class OnboardingController extends _$OnboardingController {
+  @override
+  FutureOr<void> build() {}
+
+  Future<void> complete() async {
+    state = const AsyncLoading();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('seenOnboarding', true);
+      ref.invalidate(seenOnboardingProvider);
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 }
 

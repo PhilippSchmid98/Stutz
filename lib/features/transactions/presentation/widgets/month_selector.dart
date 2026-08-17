@@ -13,44 +13,58 @@ class CleanMonthSelector extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final scrollController = useScrollController();
     const itemWidth = 80.0;
-
-    final months = ref.watch(availableMonthsProvider);
     final currentMonth = ref.watch(currentVisibleMonthProvider);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    final totalContentWidth = months.length * itemWidth;
-    final isScrollable = totalContentWidth > screenWidth;
+    // Hier ist es jetzt ein AsyncValue
+    final monthsAsync = ref.watch(availableMonthsProvider);
 
-    if (isScrollable) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!scrollController.hasClients) return;
+    // Wir nutzen .when(), um die 3 Zustände (Data, Loading, Error) zu behandeln
+    return monthsAsync.when(
+      loading: () => const SizedBox(
+        height: 50,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      error: (_, __) => const SizedBox(height: 50),
+      data: (months) {
+        if (months.isEmpty) return const SizedBox(height: 50);
 
-        final index = months.indexWhere(
-          (m) => m.year == currentMonth.year && m.month == currentMonth.month,
-        );
+        final totalContentWidth = months.length * itemWidth;
+        final isScrollable = totalContentWidth > screenWidth;
 
-        if (index != -1) {
-          final targetOffset =
-              (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
-          final maxScroll = scrollController.position.maxScrollExtent;
-          final offset = targetOffset.clamp(0.0, maxScroll);
+        if (isScrollable) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!scrollController.hasClients) return;
 
-          if ((scrollController.offset - offset).abs() > 5) {
-            scrollController.animateTo(
-              offset,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutCubic,
+            final index = months.indexWhere(
+              (m) =>
+                  m.year == currentMonth.year && m.month == currentMonth.month,
             );
-          }
-        }
-      });
-    }
 
-    return SizedBox(
-      height: 50,
-      child: isScrollable
-          ? _buildScrollableList(months, currentMonth, scrollController)
-          : _buildCenteredList(months, currentMonth),
+            if (index != -1) {
+              final targetOffset =
+                  (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+              final maxScroll = scrollController.position.maxScrollExtent;
+              final offset = targetOffset.clamp(0.0, maxScroll);
+
+              if ((scrollController.offset - offset).abs() > 5) {
+                scrollController.animateTo(
+                  offset,
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutCubic,
+                );
+              }
+            }
+          });
+        }
+
+        return SizedBox(
+          height: 50,
+          child: isScrollable
+              ? _buildScrollableList(months, currentMonth, scrollController)
+              : _buildCenteredList(months, currentMonth),
+        );
+      },
     );
   }
 

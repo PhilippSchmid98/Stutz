@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stutz/features/budget/presentation/budget_planning_screen.dart';
-import 'package:stutz/features/dashboard/presentation/dashboard_screen.dart';
+//import 'package:stutz/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:stutz/features/transactions/presentation/transaction_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -18,7 +18,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     // Screens we switch between
     const screens = [
-      DashboardScreen(),
+      //DashboardScreen(),
       BudgetPlanningScreen(),
       TransactionScreen(),
     ];
@@ -37,11 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
+          // NavigationDestination(
+          //   icon: Icon(Icons.dashboard_outlined),
+          //   selectedIcon: Icon(Icons.dashboard),
+          //   label: 'Dashboard',
+          // ),
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
             selectedIcon: Icon(Icons.account_balance_wallet),

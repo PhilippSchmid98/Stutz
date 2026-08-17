@@ -475,4 +475,5 @@ class AddTransactionDialog extends HookConsumerWidget {
     );
   }
 }
+
 // 4. ÄNDERUNG: Die _flattenTreeVariableOnly Methode wurde von hier ganz unten gelöscht!

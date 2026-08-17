@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
@@ -20,7 +21,16 @@ class BudgetPlanningScreen extends ConsumerWidget {
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text('Budget Planung'),
-        actions: [const CloudStatusIcon()],
+        actions: [
+          const CloudStatusIcon(),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await ref.read(authControllerProvider.notifier).signOut();
+              // AppRouter reacts to authStateProvider and navigates automatically.
+            },
+          ),
+        ],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
