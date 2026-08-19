@@ -35,13 +35,6 @@ Sichere Anmeldung für deine Finanzdaten.
 * **Gast-Modus:** Starte ohne Account mit anonymer Firebase-Authentifizierung.
 * **Onboarding:** Willkommens-Screen mit 3-seitiger Tutorial-Tour (Fix vs. Variabel, Intervalle, Cloud-Sync).
 
-### 📊 Das Dashboard
-Der zentrale Hub. Auf einen Blick siehst du nicht nur, was du ausgegeben hast, sondern **was noch übrig ist**.
-* **Visualisierung:** Circular Indicators zeigen sofort, ob du im grünen Bereich bist (Grün < 85%, Orange 85–100%, Rot > 100%).
-* **Historie:** Vergleiche deine Performance mit den vergangenen Monaten durch lineare Fortschrittsbalken.
-* **Smart Calculation:** Automatische Trennung von Fixkosten und variablem Budget – nur variable Ausgaben werden getrackt.
-* **Schnellzugriff:** FAB für sofortige Transaktionserfassung, Jahresansicht über AppBar-Icon.
-
 ### 💰 Budget Planung
 Weg vom Tabellen-Chaos, hin zu strukturierten Karten.
 * **Hierarchische Kategorien:** Erstelle Hauptkategorien und verschachtelte Untergruppen (beliebig tief) als Baumstruktur.
@@ -57,20 +50,6 @@ Weg vom Tabellen-Chaos, hin zu strukturierten Karten.
 * **Monats-Sprung:** Navigiere blitzschnell zu vergangenen Monaten über die horizontale Monats-Leiste mit Smart-Scroll-Erkennung.
 * **Bearbeiten & Löschen:** Tippe auf eine Transaktion zum Bearbeiten oder Löschen.
 
-### 🔍 Monatliche Detail-Analyse (Drill-Down)
-Klicke auf einen Monat im Dashboard, um zu sehen, wo das Geld wirklich hinfließt.
-* **Rekursiver Baum:** Die App aggregiert Ausgaben von den kleinsten Unterkategorien hoch zu den Hauptgruppen.
-* **Ist-Soll-Vergleich:** Fortschrittsbalken zeigen pro Kategorie, wie viel vom geplanten Budget verbraucht wurde.
-* **Aufklappbare Gruppen:** Erweitere Kategorien, um Unterkategorien mit eigenen Fortschrittsanzeigen zu sehen.
-* **Transaktions-Drill-Down:** Tippe auf eine Kategorie, um alle zugehörigen Transaktionen des Monats zu sehen.
-
-### 📅 Jahresansicht
-Jahresübergreifende Analyse deiner variablen Ausgaben.
-* **Jahresnavigation:** Wechsle per Pfeil zwischen Jahren.
-* **Offset-Berechnung:** Berücksichtigt den Zeitpunkt, ab dem du die App nutzt (Mid-Year-Adoption).
-* **Gestapelte Fortschrittsbalken:** Zeigen Offset (blau) + tatsächliche Ausgaben (teal) an.
-* **Jahresfortschritt:** Wie viel % des Jahres bereits vergangen sind.
-
 ### ☁️ Cloud & Offline
 * **Firebase Cloud Firestore:** Echtzeit-Synchronisation aller Daten.
 * **Offline-Erkennung:** Cloud-Status-Icon zeigt Verbindungsstatus in allen Screens.
@@ -80,11 +59,7 @@ Jahresübergreifende Analyse deiner variablen Ausgaben.
 
 ## 📱 Screenshots
 
-| Dashboard | Transaktionen | Planung | Erfassung |
-|:---:|:---:|:---:|:---:|
-| <img src="assets/dashboard.png" width="200"> | <img src="assets/transactions.png" width="200"> | <img src="assets/planning.png" width="200"> | <img src="assets/add_transaction.png" width="200"> |
-
-*(Hinweis: Lege deine Screenshots in einen Ordner `assets/` im Hauptverzeichnis und benenne sie entsprechend, damit sie hier angezeigt werden.)*
+Screenshots werden ergänzt, sobald die aktuelle UI-Version finalisiert ist.
 
 ---
 
@@ -98,17 +73,14 @@ Die App wurde mit einem Fokus auf **Skalierbarkeit** und **Clean Architecture** 
 | **State Management** | [Riverpod 3.x](https://riverpod.dev/) | `@riverpod` Code Generation, `Notifier`, `AsyncNotifier` |
 | **Backend** | [Firebase](https://firebase.google.com/) | Cloud Firestore (Echtzeit-Streams), Firebase Auth (Google + Anonym) |
 | **Code Generation** | Freezed 3.x, Riverpod Generator 3.x | Immutable Models, Provider-Generation |
-| **UI Packages** | `percent_indicator`, `scrollable_positioned_list`, `intl` | Budget-Kreise, Transaktions-Scroll, Lokalisierung (de-CH) |
+| **UI Packages** | `scrollable_positioned_list`, `intl`, `google_fonts` | Transaktions-Scroll, Lokalisierung (de-CH), Typografie |
 | **Architektur** | Clean Architecture / Repository Pattern | Domain → Data → Presentation Layer-Trennung |
 
 ### Highlight: Rekursive Budget-Berechnung 🧮
-Eine der technischen Herausforderungen war die Berechnung der Budgets über verschachtelte Gruppen hinweg.
-Die Domain-Services (`BudgetCalculator`, `YearlyCalculator`) nutzen rekursive Algorithmen, um:
-1.  Den Kategorien-Baum zu durchlaufen.
-2.  Ausgaben (Transactions) den korrekten Blättern zuzuordnen.
-3.  Die Summen (Actual vs. Planned) von unten nach oben ("Bubbling up") zu den Hauptkategorien zu aggregieren.
-4.  Dabei intelligent zwischen "Fix" und "Variabel" zu filtern – nur variable Kosten werden analysiert.
-5.  Für die Jahresansicht einen Offset-Faktor für Mid-Year-Adoption zu berechnen.
+`BudgetCalculator` traversiert verschachtelte Kategorien und erzeugt eine zentrale
+Budget-Zusammenfassung mit Einkommen, Ausgaben, Fixkosten, variablen Kosten und
+monatlichem Saldo. Transaktionen werden nach Datum gruppiert und über einen
+schreibgeschützten Kategorie-Lookup angereichert.
 
 ---
 
@@ -177,33 +149,26 @@ Die Domain-Services (`BudgetCalculator`, `YearlyCalculator`) nutzen rekursive Al
     flutter run
     ```
 
+6.  **Tests ausführen:**
+    ```bash
+    flutter analyze
+    flutter test
+    npm install
+    npm run test:rules
+    ```
+
 ---
 
 ## 📂 Projektstruktur
 ```text
 lib/
-├── core/
-│   ├── constants/           # Firebase Config (OAuth Client IDs)
-│   └── enums/               # PaymentInterval, ExpenseType, IncomeGroup
-├── data/
-│   ├── auth_service.dart    # Firebase Auth + Google Sign-In
-│   ├── mappers/             # Firestore ↔ Domain Model Mapper
-│   └── repositories/        # Firestore Repository Implementierungen
-├── domain/
-│   ├── logic_extensions.dart # Extensions auf IncomeSource & ExpenseNode
-│   ├── models/              # Freezed Domain Models
-│   ├── repositories/        # Abstrakte Repository Interfaces
-│   └── services/            # Stateless Business Logic (Calculator, Grouper, TreeBuilder)
-├── presentation/
-│   ├── app_router.dart      # Auth-basiertes Routing (Splash → Welcome → Login → Home)
-│   ├── providers/           # Riverpod 3 Provider (Generated, Streams, AsyncNotifiers)
-│   └── screens/
-│       ├── budget/          # Budget-Planung (Einnahmen, Ausgaben, Dialoge)
-│       ├── dashboard/       # Dashboard mit Monatsübersicht
-│       ├── onboarding/      # Welcome, Tutorial, Login Screens
-│       ├── shared/          # Wiederverwendbare Widgets (SectionCard, StyledTextField, etc.)
-│       ├── transactions/    # Transaktionsliste & Erfassungs-Dialog
-│       └── widgets/         # Cloud-Status-Icon
+├── app/                         # Root router and home navigation
+├── core/                        # Theme, connectivity, shared utilities
+├── features/
+│   ├── auth/                    # Firebase Auth and onboarding
+│   ├── budget/                  # Budget domain, repositories, UI and mutations
+│   └── transactions/            # Transaction domain, pagination, UI and mutations
+├── shared/                      # Reusable widgets
 ├── firebase_options.dart
 └── main.dart
 ```
@@ -215,7 +180,6 @@ lib/
 * [ ] Dark Mode Support
 * [ ] Daten-Export (CSV/PDF)
 * [ ] Unterstützung für wiederkehrende Transaktionen (Recurring)
-* [ ] Showcaseview-Integration für In-App-Tutorials
 * [ ] iOS Release
 
 ---

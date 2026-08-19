@@ -2,6 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 
+class _TutorialPage {
+  final String title;
+  final String text;
+  final IconData icon;
+
+  const _TutorialPage({
+    required this.title,
+    required this.text,
+    required this.icon,
+  });
+}
+
 class TutorialScreen extends ConsumerStatefulWidget {
   const TutorialScreen({super.key});
 
@@ -14,25 +26,25 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
   int _currentPage = 0;
   bool _isCompleting = false;
 
-  final List<Map<String, dynamic>> _pages = [
-    {
-      "title": "Fix vs. Variabel",
-      "text":
+  static const _pages = [
+    _TutorialPage(
+      title: "Fix vs. Variabel",
+      text:
           "Stutz trennt automatisch deine Fixkosten vom Budget. So siehst du nur das Geld, das du wirklich ausgeben kannst.",
-      "icon": Icons.pie_chart_outline,
-    },
-    {
-      "title": "Monatlich & Jährlich",
-      "text":
+      icon: Icons.pie_chart_outline,
+    ),
+    _TutorialPage(
+      title: "Monatlich & Jährlich",
+      text:
           "Versicherungen zahlen wir oft jährlich. Stutz rechnet diese Kosten automatisch auf den Monat herunter.",
-      "icon": Icons.calendar_today,
-    },
-    {
-      "title": "Offline First",
-      "text":
+      icon: Icons.calendar_today,
+    ),
+    _TutorialPage(
+      title: "Offline First",
+      text:
           "Kein Netz? Kein Problem. Erfasse Ausgaben jederzeit offline. Wir synchronisieren, sobald du wieder online bist.",
-      "icon": Icons.cloud_off,
-    },
+      icon: Icons.cloud_off,
+    ),
   ];
 
   @override
@@ -149,22 +161,22 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
     );
   }
 
-  Widget _buildPageContent(Map<String, dynamic> page) {
+  Widget _buildPageContent(_TutorialPage page) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(page['icon'], size: 100, color: Colors.teal),
+          Icon(page.icon, size: 100, color: Colors.teal),
           const SizedBox(height: 40),
           Text(
-            page['title'],
+            page.title,
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 16),
           Text(
-            page['text'],
+            page.text,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,

@@ -101,5 +101,38 @@ void main() {
         expect(group.totalMonthlyCalculated, 1050.0);
       });
     });
+
+    group('validateForWrite', () {
+      test('accepts an empty group', () {
+        expect(
+          () => ExpenseNode(id: 'group', name: 'Housing').validateForWrite(),
+          returnsNormally,
+        );
+      });
+
+      test('rejects an incomplete leaf', () {
+        expect(
+          () => ExpenseNode(
+            id: 'leaf',
+            name: 'Housing',
+            plannedAmount: 100,
+          ).validateForWrite(),
+          throwsA(isA<ExpenseNodeValidationException>()),
+        );
+      });
+
+      test('rejects non-positive leaf amounts', () {
+        expect(
+          () => ExpenseNode(
+            id: 'leaf',
+            name: 'Housing',
+            plannedAmount: 0,
+            interval: PaymentInterval.monthly,
+            type: ExpenseType.fixed,
+          ).validateForWrite(),
+          throwsA(isA<ExpenseNodeValidationException>()),
+        );
+      });
+    });
   });
 }

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:stutz/features/budget/application/budget_mutations.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
-import 'package:stutz/features/budget/data/expense_node_repository.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/shared/widgets/styled_dropdown.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
@@ -30,6 +31,8 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
       existingNode?.interval ?? PaymentInterval.monthly,
     );
     final type = useState(existingNode?.type ?? ExpenseType.fixed);
+    final mutationAsync = ref.watch(budgetMutationsProvider);
+    final isSaving = mutationAsync.isLoading;
 
     final isEdit = existingNode != null;
 
@@ -154,43 +157,58 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
         if (isEdit)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () async {
-              final hasChildren = existingNode!.children.isNotEmpty;
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text("Löschen?"),
-                  content: Text(
-                    hasChildren
-                        ? "ACHTUNG: Gruppe mit Inhalt löschen?"
-                        : "Löschen?",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text("Abbrechen"),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text(
-                        "Löschen",
-                        style: TextStyle(color: Colors.red),
+            onPressed: isSaving
+                ? null
+                : () async {
+                    final hasChildren = existingNode!.children.isNotEmpty;
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Löschen?"),
+                        content: Text(
+                          hasChildren
+                              ? "ACHTUNG: Gruppe mit Inhalt löschen?"
+                              : "Löschen?",
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text("Abbrechen"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text(
+                              "Löschen",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await ref
-                    .read(expenseNodeRepositoryProvider)
-                    .deleteExpenseNode(existingNode!.id);
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
+                    );
+                    if (confirm == true) {
+                      try {
+                        await ref
+                            .read(budgetMutationsProvider.notifier)
+                            .deleteExpenseNode(existingNode!.id);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Kategorie kann nicht gelöscht werden. Entferne zuerst Unterkategorien oder zugehörige Transaktionen.',
+                              ),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
             child: const Text('Löschen'),
           ),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: isSaving ? null : () => Navigator.pop(context),
           child: Text(
             'Abbrechen',
             style: TextStyle(color: Colors.grey.shade600),
@@ -203,33 +221,58 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () async {
-            if (formKey.currentState!.validate()) {
-              final repo = ref.read(expenseNodeRepositoryProvider);
-              final resolvedParentId = isEdit
-                  ? existingNode!.parentId
-                  : parentId;
-              final id = isEdit ? existingNode!.id : const Uuid().v4();
+          onPressed: isSaving
+              ? null
+              : () async {
+                  if (formKey.currentState!.validate()) {
+                    final resolvedParentId = isEdit
+                        ? existingNode!.parentId
+                        : parentId;
+                    final id = isEdit ? existingNode!.id : const Uuid().v4();
+                    final amount = isGroup.value
+                        ? null
+                        : parsePositiveAmount(amountCtrl.text);
 
-              final node = ExpenseNode(
-                id: id,
-                parentId: resolvedParentId,
-                name: nameCtrl.text,
-                plannedAmount: isGroup.value
-                    ? null
-                    : double.parse(amountCtrl.text.replaceAll(',', '.')),
-                interval: isGroup.value ? null : interval.value,
-                type: isGroup.value ? null : type.value,
-                children: isEdit ? existingNode!.children : [],
-              );
-              if (isEdit) {
-                await repo.updateExpenseNode(node);
-              } else {
-                await repo.addExpenseNode(node);
-              }
-              if (context.mounted) Navigator.pop(context);
-            }
-          },
+                    if (!isGroup.value && (amount == null || amount <= 0)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Bitte einen gültigen Betrag eingeben'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final node = ExpenseNode(
+                      id: id,
+                      parentId: resolvedParentId,
+                      name: nameCtrl.text,
+                      plannedAmount: amount,
+                      interval: isGroup.value ? null : interval.value,
+                      type: isGroup.value ? null : type.value,
+                      children: isEdit ? existingNode!.children : [],
+                    );
+                    try {
+                      final mutations = ref.read(
+                        budgetMutationsProvider.notifier,
+                      );
+                      if (isEdit) {
+                        await mutations.updateExpenseNode(node);
+                      } else {
+                        await mutations.addExpenseNode(node);
+                      }
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Speichern fehlgeschlagen'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                    if (context.mounted) Navigator.pop(context);
+                  }
+                },
           child: const Text('Speichern'),
         ),
       ],

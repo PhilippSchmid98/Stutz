@@ -78,5 +78,33 @@ void main() {
       final result = builder.buildTree([fixed]);
       expect(result, hasLength(1));
     });
+
+    test('rejects duplicate IDs', () {
+      expect(
+        () => builder.buildTree([
+          makeExpense(id: 'duplicate'),
+          makeExpense(id: 'duplicate'),
+        ]),
+        throwsA(isA<ExpenseTreeValidationException>()),
+      );
+    });
+
+    test('rejects missing parents', () {
+      expect(
+        () =>
+            builder.buildTree([makeExpense(id: 'child', parentId: 'missing')]),
+        throwsA(isA<ExpenseTreeValidationException>()),
+      );
+    });
+
+    test('rejects parent cycles', () {
+      expect(
+        () => builder.buildTree([
+          makeExpense(id: 'a', parentId: 'b'),
+          makeExpense(id: 'b', parentId: 'a'),
+        ]),
+        throwsA(isA<ExpenseTreeValidationException>()),
+      );
+    });
   });
 }

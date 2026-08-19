@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:stutz/features/budget/application/budget_mutations.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
-import 'package:stutz/features/budget/data/income_source_repository.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/shared/widgets/styled_dropdown.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
@@ -24,6 +25,8 @@ class AddIncomeDialog extends HookConsumerWidget {
       existingItem?.interval ?? PaymentInterval.monthly,
     );
     final group = useState(existingItem?.group ?? IncomeGroup.main);
+    final mutationAsync = ref.watch(budgetMutationsProvider);
+    final isSaving = mutationAsync.isLoading;
 
     final isEdit = existingItem != null;
 
@@ -83,40 +86,53 @@ class AddIncomeDialog extends HookConsumerWidget {
         if (isEdit)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text("Löschen?"),
-                  content: const Text(
-                    "Soll diese Einnahme wirklich gelöscht werden?",
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: const Text("Abbrechen"),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx, true),
-                      child: const Text(
-                        "Löschen",
-                        style: TextStyle(color: Colors.red),
+            onPressed: isSaving
+                ? null
+                : () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text("Löschen?"),
+                        content: const Text(
+                          "Soll diese Einnahme wirklich gelöscht werden?",
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text("Abbrechen"),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text(
+                              "Löschen",
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true) {
-                await ref
-                    .read(incomeSourceRepositoryProvider)
-                    .deleteIncomeSource(existingItem!.id);
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
+                    );
+                    if (confirm == true) {
+                      try {
+                        await ref
+                            .read(budgetMutationsProvider.notifier)
+                            .deleteIncomeSource(existingItem!.id);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Löschen fehlgeschlagen'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
             child: const Text('Löschen'),
           ),
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: isSaving ? null : () => Navigator.pop(context),
           child: Text(
             'Abbrechen',
             style: TextStyle(color: Colors.grey.shade600),
@@ -129,34 +145,67 @@ class AddIncomeDialog extends HookConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () {
-            if (formKey.currentState!.validate()) {
-              final newAmount = double.parse(
-                amountCtrl.text.replaceAll(',', '.'),
-              );
-              final repo = ref.read(incomeSourceRepositoryProvider);
-              if (isEdit) {
-                final updated = IncomeSource(
-                  id: existingItem!.id,
-                  name: nameCtrl.text,
-                  amount: newAmount,
-                  interval: interval.value,
-                  group: group.value,
-                );
-                repo.updateIncomeSource(updated);
-              } else {
-                final src = IncomeSource(
-                  id: const Uuid().v4(),
-                  name: nameCtrl.text,
-                  amount: newAmount,
-                  interval: interval.value,
-                  group: group.value,
-                );
-                repo.addIncomeSource(src);
-              }
-              Navigator.pop(context);
-            }
-          },
+          onPressed: isSaving
+              ? null
+              : () async {
+                  if (formKey.currentState!.validate()) {
+                    final newAmount = parsePositiveAmount(amountCtrl.text);
+                    if (newAmount == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Bitte einen gültigen Betrag eingeben'),
+                        ),
+                      );
+                      return;
+                    }
+
+                    final mutations = ref.read(
+                      budgetMutationsProvider.notifier,
+                    );
+                    if (isEdit) {
+                      final updated = IncomeSource(
+                        id: existingItem!.id,
+                        name: nameCtrl.text,
+                        amount: newAmount,
+                        interval: interval.value,
+                        group: group.value,
+                      );
+                      try {
+                        await mutations.updateIncomeSource(updated);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Speichern fehlgeschlagen'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                    } else {
+                      final src = IncomeSource(
+                        id: const Uuid().v4(),
+                        name: nameCtrl.text,
+                        amount: newAmount,
+                        interval: interval.value,
+                        group: group.value,
+                      );
+                      try {
+                        await mutations.addIncomeSource(src);
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Speichern fehlgeschlagen'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                    }
+                    if (context.mounted) Navigator.pop(context);
+                  }
+                },
           child: const Text('Speichern'),
         ),
       ],

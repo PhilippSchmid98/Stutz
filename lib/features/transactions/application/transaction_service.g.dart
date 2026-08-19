@@ -38,7 +38,7 @@ final class PaginatedTransactionListProvider
 }
 
 String _$paginatedTransactionListHash() =>
-    r'5ae001d684fcf73dcd3b3168d03b302c99bda5b9';
+    r'14fbfbf6ed0174ffde433c91f4bb0e0b1469882a';
 
 abstract class _$PaginatedTransactionList
     extends $AsyncNotifier<PaginatedTransactionsState> {
@@ -93,7 +93,7 @@ final class TransactionMutationsProvider
 }
 
 String _$transactionMutationsHash() =>
-    r'4e7969c1dec721a11fce0020f2f2b28752a59e59';
+    r'b79905dc108193c7529f322468d727c51fa56faa';
 
 abstract class _$TransactionMutations extends $AsyncNotifier<void> {
   FutureOr<void> build();

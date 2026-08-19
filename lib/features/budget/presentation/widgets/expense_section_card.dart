@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_expense_node_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_item_row.dart';
@@ -8,33 +7,24 @@ import 'package:stutz/shared/widgets/section_card.dart';
 
 class ExpenseSectionCard extends StatelessWidget {
   final ExpenseNode rootNode;
+  final double monthlyTotal;
+  final double yearlyTotal;
 
-  const ExpenseSectionCard({super.key, required this.rootNode});
-
-  double _calcSum(List<ExpenseNode> nodes, PaymentInterval targetInterval) {
-    double sum = 0;
-    for (var node in nodes) {
-      if (node.plannedAmount != null && node.interval == targetInterval) {
-        sum += node.plannedAmount!;
-      }
-      if (node.children.isNotEmpty) {
-        sum += _calcSum(node.children, targetInterval);
-      }
-    }
-    return sum;
-  }
+  const ExpenseSectionCard({
+    super.key,
+    required this.rootNode,
+    required this.monthlyTotal,
+    required this.yearlyTotal,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final monthly = _calcSum(rootNode.children, PaymentInterval.monthly);
-    final yearly = _calcSum(rootNode.children, PaymentInterval.yearly);
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: SectionCard(
         title: rootNode.name.toUpperCase(),
-        totalMonthly: monthly,
-        totalYearly: yearly,
+        totalMonthly: monthlyTotal,
+        totalYearly: yearlyTotal,
         icon: Icons.folder_open,
         iconColor: Colors.teal,
         backgroundColor: Colors.white,

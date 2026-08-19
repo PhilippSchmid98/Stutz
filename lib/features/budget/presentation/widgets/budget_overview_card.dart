@@ -1,57 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:stutz/features/budget/domain/enums/enums.dart';
-import 'package:stutz/features/budget/domain/entities/expense_node.dart';
-import 'package:stutz/features/budget/domain/entities/income_source.dart';
+import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
-  final List<IncomeSource> incomes;
-  final List<ExpenseNode> roots;
+  final BudgetSummary summary;
 
-  const BudgetOverviewCard({
-    super.key,
-    required this.incomes,
-    required this.roots,
-  });
-
-  double _calcTotalIncome() {
-    double total = 0;
-    for (var i in incomes) {
-      total += i.interval == PaymentInterval.monthly ? i.amount : i.amount / 12;
-    }
-    return total;
-  }
-
-  ({double fixed, double variable}) _calcExpensesByType(
-    List<ExpenseNode> nodes,
-  ) {
-    double fixed = 0;
-    double variable = 0;
-    for (var node in nodes) {
-      if (node.plannedAmount != null) {
-        double amount = node.plannedAmount!;
-        if (node.interval == PaymentInterval.yearly) amount /= 12;
-        if (node.type == ExpenseType.fixed) {
-          fixed += amount;
-        } else {
-          variable += amount;
-        }
-      }
-      if (node.children.isNotEmpty) {
-        final sub = _calcExpensesByType(node.children);
-        fixed += sub.fixed;
-        variable += sub.variable;
-      }
-    }
-    return (fixed: fixed, variable: variable);
-  }
+  const BudgetOverviewCard({super.key, required this.summary});
 
   @override
   Widget build(BuildContext context) {
-    final totalIncome = _calcTotalIncome();
-    final (:fixed, :variable) = _calcExpensesByType(roots);
-    final totalExpenses = fixed + variable;
-    final balance = totalIncome - totalExpenses;
-    final isPositive = balance >= 0;
+    final isPositive = summary.balance >= 0;
     final balanceColor = isPositive ? Colors.teal : Colors.red;
 
     return Container(
@@ -84,7 +41,7 @@ class BudgetOverviewCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            "${isPositive ? '+' : ''} ${balance.toStringAsFixed(2)} CHF",
+            "${isPositive ? '+' : ''} ${summary.balance.toStringAsFixed(2)} CHF",
             style: TextStyle(
               fontWeight: FontWeight.w900,
               fontSize: 32,
@@ -107,12 +64,12 @@ class BudgetOverviewCard extends StatelessWidget {
             children: [
               _OverviewItem(
                 label: "Einnahmen",
-                value: totalIncome,
+                value: summary.monthlyIncome,
                 color: Colors.green,
               ),
               _OverviewItem(
                 label: "Ausgaben",
-                value: totalExpenses,
+                value: summary.monthlyExpenses,
                 color: Colors.black87,
               ),
             ],
@@ -138,7 +95,7 @@ class BudgetOverviewCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      fixed.toStringAsFixed(2),
+                      summary.fixedExpenses.toStringAsFixed(2),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -158,7 +115,7 @@ class BudgetOverviewCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      variable.toStringAsFixed(2),
+                      summary.variableExpenses.toStringAsFixed(2),
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,

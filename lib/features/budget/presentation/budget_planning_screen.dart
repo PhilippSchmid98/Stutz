@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
+import 'package:stutz/features/budget/domain/services/budget_calculator.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_section_card.dart';
@@ -16,6 +17,7 @@ class BudgetPlanningScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final incomeAsync = ref.watch(incomeListProvider);
     final expenseRootsAsync = ref.watch(expenseTreeProvider);
+    final summaryAsync = ref.watch(budgetSummaryProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
@@ -43,7 +45,16 @@ class BudgetPlanningScreen extends ConsumerWidget {
             incomeAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Fehler: $e'),
-              data: (incomes) => IncomeSectionCard(incomes: incomes),
+              data: (incomes) {
+                final totals = const BudgetCalculator().incomeIntervalTotals(
+                  incomes,
+                );
+                return IncomeSectionCard(
+                  incomes: incomes,
+                  monthlyTotal: totals.monthly,
+                  yearlyTotal: totals.yearly,
+                );
+              },
             ),
 
             const SizedBox(height: 32),
@@ -75,9 +86,15 @@ class BudgetPlanningScreen extends ConsumerWidget {
               error: (e, _) => Text('Fehler: $e'),
               data: (roots) => Column(
                 children: [
-                  ...roots.map(
-                    (rootNode) => ExpenseSectionCard(rootNode: rootNode),
-                  ),
+                  ...roots.map((rootNode) {
+                    final totals = const BudgetCalculator()
+                        .expenseIntervalTotals(rootNode.children);
+                    return ExpenseSectionCard(
+                      rootNode: rootNode,
+                      monthlyTotal: totals.monthly,
+                      yearlyTotal: totals.yearly,
+                    );
+                  }),
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: SizedBox(
@@ -107,11 +124,11 @@ class BudgetPlanningScreen extends ConsumerWidget {
             const SizedBox(height: 24),
 
             // Budget overview card
-            if (incomeAsync.hasValue && expenseRootsAsync.hasValue)
-              BudgetOverviewCard(
-                incomes: incomeAsync.value!,
-                roots: expenseRootsAsync.value!,
-              ),
+            summaryAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Text('Fehler: $error'),
+              data: (summary) => BudgetOverviewCard(summary: summary),
+            ),
 
             const LegendRow(),
           ],

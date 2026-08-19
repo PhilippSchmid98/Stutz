@@ -12,6 +12,8 @@ class TreeBuilder {
   /// Nodes at each level are sorted by [sortOrder] (ascending), with name as
   /// tie-breaker.
   List<ExpenseNode> buildTree(List<ExpenseNode> flatNodes) {
+    _validateStructure(flatNodes);
+
     final Map<String, List<ExpenseNode>> childrenMap = {};
     for (var node in flatNodes) {
       if (node.parentId != null) {
@@ -41,6 +43,51 @@ class TreeBuilder {
     return roots.map((root) => attachChildren(root)).toList();
   }
 
+  void _validateStructure(List<ExpenseNode> flatNodes) {
+    final nodesById = <String, ExpenseNode>{};
+    for (final node in flatNodes) {
+      if (node.id.trim().isEmpty) {
+        throw const ExpenseTreeValidationException('Category ID is required');
+      }
+      if (nodesById.containsKey(node.id)) {
+        throw ExpenseTreeValidationException(
+          'Duplicate category ID: ${node.id}',
+        );
+      }
+      nodesById[node.id] = node;
+    }
+
+    for (final node in flatNodes) {
+      final parentId = node.parentId;
+      if (parentId != null && !nodesById.containsKey(parentId)) {
+        throw ExpenseTreeValidationException(
+          'Category ${node.id} references missing parent $parentId',
+        );
+      }
+    }
+
+    final visiting = <String>{};
+    final visited = <String>{};
+
+    void visit(String id) {
+      if (visiting.contains(id)) {
+        throw ExpenseTreeValidationException(
+          'Category tree contains a cycle at $id',
+        );
+      }
+      if (!visited.add(id)) return;
+
+      visiting.add(id);
+      final parentId = nodesById[id]!.parentId;
+      if (parentId != null) visit(parentId);
+      visiting.remove(id);
+    }
+
+    for (final node in flatNodes) {
+      visit(node.id);
+    }
+  }
+
   /// Recursively flattens a tree of [ExpenseNode] into a single flat list
   /// (depth-first, parent before children).
   List<ExpenseNode> flattenTree(List<ExpenseNode> nodes) {
@@ -53,4 +100,13 @@ class TreeBuilder {
     }
     return flatList;
   }
+}
+
+class ExpenseTreeValidationException implements Exception {
+  final String message;
+
+  const ExpenseTreeValidationException(this.message);
+
+  @override
+  String toString() => message;
 }

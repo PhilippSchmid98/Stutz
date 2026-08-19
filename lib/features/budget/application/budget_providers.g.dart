@@ -109,6 +109,52 @@ final class FlatExpenseNodesProvider
 
 String _$flatExpenseNodesHash() => r'09aa5b807836dcf3151d0462d655aa00d4163041';
 
+/// Read-only category contract for features that enrich transactions.
+
+@ProviderFor(categoryLookups)
+const categoryLookupsProvider = CategoryLookupsProvider._();
+
+/// Read-only category contract for features that enrich transactions.
+
+final class CategoryLookupsProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<CategoryLookup>>,
+          List<CategoryLookup>,
+          FutureOr<List<CategoryLookup>>
+        >
+    with
+        $FutureModifier<List<CategoryLookup>>,
+        $FutureProvider<List<CategoryLookup>> {
+  /// Read-only category contract for features that enrich transactions.
+  const CategoryLookupsProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'categoryLookupsProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$categoryLookupsHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<CategoryLookup>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<CategoryLookup>> create(Ref ref) {
+    return categoryLookups(ref);
+  }
+}
+
+String _$categoryLookupsHash() => r'f83a907d48cf997f0703afd28ea7e7cf92007a21';
+
 /// Streams income sources directly from Firestore — auto-updates on any change
 /// without requiring manual [ref.invalidate] calls after mutations.
 
@@ -226,41 +272,41 @@ final class TotalMonthlyExpensesProvider
 String _$totalMonthlyExpensesHash() =>
     r'b31f5098773ae01ad24b82636c64691777dc0133';
 
-@ProviderFor(budgetHealth)
-const budgetHealthProvider = BudgetHealthProvider._();
+@ProviderFor(budgetSummary)
+const budgetSummaryProvider = BudgetSummaryProvider._();
 
-final class BudgetHealthProvider
+final class BudgetSummaryProvider
     extends
         $FunctionalProvider<
-          AsyncValue<BudgetHealth>,
-          BudgetHealth,
-          FutureOr<BudgetHealth>
+          AsyncValue<BudgetSummary>,
+          BudgetSummary,
+          FutureOr<BudgetSummary>
         >
-    with $FutureModifier<BudgetHealth>, $FutureProvider<BudgetHealth> {
-  const BudgetHealthProvider._()
+    with $FutureModifier<BudgetSummary>, $FutureProvider<BudgetSummary> {
+  const BudgetSummaryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'budgetHealthProvider',
+        name: r'budgetSummaryProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$budgetHealthHash();
+  String debugGetCreateSourceHash() => _$budgetSummaryHash();
 
   @$internal
   @override
-  $FutureProviderElement<BudgetHealth> $createElement(
+  $FutureProviderElement<BudgetSummary> $createElement(
     $ProviderPointer pointer,
   ) => $FutureProviderElement(pointer);
 
   @override
-  FutureOr<BudgetHealth> create(Ref ref) {
-    return budgetHealth(ref);
+  FutureOr<BudgetSummary> create(Ref ref) {
+    return budgetSummary(ref);
   }
 }
 
-String _$budgetHealthHash() => r'dd9d39994f20f91aebb24ced77a662067fc114e1';
+String _$budgetSummaryHash() => r'47292a82fda65daf3cbf5b054c5f61dbf5abec57';

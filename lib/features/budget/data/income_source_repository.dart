@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
+import 'package:stutz/features/budget/data/income_source_mapper.dart';
 
 part 'income_source_repository.g.dart';
 
@@ -16,21 +17,23 @@ class IncomeSourceRepository {
 
   Future<List<IncomeSource>> getAllIncomeSources() async {
     final snapshot = await _collection.get();
-    return snapshot.docs.map((doc) => IncomeSource.fromFirestore(doc)).toList();
+    return snapshot.docs.map(IncomeSourceMapper.fromDocument).toList();
   }
 
   Stream<List<IncomeSource>> watchAllIncomeSources() {
     return _collection.snapshots().map(
-      (s) => s.docs.map((d) => IncomeSource.fromFirestore(d)).toList(),
+      (s) => s.docs.map(IncomeSourceMapper.fromDocument).toList(),
     );
   }
 
   Future<void> addIncomeSource(IncomeSource source) async {
-    await _collection.doc(source.id).set(source.toFirestore());
+    await _collection.doc(source.id).set(IncomeSourceMapper.toDocument(source));
   }
 
   Future<void> updateIncomeSource(IncomeSource source) async {
-    await _collection.doc(source.id).update(source.toFirestore());
+    await _collection
+        .doc(source.id)
+        .update(IncomeSourceMapper.toDocument(source));
   }
 
   Future<void> deleteIncomeSource(String id) async {

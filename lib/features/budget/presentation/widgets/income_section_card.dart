@@ -8,8 +8,15 @@ import 'package:stutz/shared/widgets/section_card.dart';
 
 class IncomeSectionCard extends StatelessWidget {
   final List<IncomeSource> incomes;
+  final double monthlyTotal;
+  final double yearlyTotal;
 
-  const IncomeSectionCard({super.key, required this.incomes});
+  const IncomeSectionCard({
+    super.key,
+    required this.incomes,
+    required this.monthlyTotal,
+    required this.yearlyTotal,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,20 +27,10 @@ class IncomeSectionCard extends StatelessWidget {
         .where((i) => i.group == IncomeGroup.additional)
         .toList();
 
-    double rawMonthlySum = 0;
-    double rawYearlySum = 0;
-    for (final item in incomes) {
-      if (item.interval == PaymentInterval.monthly) {
-        rawMonthlySum += item.amount;
-      } else {
-        rawYearlySum += item.amount;
-      }
-    }
-
     return SectionCard(
       title: "EINNAHMEN",
-      totalMonthly: rawMonthlySum,
-      totalYearly: rawYearlySum,
+      totalMonthly: monthlyTotal,
+      totalYearly: yearlyTotal,
       icon: Icons.trending_up,
       iconColor: Colors.green,
       backgroundColor: Colors.green.shade50,

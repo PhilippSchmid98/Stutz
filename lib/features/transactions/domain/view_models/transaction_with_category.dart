@@ -11,6 +11,6 @@ abstract class TransactionWithCategory with _$TransactionWithCategory {
     required String categoryName,
 
     /// The parent node's ID, used for grouping by category.
-    String? groupName,
+    String? parentId,
   }) = _TransactionWithCategory;
 }

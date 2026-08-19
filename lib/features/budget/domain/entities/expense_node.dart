@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 
@@ -39,54 +38,47 @@ abstract class ExpenseNode with _$ExpenseNode {
     return amount;
   }
 
-  /// Firestore stores flat nodes (no nested children); [parentId] links them — use TreeBuilder to assemble.
-  factory ExpenseNode.fromFirestore(
-    DocumentSnapshot<Map<String, dynamic>> doc,
-  ) {
-    final data = doc.data()!;
-    return ExpenseNode(
-      id: doc.id,
-      parentId: data['parentId'],
-      name: data['name'] ?? 'Unknown',
-      plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
-      interval: _parseInterval(data['interval']),
-      type: _parseType(data['type']),
-      sortOrder: data['sortOrder'] ?? 99999,
-    );
+  /// Validates the state before it is persisted. Empty groups are valid even
+  /// though their children are loaded separately from Firestore.
+  void validateForWrite() {
+    if (id.trim().isEmpty) {
+      throw const ExpenseNodeValidationException('Category ID is required');
+    }
+    if (name.trim().isEmpty) {
+      throw const ExpenseNodeValidationException('Category name is required');
+    }
+
+    final isGroupNode =
+        children.isNotEmpty ||
+        (plannedAmount == null && interval == null && type == null);
+    if (isGroupNode) {
+      if (plannedAmount != null || interval != null || type != null) {
+        throw const ExpenseNodeValidationException(
+          'A group cannot have amount, interval, or type',
+        );
+      }
+      return;
+    }
+
+    final amount = plannedAmount;
+    if (amount == null || !amount.isFinite || amount <= 0) {
+      throw const ExpenseNodeValidationException(
+        'A leaf category needs a positive amount',
+      );
+    }
+    if (interval == null || type == null) {
+      throw const ExpenseNodeValidationException(
+        'A leaf category needs an interval and type',
+      );
+    }
   }
 }
 
-extension ExpenseNodeFirestoreX on ExpenseNode {
-  Map<String, dynamic> toFirestore() {
-    return {
-      'parentId': parentId,
-      'name': name,
-      'plannedAmount': plannedAmount,
-      'interval': interval?.name,
-      'type': type?.name,
-      'sortOrder': sortOrder,
-    };
-  }
-}
+class ExpenseNodeValidationException implements Exception {
+  final String message;
 
-PaymentInterval? _parseInterval(String? value) {
-  switch (value?.toLowerCase()) {
-    case 'yearly':
-      return PaymentInterval.yearly;
-    case 'monthly':
-      return PaymentInterval.monthly;
-    default:
-      return null;
-  }
-}
+  const ExpenseNodeValidationException(this.message);
 
-ExpenseType? _parseType(String? value) {
-  switch (value?.toLowerCase()) {
-    case 'fixed':
-      return ExpenseType.fixed;
-    case 'variable':
-      return ExpenseType.variable;
-    default:
-      return null;
-  }
+  @override
+  String toString() => message;
 }

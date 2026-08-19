@@ -1,34 +1,36 @@
 import 'package:collection/collection.dart';
-import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/features/transactions/domain/view_models/daily_transactions.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 
 /// Pure domain service for enriching and grouping transactions.
 ///
-/// Consumes [ExpenseNode] only for its id/name/parentId — the Budget feature
-/// remains the sole owner of that data (Primary Owner pattern).
+/// Consumes only the Budget feature's read-only category lookup contract.
 class TransactionGrouper {
   const TransactionGrouper();
 
-  /// Enriches [transactions] with category names via [flatNodes] (already
-  /// flattened — e.g. Budget's `flatExpenseNodesProvider`) and groups them by day.
+  /// Enriches [transactions] with category names via [categories] and groups
+  /// them by day.
   ///
   /// The returned list is sorted newest-first within each day, and days are
   /// also ordered newest-first.
   List<DailyTransactions> groupByDay(
     List<AppTransaction> transactions,
-    List<ExpenseNode> flatNodes,
+    List<CategoryLookup> categories,
   ) {
+    final categoriesById = <String, CategoryLookup>{
+      for (final category in categories) category.id: category,
+    };
     final sorted = [...transactions]
       ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
 
     final enriched = sorted.map((txn) {
-      final node = flatNodes.firstWhereOrNull((n) => n.id == txn.expenseNodeId);
+      final category = categoriesById[txn.expenseNodeId];
       return TransactionWithCategory(
         transaction: txn,
-        categoryName: node?.name ?? 'Unknown',
-        groupName: node?.parentId,
+        categoryName: category?.name ?? 'Unknown',
+        parentId: category?.parentId,
       );
     }).toList();
 

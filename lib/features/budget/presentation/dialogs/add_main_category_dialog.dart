@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:stutz/features/budget/data/expense_node_repository.dart';
+import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
@@ -13,6 +13,8 @@ class AddMainCategoryDialog extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final nameCtrl = useTextEditingController();
+    final mutationAsync = ref.watch(budgetMutationsProvider);
+    final isSaving = mutationAsync.isLoading;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -44,7 +46,7 @@ class AddMainCategoryDialog extends HookConsumerWidget {
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: isSaving ? null : () => Navigator.pop(context),
           child: Text(
             'Abbrechen',
             style: TextStyle(color: Colors.grey.shade600),
@@ -57,23 +59,36 @@ class AddMainCategoryDialog extends HookConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () async {
-            if (formKey.currentState!.validate()) {
-              final node = ExpenseNode(
-                id: const Uuid().v4(),
-                parentId: null,
-                name: nameCtrl.text,
-                plannedAmount: null,
-                interval: null,
-                type: null,
-                children: [],
-              );
-              await ref
-                  .read(expenseNodeRepositoryProvider)
-                  .addExpenseNode(node);
-              if (context.mounted) Navigator.pop(context);
-            }
-          },
+          onPressed: isSaving
+              ? null
+              : () async {
+                  if (formKey.currentState!.validate()) {
+                    final node = ExpenseNode(
+                      id: const Uuid().v4(),
+                      parentId: null,
+                      name: nameCtrl.text,
+                      plannedAmount: null,
+                      interval: null,
+                      type: null,
+                      children: [],
+                    );
+                    try {
+                      await ref
+                          .read(budgetMutationsProvider.notifier)
+                          .addExpenseNode(node);
+                    } catch (_) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Erstellen fehlgeschlagen'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                    if (context.mounted) Navigator.pop(context);
+                  }
+                },
           child: const Text('Erstellen'),
         ),
       ],

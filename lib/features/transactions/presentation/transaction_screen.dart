@@ -77,7 +77,26 @@ class TransactionScreen extends HookConsumerWidget {
     }, [paginatedStateAsync.value]);
 
     Future<void> scrollToMonth(DateTime month) async {
-      final allGroups = paginatedStateAsync.value?.groupedDays;
+      final listNotifier = ref.read(paginatedTransactionListProvider.notifier);
+      final loaded = await listNotifier.ensureMonthLoaded(month);
+      if (!context.mounted || !loaded) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Für diesen Monat konnten keine Daten geladen werden.',
+              ),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      final allGroups = ref
+          .read(paginatedTransactionListProvider)
+          .value
+          ?.groupedDays;
       if (allGroups == null) return;
 
       final index = allGroups.indexWhere(
@@ -94,23 +113,16 @@ class TransactionScreen extends HookConsumerWidget {
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOutCubic,
         );
-
-        Future.delayed(const Duration(milliseconds: 650), () {
-          if (context.mounted) isProgrammaticScroll.value = false;
-        });
-      } else {
-        // Falls der Monat noch nicht geladen wurde, weil er weiter hinten liegt,
-        // müsste man theoretisch tiefer nachladen. Für die UX reicht hier eine Info.
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                "Bisher keine Transaktionen geladen. Scrolle nach unten!",
-              ),
-              duration: Duration(seconds: 2),
+        isProgrammaticScroll.value = false;
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Für diesen Monat wurden keine Transaktionen gefunden.',
             ),
-          );
-        }
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
     }
 
@@ -174,6 +186,30 @@ class TransactionScreen extends HookConsumerWidget {
                       allGroups.length + (stateData.hasReachedMax ? 0 : 1),
                   itemBuilder: (context, index) {
                     if (index == allGroups.length) {
+                      if (stateData.loadMoreError != null) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Weitere Transaktionen konnten nicht geladen werden.',
+                              ),
+                              TextButton(
+                                onPressed: stateData.isLoadingMore
+                                    ? null
+                                    : () => ref
+                                          .read(
+                                            paginatedTransactionListProvider
+                                                .notifier,
+                                          )
+                                          .loadNextPage(),
+                                child: const Text('Erneut versuchen'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 32.0),
                         child: Center(child: CircularProgressIndicator()),

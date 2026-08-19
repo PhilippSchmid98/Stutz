@@ -11,19 +11,16 @@ part of 'app_transaction.dart';
 
 // dart format off
 T _$identity<T>(T value) => value;
-
 /// @nodoc
 mixin _$AppTransaction {
 
- String get id; String get expenseNodeId; double get amount;@FirestoreTimestampConverter() DateTime get dateTime; String? get note;
+ String get id; String get expenseNodeId; double get amount; DateTime get dateTime; String? get note;
 /// Create a copy of AppTransaction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
 $AppTransactionCopyWith<AppTransaction> get copyWith => _$AppTransactionCopyWithImpl<AppTransaction>(this as AppTransaction, _$identity);
 
-  /// Serializes this AppTransaction to a JSON map.
-  Map<String, dynamic> toJson();
 
 
 @override
@@ -31,7 +28,7 @@ bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amount,dateTime,note);
 
@@ -48,7 +45,7 @@ abstract mixin class $AppTransactionCopyWith<$Res>  {
   factory $AppTransactionCopyWith(AppTransaction value, $Res Function(AppTransaction) _then) = _$AppTransactionCopyWithImpl;
 @useResult
 $Res call({
- String id, String expenseNodeId, double amount,@FirestoreTimestampConverter() DateTime dateTime, String? note
+ String id, String expenseNodeId, double amount, DateTime dateTime, String? note
 });
 
 
@@ -157,7 +154,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount, @FirestoreTimestampConverter()  DateTime dateTime,  String? note)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppTransaction() when $default != null:
 return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
@@ -178,7 +175,7 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount, @FirestoreTimestampConverter()  DateTime dateTime,  String? note)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)  $default,) {final _that = this;
 switch (_that) {
 case _AppTransaction():
 return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
@@ -198,7 +195,7 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String expenseNodeId,  double amount, @FirestoreTimestampConverter()  DateTime dateTime,  String? note)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)?  $default,) {final _that = this;
 switch (_that) {
 case _AppTransaction() when $default != null:
 return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
@@ -210,16 +207,16 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 }
 
 /// @nodoc
-@JsonSerializable()
+
 
 class _AppTransaction implements AppTransaction {
-  const _AppTransaction({required this.id, required this.expenseNodeId, required this.amount, @FirestoreTimestampConverter() required this.dateTime, this.note});
-  factory _AppTransaction.fromJson(Map<String, dynamic> json) => _$AppTransactionFromJson(json);
+  const _AppTransaction({required this.id, required this.expenseNodeId, required this.amount, required this.dateTime, this.note});
+
 
 @override final  String id;
 @override final  String expenseNodeId;
 @override final  double amount;
-@override@FirestoreTimestampConverter() final  DateTime dateTime;
+@override final  DateTime dateTime;
 @override final  String? note;
 
 /// Create a copy of AppTransaction
@@ -228,17 +225,14 @@ class _AppTransaction implements AppTransaction {
 @pragma('vm:prefer-inline')
 _$AppTransactionCopyWith<_AppTransaction> get copyWith => __$AppTransactionCopyWithImpl<_AppTransaction>(this, _$identity);
 
-@override
-Map<String, dynamic> toJson() {
-  return _$AppTransactionToJson(this, );
-}
+
 
 @override
 bool operator ==(Object other) {
   return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
 }
 
-@JsonKey(includeFromJson: false, includeToJson: false)
+
 @override
 int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amount,dateTime,note);
 
@@ -255,7 +249,7 @@ abstract mixin class _$AppTransactionCopyWith<$Res> implements $AppTransactionCo
   factory _$AppTransactionCopyWith(_AppTransaction value, $Res Function(_AppTransaction) _then) = __$AppTransactionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String expenseNodeId, double amount,@FirestoreTimestampConverter() DateTime dateTime, String? note
+ String id, String expenseNodeId, double amount, DateTime dateTime, String? note
 });
 
 

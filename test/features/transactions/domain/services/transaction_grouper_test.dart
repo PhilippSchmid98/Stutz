@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
 import 'package:stutz/features/transactions/domain/services/transaction_grouper.dart';
 import '../../../../helpers/test_data.dart';
 
@@ -12,7 +12,7 @@ void main() {
     });
 
     test('enriches transaction with category name from flatNodes', () {
-      final node = ExpenseNode(id: 'e1', name: 'Groceries');
+      const node = CategoryLookup(id: 'e1', name: 'Groceries');
       final txn = makeTransaction(id: 't1', expenseNodeId: 'e1', amount: 20);
       final result = grouper.groupByDay([txn], [node]);
 
@@ -27,7 +27,7 @@ void main() {
     });
 
     test('groups multiple transactions on the same day together', () {
-      final node = ExpenseNode(id: 'e1', name: 'Food');
+      const node = CategoryLookup(id: 'e1', name: 'Food');
       final txns = [
         makeTransaction(
           id: 't1',

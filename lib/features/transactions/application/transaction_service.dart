@@ -1,12 +1,13 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
-import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
 import '../domain/entities/app_transaction.dart';
 import '../domain/services/transaction_grouper.dart';
 import '../domain/view_models/daily_transactions.dart';
 import '../data/transaction_repository.dart';
+import '../data/transaction_mapper.dart';
 
 part 'transaction_service.g.dart';
 
@@ -15,30 +16,52 @@ class PaginatedTransactionsState {
   final List<AppTransaction> rawTransactions; // Beibehalten für den Grouper
   final QueryDocumentSnapshot? lastSnapshot;
   final bool hasReachedMax;
+  final bool isLoadingMore;
+  final Object? loadMoreError;
 
   PaginatedTransactionsState({
     required this.groupedDays,
     required this.rawTransactions,
     this.lastSnapshot,
     required this.hasReachedMax,
+    this.isLoadingMore = false,
+    this.loadMoreError,
   });
+
+  PaginatedTransactionsState copyWith({
+    List<DailyTransactions>? groupedDays,
+    List<AppTransaction>? rawTransactions,
+    QueryDocumentSnapshot? lastSnapshot,
+    bool? hasReachedMax,
+    bool? isLoadingMore,
+    Object? loadMoreError,
+    bool clearLoadMoreError = false,
+  }) {
+    return PaginatedTransactionsState(
+      groupedDays: groupedDays ?? this.groupedDays,
+      rawTransactions: rawTransactions ?? this.rawTransactions,
+      lastSnapshot: lastSnapshot ?? this.lastSnapshot,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      loadMoreError: clearLoadMoreError
+          ? null
+          : loadMoreError ?? this.loadMoreError,
+    );
+  }
 }
 
 @riverpod
 class PaginatedTransactionList extends _$PaginatedTransactionList {
   static const _pageSize = 20;
 
-  // Neuer Lock, um paralleles Laden beim wilden Scrollen zu verhindern
-  bool _isFetchingNextPage = false;
-
   @override
   FutureOr<PaginatedTransactionsState> build() async {
     final repo = ref.watch(transactionRepositoryProvider);
-    final flatNodes = await ref.watch(flatExpenseNodesProvider.future);
+    final categories = await ref.watch(categoryLookupsProvider.future);
 
     return _fetchPage(
       repo: repo,
-      flatNodes: flatNodes,
+      categories: categories,
       startAfter: null,
       currentTransactions: [],
     );
@@ -46,7 +69,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
   Future<PaginatedTransactionsState> _fetchPage({
     required TransactionRepository repo,
-    required List<ExpenseNode> flatNodes,
+    required List<CategoryLookup> categories,
     required QueryDocumentSnapshot? startAfter,
     required List<AppTransaction> currentTransactions,
   }) async {
@@ -55,15 +78,13 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
       startAfter: startAfter,
     );
 
-    final newTransactions = docs
-        .map((d) => AppTransaction.fromFirestore(d))
-        .toList();
+    final newTransactions = docs.map(TransactionMapper.fromDocument).toList();
     final allTransactions = [...currentTransactions, ...newTransactions];
 
     // Nutzen den existierenden puren Domain Service zum Gruppieren
     final grouped = const TransactionGrouper().groupByDay(
       allTransactions,
-      flatNodes,
+      categories,
     );
 
     return PaginatedTransactionsState(
@@ -75,30 +96,56 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
   }
 
   Future<void> loadNextPage() async {
-    // 1. Wenn wir schon laden oder am Ende sind -> abbrechen
-    if (_isFetchingNextPage || state.value?.hasReachedMax == true) return;
+    final current = state.value;
+    if (current == null || current.isLoadingMore || current.hasReachedMax) {
+      return;
+    }
 
-    _isFetchingNextPage = true;
+    state = AsyncData(
+      current.copyWith(isLoadingMore: true, clearLoadMoreError: true),
+    );
 
     try {
-      final current = state.value!;
       final repo = ref.read(transactionRepositoryProvider);
-      final flatNodes = await ref.watch(flatExpenseNodesProvider.future);
+      final categories = await ref.read(categoryLookupsProvider.future);
       final nextState = await _fetchPage(
         repo: repo,
-        flatNodes: flatNodes,
+        categories: categories,
         startAfter: current.lastSnapshot,
         currentTransactions: current.rawTransactions,
       );
 
-      // 2. Zustand mit den neuen Daten updaten
-      state = AsyncData(nextState);
-    } catch (e, st) {
-      // Bei einem Fehler werfen wir einen Error-State
-      state = AsyncError(e, st);
-    } finally {
-      // 3. Lock am Ende wieder freigeben
-      _isFetchingNextPage = false;
+      state = AsyncData(
+        nextState.copyWith(isLoadingMore: false, clearLoadMoreError: true),
+      );
+    } catch (e) {
+      state = AsyncData(
+        current.copyWith(isLoadingMore: false, loadMoreError: e),
+      );
+    }
+  }
+
+  Future<bool> ensureMonthLoaded(DateTime month) async {
+    while (true) {
+      final current = state.value;
+      if (current == null) return false;
+
+      final isLoaded = current.groupedDays.any(
+        (group) =>
+            group.date.year == month.year && group.date.month == month.month,
+      );
+      if (isLoaded) return true;
+      if (current.hasReachedMax || current.loadMoreError != null) return false;
+
+      final transactionCount = current.rawTransactions.length;
+      await loadNextPage();
+
+      final next = state.value;
+      if (next == null ||
+          next.rawTransactions.length == transactionCount ||
+          next.loadMoreError != null) {
+        return false;
+      }
     }
   }
 }
@@ -109,38 +156,38 @@ class TransactionMutations extends _$TransactionMutations {
   FutureOr<void> build() {}
 
   Future<void> addTransaction(AppTransaction txn) async {
-    // 1. Verhindert, dass der Provider während des Speicherns abgeräumt wird
-    final keepAliveLink = ref.keepAlive();
-
+    state = const AsyncLoading();
     try {
       await ref.read(transactionRepositoryProvider).addTransaction(txn);
       _refreshTransactionData();
-    } finally {
-      keepAliveLink.close();
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
     }
   }
 
   Future<void> updateTransaction(AppTransaction txn) async {
-    // 1. Verhindert, dass der Provider während des Speicherns abgeräumt wird
-    final keepAliveLink = ref.keepAlive();
-
+    state = const AsyncLoading();
     try {
       await ref.read(transactionRepositoryProvider).updateTransaction(txn);
       _refreshTransactionData();
-    } finally {
-      keepAliveLink.close();
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
     }
   }
 
   Future<void> deleteTransaction(String id) async {
-    // 1. Verhindert, dass der Provider während des Speicherns abgeräumt wird
-    final keepAliveLink = ref.keepAlive();
-
+    state = const AsyncLoading();
     try {
       await ref.read(transactionRepositoryProvider).deleteTransaction(id);
       _refreshTransactionData();
-    } finally {
-      keepAliveLink.close();
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
     }
   }
 

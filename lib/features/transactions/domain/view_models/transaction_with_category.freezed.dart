@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 mixin _$TransactionWithCategory {
 
  AppTransaction get transaction; String get categoryName;/// The parent node's ID, used for grouping by category.
- String? get groupName;
+ String? get parentId;
 /// Create a copy of TransactionWithCategory
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $TransactionWithCategoryCopyWith<TransactionWithCategory> get copyWith => _$Tran
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionWithCategory&&(identical(other.transaction, transaction) || other.transaction == transaction)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.groupName, groupName) || other.groupName == groupName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is TransactionWithCategory&&(identical(other.transaction, transaction) || other.transaction == transaction)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.parentId, parentId) || other.parentId == parentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,transaction,categoryName,groupName);
+int get hashCode => Object.hash(runtimeType,transaction,categoryName,parentId);
 
 @override
 String toString() {
-  return 'TransactionWithCategory(transaction: $transaction, categoryName: $categoryName, groupName: $groupName)';
+  return 'TransactionWithCategory(transaction: $transaction, categoryName: $categoryName, parentId: $parentId)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $TransactionWithCategoryCopyWith<$Res>  {
   factory $TransactionWithCategoryCopyWith(TransactionWithCategory value, $Res Function(TransactionWithCategory) _then) = _$TransactionWithCategoryCopyWithImpl;
 @useResult
 $Res call({
- AppTransaction transaction, String categoryName, String? groupName
+ AppTransaction transaction, String categoryName, String? parentId
 });
 
 
@@ -63,11 +63,11 @@ class _$TransactionWithCategoryCopyWithImpl<$Res>
 
 /// Create a copy of TransactionWithCategory
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? transaction = null,Object? categoryName = null,Object? groupName = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? transaction = null,Object? categoryName = null,Object? parentId = freezed,}) {
   return _then(_self.copyWith(
 transaction: null == transaction ? _self.transaction : transaction // ignore: cast_nullable_to_non_nullable
 as AppTransaction,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
-as String,groupName: freezed == groupName ? _self.groupName : groupName // ignore: cast_nullable_to_non_nullable
+as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -162,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppTransaction transaction,  String categoryName,  String? groupName)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( AppTransaction transaction,  String categoryName,  String? parentId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _TransactionWithCategory() when $default != null:
-return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
+return $default(_that.transaction,_that.categoryName,_that.parentId);case _:
   return orElse();
 
 }
@@ -183,10 +183,10 @@ return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppTransaction transaction,  String categoryName,  String? groupName)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( AppTransaction transaction,  String categoryName,  String? parentId)  $default,) {final _that = this;
 switch (_that) {
 case _TransactionWithCategory():
-return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
+return $default(_that.transaction,_that.categoryName,_that.parentId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +203,10 @@ return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppTransaction transaction,  String categoryName,  String? groupName)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( AppTransaction transaction,  String categoryName,  String? parentId)?  $default,) {final _that = this;
 switch (_that) {
 case _TransactionWithCategory() when $default != null:
-return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
+return $default(_that.transaction,_that.categoryName,_that.parentId);case _:
   return null;
 
 }
@@ -218,13 +218,13 @@ return $default(_that.transaction,_that.categoryName,_that.groupName);case _:
 
 
 class _TransactionWithCategory implements TransactionWithCategory {
-  const _TransactionWithCategory({required this.transaction, required this.categoryName, this.groupName});
+  const _TransactionWithCategory({required this.transaction, required this.categoryName, this.parentId});
   
 
 @override final  AppTransaction transaction;
 @override final  String categoryName;
 /// The parent node's ID, used for grouping by category.
-@override final  String? groupName;
+@override final  String? parentId;
 
 /// Create a copy of TransactionWithCategory
 /// with the given fields replaced by the non-null parameter values.
@@ -236,16 +236,16 @@ _$TransactionWithCategoryCopyWith<_TransactionWithCategory> get copyWith => __$T
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionWithCategory&&(identical(other.transaction, transaction) || other.transaction == transaction)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.groupName, groupName) || other.groupName == groupName));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _TransactionWithCategory&&(identical(other.transaction, transaction) || other.transaction == transaction)&&(identical(other.categoryName, categoryName) || other.categoryName == categoryName)&&(identical(other.parentId, parentId) || other.parentId == parentId));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,transaction,categoryName,groupName);
+int get hashCode => Object.hash(runtimeType,transaction,categoryName,parentId);
 
 @override
 String toString() {
-  return 'TransactionWithCategory(transaction: $transaction, categoryName: $categoryName, groupName: $groupName)';
+  return 'TransactionWithCategory(transaction: $transaction, categoryName: $categoryName, parentId: $parentId)';
 }
 
 
@@ -256,7 +256,7 @@ abstract mixin class _$TransactionWithCategoryCopyWith<$Res> implements $Transac
   factory _$TransactionWithCategoryCopyWith(_TransactionWithCategory value, $Res Function(_TransactionWithCategory) _then) = __$TransactionWithCategoryCopyWithImpl;
 @override @useResult
 $Res call({
- AppTransaction transaction, String categoryName, String? groupName
+ AppTransaction transaction, String categoryName, String? parentId
 });
 
 
@@ -273,11 +273,11 @@ class __$TransactionWithCategoryCopyWithImpl<$Res>
 
 /// Create a copy of TransactionWithCategory
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? transaction = null,Object? categoryName = null,Object? groupName = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? transaction = null,Object? categoryName = null,Object? parentId = freezed,}) {
   return _then(_TransactionWithCategory(
 transaction: null == transaction ? _self.transaction : transaction // ignore: cast_nullable_to_non_nullable
 as AppTransaction,categoryName: null == categoryName ? _self.categoryName : categoryName // ignore: cast_nullable_to_non_nullable
-as String,groupName: freezed == groupName ? _self.groupName : groupName // ignore: cast_nullable_to_non_nullable
+as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

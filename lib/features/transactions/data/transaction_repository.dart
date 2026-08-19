@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import '../domain/entities/app_transaction.dart';
+import 'transaction_mapper.dart';
 
 part 'transaction_repository.g.dart';
 
@@ -38,13 +39,13 @@ class TransactionRepository {
         .get();
 
     if (snapshot.docs.isEmpty) return null;
-    return AppTransaction.fromFirestore(snapshot.docs.first);
+    return TransactionMapper.fromDocument(snapshot.docs.first);
   }
 
   Future<void> addTransaction(AppTransaction t) async =>
-      await _collection.doc(t.id).set(t.toFirestore());
+      await _collection.doc(t.id).set(TransactionMapper.toDocument(t));
   Future<void> updateTransaction(AppTransaction t) async =>
-      await _collection.doc(t.id).update(t.toFirestore());
+      await _collection.doc(t.id).update(TransactionMapper.toDocument(t));
   Future<void> deleteTransaction(String id) async =>
       await _collection.doc(id).delete();
 }

@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/features/budget/application/selectable_categories_provider.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
@@ -36,6 +37,8 @@ class AddTransactionDialog extends HookConsumerWidget {
 
     // 1. ÄNDERUNG: Wir lauschen nur noch auf den neuen, sauberen Provider
     final selectableCategoriesAsync = ref.watch(selectableCategoriesProvider);
+    final mutationAsync = ref.watch(transactionMutationsProvider);
+    final isSaving = mutationAsync.isLoading;
     final isEdit = existingItem != null;
 
     // --- HELPERS ---
@@ -118,9 +121,15 @@ class AddTransactionDialog extends HookConsumerWidget {
           return;
         }
 
-        final amount =
-            double.tryParse(amountCtrl.text.replaceAll(',', '.')) ?? 0.0;
-        if (amount <= 0) return;
+        final amount = parsePositiveAmount(amountCtrl.text);
+        if (amount == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Bitte einen gültigen Betrag eingeben"),
+            ),
+          );
+          return;
+        }
 
         final id = isEdit ? existingItem!.transaction.id : const Uuid().v4();
 
@@ -133,10 +142,19 @@ class AddTransactionDialog extends HookConsumerWidget {
         );
 
         final mutations = ref.read(transactionMutationsProvider.notifier);
-        if (isEdit) {
-          await mutations.updateTransaction(txn);
-        } else {
-          await mutations.addTransaction(txn);
+        try {
+          if (isEdit) {
+            await mutations.updateTransaction(txn);
+          } else {
+            await mutations.addTransaction(txn);
+          }
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Speichern fehlgeschlagen")),
+            );
+          }
+          return;
         }
         if (context.mounted) Navigator.pop(context);
       }
@@ -165,9 +183,18 @@ class AddTransactionDialog extends HookConsumerWidget {
       );
 
       if (confirm == true && existingItem != null) {
-        await ref
-            .read(transactionMutationsProvider.notifier)
-            .deleteTransaction(existingItem!.transaction.id);
+        try {
+          await ref
+              .read(transactionMutationsProvider.notifier)
+              .deleteTransaction(existingItem!.transaction.id);
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Löschen fehlgeschlagen")),
+            );
+          }
+          return;
+        }
         if (context.mounted) Navigator.pop(context);
       }
     }
@@ -193,7 +220,7 @@ class AddTransactionDialog extends HookConsumerWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: isSaving ? null : () => Navigator.pop(context),
                   icon: Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -429,7 +456,7 @@ class AddTransactionDialog extends HookConsumerWidget {
                 if (isEdit) ...[
                   Expanded(
                     child: TextButton(
-                      onPressed: deleteTransaction,
+                      onPressed: isSaving ? null : deleteTransaction,
                       style: TextButton.styleFrom(
                         foregroundColor: Colors.red,
                         padding: const EdgeInsets.symmetric(vertical: 14),
@@ -449,7 +476,7 @@ class AddTransactionDialog extends HookConsumerWidget {
                 Expanded(
                   flex: 2,
                   child: FilledButton(
-                    onPressed: saveTransaction,
+                    onPressed: isSaving ? null : saveTransaction,
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.black,
                       padding: const EdgeInsets.symmetric(vertical: 14),
