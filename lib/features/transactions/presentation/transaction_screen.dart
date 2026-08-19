@@ -20,9 +20,7 @@ class TransactionScreen extends HookConsumerWidget {
     // when _scrollToMonth drives the list programmatically.
     final isProgrammaticScroll = useRef(false);
 
-    // Auf den neuen paginierten Provider lauschen
     final paginatedStateAsync = ref.watch(paginatedTransactionListProvider);
-    final availableMonthsAsync = ref.watch(availableMonthsProvider);
 
     useEffect(() {
       void onListScroll() {
@@ -106,14 +104,17 @@ class TransactionScreen extends HookConsumerWidget {
 
       if (index != -1) {
         isProgrammaticScroll.value = true;
-        ref.read(currentVisibleMonthProvider.notifier).set(month);
+        try {
+          ref.read(currentVisibleMonthProvider.notifier).set(month);
 
-        await itemScrollController.scrollTo(
-          index: index,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOutCubic,
-        );
-        isProgrammaticScroll.value = false;
+          await itemScrollController.scrollTo(
+            index: index,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOutCubic,
+          );
+        } finally {
+          isProgrammaticScroll.value = false;
+        }
       } else if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -128,18 +129,7 @@ class TransactionScreen extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text('Transaktionen'),
-        actions: [const CloudStatusIcon()],
-        centerTitle: false,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: Colors.grey.shade100, height: 1),
-        ),
-      ),
+      appBar: const _TransactionAppBar(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'transaction_screen_fab',
         backgroundColor: Colors.black,
@@ -157,69 +147,17 @@ class TransactionScreen extends HookConsumerWidget {
       body: Column(
         children: [
           const SizedBox(height: 8),
-          // Month Selector wartet auf asynchrone Monate
-          availableMonthsAsync.when(
-            data: (_) => CleanMonthSelector(onMonthSelected: scrollToMonth),
-            loading: () => const SizedBox(
-              height: 50,
-              child: Center(child: LinearProgressIndicator()),
-            ),
-            error: (_, __) => const SizedBox(height: 50),
-          ),
+          CleanMonthSelector(onMonthSelected: scrollToMonth),
           const SizedBox(height: 8),
           Divider(height: 1, color: Colors.grey.shade100),
-
-          // Listeninhalt
           Expanded(
-            child: paginatedStateAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('Fehler: $err')),
-              data: (stateData) {
-                final allGroups = stateData.groupedDays;
-                if (allGroups.isEmpty) return const _EmptyState();
-
-                return ScrollablePositionedList.builder(
-                  itemScrollController: itemScrollController,
-                  itemPositionsListener: itemPositionsListener,
-                  padding: const EdgeInsets.only(bottom: 80, top: 0),
-                  itemCount:
-                      allGroups.length + (stateData.hasReachedMax ? 0 : 1),
-                  itemBuilder: (context, index) {
-                    if (index == allGroups.length) {
-                      if (stateData.loadMoreError != null) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24),
-                          child: Column(
-                            children: [
-                              const Text(
-                                'Weitere Transaktionen konnten nicht geladen werden.',
-                              ),
-                              TextButton(
-                                onPressed: stateData.isLoadingMore
-                                    ? null
-                                    : () => ref
-                                          .read(
-                                            paginatedTransactionListProvider
-                                                .notifier,
-                                          )
-                                          .loadNextPage(),
-                                child: const Text('Erneut versuchen'),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 32.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    final group = allGroups[index];
-                    return DailyTransactionGroup(group: group);
-                  },
-                );
-              },
+            child: _TransactionList(
+              state: paginatedStateAsync,
+              itemScrollController: itemScrollController,
+              itemPositionsListener: itemPositionsListener,
+              onLoadNextPage: () => ref
+                  .read(paginatedTransactionListProvider.notifier)
+                  .loadNextPage(),
             ),
           ),
         ],
@@ -237,6 +175,93 @@ class _EmptyState extends StatelessWidget {
         'Keine Ausgaben.',
         style: TextStyle(color: Colors.grey.shade400),
       ),
+    );
+  }
+}
+
+class _TransactionAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _TransactionAppBar();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 1);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: const Text('Transaktionen'),
+      actions: [const CloudStatusIcon()],
+      centerTitle: false,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      elevation: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(1),
+        child: Container(color: Colors.grey.shade100, height: 1),
+      ),
+    );
+  }
+}
+
+class _TransactionList extends StatelessWidget {
+  final AsyncValue<PaginatedTransactionsState> state;
+  final ItemScrollController itemScrollController;
+  final ItemPositionsListener itemPositionsListener;
+  final VoidCallback onLoadNextPage;
+
+  const _TransactionList({
+    required this.state,
+    required this.itemScrollController,
+    required this.itemPositionsListener,
+    required this.onLoadNextPage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return state.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const Center(
+        child: Text('Transaktionen konnten nicht geladen werden.'),
+      ),
+      data: (stateData) {
+        if (stateData.groupedDays.isEmpty) return const _EmptyState();
+
+        return ScrollablePositionedList.builder(
+          itemScrollController: itemScrollController,
+          itemPositionsListener: itemPositionsListener,
+          padding: const EdgeInsets.only(bottom: 80, top: 0),
+          itemCount:
+              stateData.groupedDays.length + (stateData.hasReachedMax ? 0 : 1),
+          itemBuilder: (context, index) {
+            if (index == stateData.groupedDays.length) {
+              return _buildLoadMoreFooter(stateData);
+            }
+            return DailyTransactionGroup(group: stateData.groupedDays[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildLoadMoreFooter(PaginatedTransactionsState stateData) {
+    if (stateData.loadMoreError != null) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Column(
+          children: [
+            const Text('Weitere Transaktionen konnten nicht geladen werden.'),
+            TextButton(
+              onPressed: stateData.isLoadingMore ? null : onLoadNextPage,
+              child: const Text('Erneut versuchen'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: 32.0),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 }

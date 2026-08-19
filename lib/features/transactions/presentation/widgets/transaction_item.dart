@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 
-class TransactionItem extends ConsumerWidget {
+class TransactionItem extends StatelessWidget {
   final TransactionWithCategory item;
 
   const TransactionItem({super.key, required this.item});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
         showDialog(

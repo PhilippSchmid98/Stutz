@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
 
 class CleanMonthSelector extends HookConsumerWidget {
-  final Function(DateTime) onMonthSelected;
+  final ValueChanged<DateTime> onMonthSelected;
 
   const CleanMonthSelector({super.key, required this.onMonthSelected});
 
@@ -15,6 +15,7 @@ class CleanMonthSelector extends HookConsumerWidget {
     const itemWidth = 80.0;
     final currentMonth = ref.watch(currentVisibleMonthProvider);
     final screenWidth = MediaQuery.of(context).size.width;
+    final lastScheduledScrollKey = useRef<String?>(null);
 
     // Hier ist es jetzt ein AsyncValue
     final monthsAsync = ref.watch(availableMonthsProvider);
@@ -33,29 +34,32 @@ class CleanMonthSelector extends HookConsumerWidget {
         final isScrollable = totalContentWidth > screenWidth;
 
         if (isScrollable) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!scrollController.hasClients) return;
+          final scrollKey = _monthScrollKey(months, currentMonth);
+          if (lastScheduledScrollKey.value != scrollKey) {
+            lastScheduledScrollKey.value = scrollKey;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!scrollController.hasClients) return;
 
-            final index = months.indexWhere(
-              (m) =>
-                  m.year == currentMonth.year && m.month == currentMonth.month,
-            );
+              final index = months.indexWhere(
+                (month) => _isSameMonth(month, currentMonth),
+              );
 
-            if (index != -1) {
-              final targetOffset =
-                  (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
-              final maxScroll = scrollController.position.maxScrollExtent;
-              final offset = targetOffset.clamp(0.0, maxScroll);
+              if (index != -1) {
+                final targetOffset =
+                    (index * itemWidth) - (screenWidth / 2) + (itemWidth / 2);
+                final maxScroll = scrollController.position.maxScrollExtent;
+                final offset = targetOffset.clamp(0.0, maxScroll);
 
-              if ((scrollController.offset - offset).abs() > 5) {
-                scrollController.animateTo(
-                  offset,
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                );
+                if ((scrollController.offset - offset).abs() > 5) {
+                  scrollController.animateTo(
+                    offset,
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                  );
+                }
               }
-            }
-          });
+            });
+          }
         }
 
         return SizedBox(
@@ -66,6 +70,21 @@ class CleanMonthSelector extends HookConsumerWidget {
         );
       },
     );
+  }
+
+  String _monthScrollKey(List<DateTime> months, DateTime currentMonth) {
+    final monthKeys = months.map(_monthKey);
+    return '${currentMonth.year}-${currentMonth.month}|${monthKeys.join('|')}';
+  }
+
+  String _monthKey(DateTime month) => '${month.year}-${month.month}';
+
+  bool _isSameMonth(DateTime first, DateTime second) {
+    return first.year == second.year && first.month == second.month;
+  }
+
+  String _formatMonth(DateTime date) {
+    return DateFormat('MMM yy', 'de_DE').format(date).replaceAll('.', '');
   }
 
   Widget _buildScrollableList(
@@ -95,8 +114,7 @@ class CleanMonthSelector extends HookConsumerWidget {
   }
 
   Widget _buildItem(DateTime date, DateTime currentMonth) {
-    final isSelected =
-        date.year == currentMonth.year && date.month == currentMonth.month;
+    final isSelected = _isSameMonth(date, currentMonth);
 
     return GestureDetector(
       onTap: () => onMonthSelected(date),
@@ -112,9 +130,7 @@ class CleanMonthSelector extends HookConsumerWidget {
             fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
             color: isSelected ? Colors.black : Colors.grey.shade400,
           ),
-          child: Text(
-            DateFormat('MMM yy', 'de_DE').format(date).replaceAll('.', ''),
-          ),
+          child: Text(_formatMonth(date)),
         ),
       ),
     );

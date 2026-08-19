@@ -50,13 +50,10 @@ class DailyTransactionGroup extends StatelessWidget {
             ],
           ),
         ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 0),
-          child: Column(
-            children: group.transactions
-                .map((item) => TransactionItem(item: item))
-                .toList(),
-          ),
+        Column(
+          children: group.transactions
+              .map((item) => TransactionItem(item: item))
+              .toList(),
         ),
       ],
     );

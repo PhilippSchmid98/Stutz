@@ -32,19 +32,15 @@ class AddTransactionDialog extends HookConsumerWidget {
       existingItem?.transaction.dateTime ?? DateTime.now(),
     );
 
-    // Store ID and name separately for autocomplete logic
     final selectedNodeId = useState<String?>(
       existingItem?.transaction.expenseNodeId,
     );
     final selectedNodeName = useState<String>(existingItem?.categoryName ?? '');
 
-    // 1. ÄNDERUNG: Wir lauschen nur noch auf den neuen, sauberen Provider
     final selectableCategoriesAsync = ref.watch(selectableCategoriesProvider);
     final mutationAsync = ref.watch(transactionMutationsProvider);
     final isSaving = mutationAsync.isLoading;
     final isEdit = existingItem != null;
-
-    // --- HELPERS ---
 
     Future<void> pickDateTime() async {
       FocusScope.of(context).unfocus(); // Close keyboard
@@ -162,243 +158,50 @@ class AddTransactionDialog extends HookConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isEdit ? "Bearbeiten" : "Neue Ausgabe",
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(
-                  onPressed: isSaving ? null : () => Navigator.pop(context),
-                  icon: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.close, size: 18),
-                  ),
-                ),
-              ],
+            _TransactionDialogHeader(
+              isEdit: isEdit,
+              isSaving: isSaving,
+              onClose: () => Navigator.pop(context),
             ),
 
             const SizedBox(height: 16),
 
-            // Scrollable content
             Flexible(
               child: SingleChildScrollView(
                 child: Form(
                   key: formKey,
                   child: Column(
                     children: [
-                      // 1. Amount
-                      const SizedBox(height: 8),
-                      IntrinsicWidth(
-                        child: TextFormField(
-                          controller: amountCtrl,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          textAlign: TextAlign.center,
-                          autofocus: !isEdit,
-                          style: const TextStyle(
-                            fontSize: 42,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.black,
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: '0.00',
-                            suffixText: ' CHF',
-                            suffixStyle: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
-                            ),
-                            border: InputBorder.none,
-                            hintStyle: TextStyle(color: Colors.black12),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          validator: (v) => v == null || v.isEmpty ? '' : null,
-                        ),
+                      _TransactionAmountField(
+                        controller: amountCtrl,
+                        autofocus: !isEdit,
                       ),
                       const SizedBox(height: 24),
 
-                      // 2. Category (autocomplete / search)
-                      // 2. ÄNDERUNG: Wir rufen hier selectableCategoriesAsync auf!
-                      selectableCategoriesAsync.when(
-                        loading: () => const LinearProgressIndicator(),
-                        error: (_, __) => const SizedBox(),
-                        // 3. ÄNDERUNG: Die Daten sind bereits flach. _flattenTreeVariableOnly entfällt komplett!
-                        data: (allNodes) {
-                          return LayoutBuilder(
-                            builder: (context, constraints) {
-                              return RawAutocomplete<ExpenseNode>(
-                                initialValue: selectedNodeId.value != null
-                                    ? TextEditingValue(
-                                        text: selectedNodeName.value,
-                                      )
-                                    : null,
-                                optionsBuilder:
-                                    (TextEditingValue textEditingValue) {
-                                      if (textEditingValue.text == '') {
-                                        return allNodes;
-                                      }
-                                      return allNodes.where((
-                                        ExpenseNode option,
-                                      ) {
-                                        return option.name
-                                            .toLowerCase()
-                                            .contains(
-                                              textEditingValue.text
-                                                  .toLowerCase(),
-                                            );
-                                      });
-                                    },
-                                onSelected: (ExpenseNode selection) {
-                                  selectedNodeId.value = selection.id;
-                                  selectedNodeName.value = selection.name;
-                                  FocusScope.of(context).unfocus();
-                                },
-                                displayStringForOption: (ExpenseNode option) =>
-                                    option.name,
-                                fieldViewBuilder:
-                                    (
-                                      context,
-                                      textController,
-                                      focusNode,
-                                      onFieldSubmitted,
-                                    ) {
-                                      if (selectedNodeId.value != null &&
-                                          textController.text.isEmpty) {
-                                        textController.text =
-                                            selectedNodeName.value;
-                                      }
-
-                                      return TextFormField(
-                                        controller: textController,
-                                        focusNode: focusNode,
-                                        decoration:
-                                            styledFieldDecoration(
-                                              label: "Kategorie (Suchen...)",
-                                              icon: Icons.category_outlined,
-                                              variant: StyledFieldVariant
-                                                  .transaction,
-                                            ).copyWith(
-                                              suffixIcon: const Icon(
-                                                Icons
-                                                    .keyboard_arrow_down_rounded,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                        validator: (v) {
-                                          if (selectedNodeId.value == null) {
-                                            return 'Bitte Kategorie wählen';
-                                          }
-                                          return null;
-                                        },
-                                        onChanged: (text) {
-                                          if (selectedNodeId.value != null) {
-                                            selectedNodeId.value = null;
-                                          }
-                                        },
-                                      );
-                                    },
-                                optionsViewBuilder: (context, onSelected, options) {
-                                  return Align(
-                                    alignment: Alignment.topLeft,
-                                    child: Material(
-                                      elevation: 4.0,
-                                      borderRadius: BorderRadius.circular(16),
-                                      color: Colors.white,
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(
-                                          maxHeight: 200,
-                                          maxWidth: constraints.maxWidth,
-                                        ),
-                                        child: ListView.separated(
-                                          padding: EdgeInsets.zero,
-                                          shrinkWrap: true,
-                                          itemCount: options.length,
-                                          separatorBuilder: (_, __) =>
-                                              const Divider(
-                                                height: 1,
-                                                indent: 16,
-                                                endIndent: 16,
-                                              ),
-                                          itemBuilder:
-                                              (
-                                                BuildContext context,
-                                                int index,
-                                              ) {
-                                                final option = options
-                                                    .elementAt(index);
-                                                return InkWell(
-                                                  onTap: () =>
-                                                      onSelected(option),
-                                                  child: Container(
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 16,
-                                                          vertical: 12,
-                                                        ),
-                                                    child: Text(
-                                                      option.name,
-                                                      style: const TextStyle(
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              },
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
-                          );
+                      _TransactionCategoryField(
+                        categories: selectableCategoriesAsync,
+                        selectedNodeId: selectedNodeId.value,
+                        selectedNodeName: selectedNodeName.value,
+                        onSelected: (selection) {
+                          selectedNodeId.value = selection.id;
+                          selectedNodeName.value = selection.name;
+                        },
+                        onTextChanged: (text) {
+                          if (selectedNodeId.value != null) {
+                            selectedNodeId.value = null;
+                          }
                         },
                       ),
 
                       const SizedBox(height: 16),
 
-                      // 3. Date
-                      InkWell(
+                      _TransactionDateField(
+                        selectedDate: selectedDate.value,
                         onTap: pickDateTime,
-                        borderRadius: BorderRadius.circular(12),
-                        child: InputDecorator(
-                          decoration: styledFieldDecoration(
-                            label: "Datum",
-                            icon: Icons.calendar_today_outlined,
-                            variant: StyledFieldVariant.transaction,
-                          ),
-                          child: Text(
-                            DateFormat(
-                              'dd.MM.yyyy, HH:mm',
-                            ).format(selectedDate.value),
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                        ),
                       ),
                       const SizedBox(height: 16),
 
-                      // 4. Note
-                      TextFormField(
-                        controller: noteCtrl,
-                        decoration: styledFieldDecoration(
-                          label: "Notiz",
-                          icon: Icons.notes_rounded,
-                          variant: StyledFieldVariant.transaction,
-                        ),
-                        maxLines: 1,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
+                      _TransactionNoteField(controller: noteCtrl),
                       const SizedBox(height: 8),
                     ],
                   ),
@@ -408,40 +211,303 @@ class AddTransactionDialog extends HookConsumerWidget {
 
             const SizedBox(height: 24),
 
-            // Buttons
-            Row(
-              children: [
-                if (isEdit) ...[
-                  Expanded(
-                    child: AppDestructiveButton(
-                      label: "Löschen",
-                      filled: true,
-                      onPressed: isSaving ? null : deleteTransaction,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                ],
-                Expanded(
-                  flex: 2,
-                  child: AppPrimaryButton(
-                    label: "Speichern",
-                    width: null,
-                    height: null,
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    elevation: 0,
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    onPressed: isSaving ? null : saveTransaction,
-                  ),
-                ),
-              ],
+            _TransactionDialogActions(
+              isEdit: isEdit,
+              isSaving: isSaving,
+              onDelete: deleteTransaction,
+              onSave: saveTransaction,
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TransactionDialogHeader extends StatelessWidget {
+  final bool isEdit;
+  final bool isSaving;
+  final VoidCallback onClose;
+
+  const _TransactionDialogHeader({
+    required this.isEdit,
+    required this.isSaving,
+    required this.onClose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          isEdit ? "Bearbeiten" : "Neue Ausgabe",
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        IconButton(
+          onPressed: isSaving ? null : onClose,
+          icon: Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.close, size: 18),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TransactionAmountField extends StatelessWidget {
+  final TextEditingController controller;
+  final bool autofocus;
+
+  const _TransactionAmountField({
+    required this.controller,
+    required this.autofocus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: IntrinsicWidth(
+        child: TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.center,
+          autofocus: autofocus,
+          style: const TextStyle(
+            fontSize: 42,
+            fontWeight: FontWeight.w900,
+            color: Colors.black,
+          ),
+          decoration: const InputDecoration(
+            hintText: '0.00',
+            suffixText: ' CHF',
+            suffixStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+            border: InputBorder.none,
+            hintStyle: TextStyle(color: Colors.black12),
+            contentPadding: EdgeInsets.zero,
+          ),
+          validator: (value) => value == null || value.isEmpty ? '' : null,
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionDateField extends StatelessWidget {
+  final DateTime selectedDate;
+  final VoidCallback onTap;
+
+  const _TransactionDateField({
+    required this.selectedDate,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: InputDecorator(
+        decoration: styledFieldDecoration(
+          label: "Datum",
+          icon: Icons.calendar_today_outlined,
+          variant: StyledFieldVariant.transaction,
+        ),
+        child: Text(
+          DateFormat('dd.MM.yyyy, HH:mm').format(selectedDate),
+          style: const TextStyle(fontSize: 15),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionNoteField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _TransactionNoteField({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      decoration: styledFieldDecoration(
+        label: "Notiz",
+        icon: Icons.notes_rounded,
+        variant: StyledFieldVariant.transaction,
+      ),
+      maxLines: 1,
+      textCapitalization: TextCapitalization.sentences,
+    );
+  }
+}
+
+class _TransactionCategoryField extends StatelessWidget {
+  final AsyncValue<List<ExpenseNode>> categories;
+  final String? selectedNodeId;
+  final String selectedNodeName;
+  final ValueChanged<ExpenseNode> onSelected;
+  final ValueChanged<String> onTextChanged;
+
+  const _TransactionCategoryField({
+    required this.categories,
+    required this.selectedNodeId,
+    required this.selectedNodeName,
+    required this.onSelected,
+    required this.onTextChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return categories.when(
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => const Padding(
+        padding: EdgeInsets.symmetric(vertical: 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text('Kategorien konnten nicht geladen werden.'),
+        ),
+      ),
+      data: (allNodes) => LayoutBuilder(
+        builder: (context, constraints) => RawAutocomplete<ExpenseNode>(
+          initialValue: selectedNodeId != null
+              ? TextEditingValue(text: selectedNodeName)
+              : null,
+          optionsBuilder: (textEditingValue) {
+            if (textEditingValue.text.isEmpty) return allNodes;
+            return allNodes.where(
+              (option) => option.name.toLowerCase().contains(
+                textEditingValue.text.toLowerCase(),
+              ),
+            );
+          },
+          onSelected: (selection) {
+            onSelected(selection);
+            FocusScope.of(context).unfocus();
+          },
+          displayStringForOption: (option) => option.name,
+          fieldViewBuilder:
+              (context, textController, focusNode, onFieldSubmitted) {
+                if (selectedNodeId != null && textController.text.isEmpty) {
+                  textController.text = selectedNodeName;
+                }
+
+                return TextFormField(
+                  controller: textController,
+                  focusNode: focusNode,
+                  decoration:
+                      styledFieldDecoration(
+                        label: "Kategorie (Suchen...)",
+                        icon: Icons.category_outlined,
+                        variant: StyledFieldVariant.transaction,
+                      ).copyWith(
+                        suffixIcon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: Colors.grey,
+                        ),
+                      ),
+                  validator: (value) =>
+                      selectedNodeId == null ? 'Bitte Kategorie wählen' : null,
+                  onChanged: onTextChanged,
+                );
+              },
+          optionsViewBuilder: (context, onOptionSelected, options) => Align(
+            alignment: Alignment.topLeft,
+            child: Material(
+              elevation: 4.0,
+              borderRadius: BorderRadius.circular(16),
+              color: Colors.white,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: 200,
+                  maxWidth: constraints.maxWidth,
+                ),
+                child: ListView.separated(
+                  padding: EdgeInsets.zero,
+                  shrinkWrap: true,
+                  itemCount: options.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, indent: 16, endIndent: 16),
+                  itemBuilder: (context, index) {
+                    final option = options.elementAt(index);
+                    return InkWell(
+                      onTap: () => onOptionSelected(option),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Text(
+                          option.name,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionDialogActions extends StatelessWidget {
+  final bool isEdit;
+  final bool isSaving;
+  final VoidCallback onDelete;
+  final VoidCallback onSave;
+
+  const _TransactionDialogActions({
+    required this.isEdit,
+    required this.isSaving,
+    required this.onDelete,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (isEdit) ...[
+          Expanded(
+            child: AppDestructiveButton(
+              label: "Löschen",
+              filled: true,
+              onPressed: isSaving ? null : onDelete,
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        Expanded(
+          flex: 2,
+          child: AppPrimaryButton(
+            label: "Speichern",
+            width: null,
+            height: null,
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            elevation: 0,
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            onPressed: isSaving ? null : onSave,
+          ),
+        ),
+      ],
     );
   }
 }
