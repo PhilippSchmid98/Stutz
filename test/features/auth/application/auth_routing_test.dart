@@ -148,4 +148,74 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getBool('seenOnboarding'), isTrue);
   });
+
+  testWidgets('login shows one loading state while sign-in is pending', (
+    tester,
+  ) async {
+    final controller = _BlockingAuthController();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [authControllerProvider.overrideWith(() => controller)],
+        child: const MaterialApp(home: LoginScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Mit Google fortfahren'));
+    await tester.pump();
+
+    expect(controller._googleCalls, 1);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(find.text('Mit Google fortfahren'), findsNothing);
+    expect(find.text('Ohne Account fortfahren (Gast)'), findsNothing);
+
+    controller.release.complete();
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('tutorial shows feedback when completion fails', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          onboardingControllerProvider.overrideWith(
+            () => _FailingOnboardingController(),
+          ),
+        ],
+        child: const MaterialApp(home: TutorialScreen()),
+      ),
+    );
+
+    await tester.tap(find.text('Überspringen'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Die Einführung konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Überspringen'), findsOneWidget);
+  });
+}
+
+class _BlockingAuthController extends AuthController {
+  final release = Completer<void>();
+  int _googleCalls = 0;
+
+  @override
+  Future<User?> signInWithGoogle() async {
+    _googleCalls++;
+    state = const AsyncLoading();
+    await release.future;
+    state = const AsyncData(null);
+    return null;
+  }
+}
+
+class _FailingOnboardingController extends OnboardingController {
+  @override
+  Future<void> complete() async {
+    throw StateError('completion failed');
+  }
 }

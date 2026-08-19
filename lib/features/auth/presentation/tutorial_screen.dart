@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/dialog_helpers.dart';
 
 class _TutorialPage {
   final String title;
@@ -64,7 +65,12 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (_) {
-      if (mounted) setState(() => _isCompleting = false);
+      if (!mounted) return;
+      setState(() => _isCompleting = false);
+      showErrorSnackBar(
+        context,
+        'Die Einführung konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
+      );
     }
   }
 
@@ -96,7 +102,6 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
               ),
             ),
 
-            // Navigation Dots & Button
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(

@@ -39,30 +39,31 @@ class AppRouter extends ConsumerWidget {
     });
 
     return authAsync.when(
-      // Still initialising the Firebase auth stream — show nothing yet.
       loading: () => const _SplashScreen(),
-      error: (error, stackTrace) => _RouterErrorScreen(
+      error: (_, __) => _RouterErrorScreen(
         message: 'Die Anmeldung konnte nicht geladen werden.',
-        error: error,
-        stackTrace: stackTrace,
         onRetry: () => ref.invalidate(authStateProvider),
       ),
-      data: (user) {
-        if (user != null) return const HomeScreen();
+      data: (user) =>
+          user == null ? const _SignedOutRouter() : const HomeScreen(),
+    );
+  }
+}
 
-        // Not signed in — decide between login and welcome based on onboarding.
-        final onboardingAsync = ref.watch(seenOnboardingProvider);
-        return onboardingAsync.when(
-          loading: () => const _SplashScreen(),
-          error: (error, stackTrace) => _RouterErrorScreen(
-            message: 'Die App-Einstellungen konnten nicht geladen werden.',
-            error: error,
-            stackTrace: stackTrace,
-            onRetry: () => ref.invalidate(seenOnboardingProvider),
-          ),
-          data: (seen) => seen ? const LoginScreen() : const WelcomeScreen(),
-        );
-      },
+class _SignedOutRouter extends ConsumerWidget {
+  const _SignedOutRouter();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final onboardingAsync = ref.watch(seenOnboardingProvider);
+
+    return onboardingAsync.when(
+      loading: () => const _SplashScreen(),
+      error: (_, __) => _RouterErrorScreen(
+        message: 'Die App-Einstellungen konnten nicht geladen werden.',
+        onRetry: () => ref.invalidate(seenOnboardingProvider),
+      ),
+      data: (seen) => seen ? const LoginScreen() : const WelcomeScreen(),
     );
   }
 }
@@ -81,16 +82,9 @@ class _SplashScreen extends StatelessWidget {
 
 class _RouterErrorScreen extends StatelessWidget {
   final String message;
-  final Object error;
-  final StackTrace stackTrace;
   final VoidCallback onRetry;
 
-  const _RouterErrorScreen({
-    required this.message,
-    required this.error,
-    required this.stackTrace,
-    required this.onRetry,
-  });
+  const _RouterErrorScreen({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
