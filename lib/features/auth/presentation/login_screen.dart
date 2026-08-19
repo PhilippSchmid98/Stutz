@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -55,61 +56,38 @@ class LoginScreen extends HookConsumerWidget {
                 const CircularProgressIndicator()
               else ...[
                 // GOOGLE LOGIN BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      side: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    icon: const Icon(
-                      Icons.g_mobiledata,
-                      size: 32,
-                      color: Colors.black,
-                    ),
-                    label: const Text(
-                      "Mit Google fortfahren",
-                      style: TextStyle(fontSize: 18, color: Colors.black),
-                    ),
-                    onPressed: () async {
-                      isLoading.value = true;
-                      await ref
-                          .read(authControllerProvider.notifier)
-                          .signInWithGoogle();
-                      // AppRouter reacts to authStateProvider on success.
-                      // Reset loading only if still mounted (login failed).
-                      if (context.mounted) isLoading.value = false;
-                    },
-                  ),
+                AppOutlinedButton(
+                  label: "Mit Google fortfahren",
+                  icon: Icons.g_mobiledata,
+                  iconSize: 32,
+                  iconColor: Colors.black,
+                  textStyle: const TextStyle(fontSize: 18, color: Colors.black),
+                  onPressed: () async {
+                    isLoading.value = true;
+                    await ref
+                        .read(authControllerProvider.notifier)
+                        .signInWithGoogle();
+                    if (context.mounted) isLoading.value = false;
+                  },
                 ),
 
                 const SizedBox(height: 16),
 
                 // GAST LOGIN BUTTON
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: TextButton(
-                    onPressed: () async {
-                      isLoading.value = true;
-                      await ref
-                          .read(authControllerProvider.notifier)
-                          .signInAnonymously();
-                      // AppRouter reacts to authStateProvider on success.
-                      if (context.mounted) isLoading.value = false;
-                    },
-                    child: Text(
-                      "Ohne Account fortfahren (Gast)",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                AppTextButton(
+                  label: "Ohne Account fortfahren (Gast)",
+                  textStyle: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
                   ),
+                  onPressed: () async {
+                    isLoading.value = true;
+                    await ref
+                        .read(authControllerProvider.notifier)
+                        .signInAnonymously();
+                    if (context.mounted) isLoading.value = false;
+                  },
                 ),
               ],
             ],

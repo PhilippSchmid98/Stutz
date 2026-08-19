@@ -10,6 +10,9 @@ import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/dialog_helpers.dart';
+import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 
 class AddTransactionDialog extends HookConsumerWidget {
   final TransactionWithCategory? existingItem;
@@ -42,32 +45,6 @@ class AddTransactionDialog extends HookConsumerWidget {
     final isEdit = existingItem != null;
 
     // --- HELPERS ---
-
-    InputDecoration inputDecoration(String label, IconData icon) {
-      return InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-        prefixIcon: Icon(icon, color: Colors.grey.shade400, size: 20),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 12,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade100),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black, width: 1),
-        ),
-      );
-    }
 
     Future<void> pickDateTime() async {
       FocusScope.of(context).unfocus(); // Close keyboard
@@ -115,19 +92,13 @@ class AddTransactionDialog extends HookConsumerWidget {
     Future<void> saveTransaction() async {
       if (formKey.currentState!.validate()) {
         if (selectedNodeId.value == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Bitte Kategorie wählen")),
-          );
+          showErrorSnackBar(context, "Bitte Kategorie wählen");
           return;
         }
 
         final amount = parsePositiveAmount(amountCtrl.text);
         if (amount == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Bitte einen gültigen Betrag eingeben"),
-            ),
-          );
+          showErrorSnackBar(context, "Bitte einen gültigen Betrag eingeben");
           return;
         }
 
@@ -150,9 +121,7 @@ class AddTransactionDialog extends HookConsumerWidget {
           }
         } catch (_) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Speichern fehlgeschlagen")),
-            );
+            showErrorSnackBar(context, "Speichern fehlgeschlagen");
           }
           return;
         }
@@ -161,25 +130,12 @@ class AddTransactionDialog extends HookConsumerWidget {
     }
 
     Future<void> deleteTransaction() async {
-      final confirm = await showDialog<bool>(
+      final confirm = await showConfirmationDialog(
         context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text("Löschen"),
-          content: const Text("Wirklich löschen?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text(
-                "Abbrechen",
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text("Löschen", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
+        title: "Löschen",
+        content: "Wirklich löschen?",
+        cancelColor: Colors.grey,
+        confirmLabel: "Löschen",
       );
 
       if (confirm == true && existingItem != null) {
@@ -189,9 +145,7 @@ class AddTransactionDialog extends HookConsumerWidget {
               .deleteTransaction(existingItem!.transaction.id);
         } catch (_) {
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Löschen fehlgeschlagen")),
-            );
+            showErrorSnackBar(context, "Löschen fehlgeschlagen");
           }
           return;
         }
@@ -329,9 +283,11 @@ class AddTransactionDialog extends HookConsumerWidget {
                                         controller: textController,
                                         focusNode: focusNode,
                                         decoration:
-                                            inputDecoration(
-                                              "Kategorie (Suchen...)",
-                                              Icons.category_outlined,
+                                            styledFieldDecoration(
+                                              label: "Kategorie (Suchen...)",
+                                              icon: Icons.category_outlined,
+                                              variant: StyledFieldVariant
+                                                  .transaction,
                                             ).copyWith(
                                               suffixIcon: const Icon(
                                                 Icons
@@ -417,9 +373,10 @@ class AddTransactionDialog extends HookConsumerWidget {
                         onTap: pickDateTime,
                         borderRadius: BorderRadius.circular(12),
                         child: InputDecorator(
-                          decoration: inputDecoration(
-                            "Datum",
-                            Icons.calendar_today_outlined,
+                          decoration: styledFieldDecoration(
+                            label: "Datum",
+                            icon: Icons.calendar_today_outlined,
+                            variant: StyledFieldVariant.transaction,
                           ),
                           child: Text(
                             DateFormat(
@@ -434,9 +391,10 @@ class AddTransactionDialog extends HookConsumerWidget {
                       // 4. Note
                       TextFormField(
                         controller: noteCtrl,
-                        decoration: inputDecoration(
-                          "Notiz",
-                          Icons.notes_rounded,
+                        decoration: styledFieldDecoration(
+                          label: "Notiz",
+                          icon: Icons.notes_rounded,
+                          variant: StyledFieldVariant.transaction,
                         ),
                         maxLines: 1,
                         textCapitalization: TextCapitalization.sentences,
@@ -455,43 +413,28 @@ class AddTransactionDialog extends HookConsumerWidget {
               children: [
                 if (isEdit) ...[
                   Expanded(
-                    child: TextButton(
+                    child: AppDestructiveButton(
+                      label: "Löschen",
+                      filled: true,
                       onPressed: isSaving ? null : deleteTransaction,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.red.shade50,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Löschen",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
                   flex: 2,
-                  child: FilledButton(
+                  child: AppPrimaryButton(
+                    label: "Speichern",
+                    width: null,
+                    height: null,
+                    borderRadius: const BorderRadius.all(Radius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                     onPressed: isSaving ? null : saveTransaction,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      "Speichern",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
                   ),
                 ),
               ],
@@ -502,5 +445,3 @@ class AddTransactionDialog extends HookConsumerWidget {
     );
   }
 }
-
-// 4. ÄNDERUNG: Die _flattenTreeVariableOnly Methode wurde von hier ganz unten gelöscht!

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 
 class StyledDropdown<T> extends StatelessWidget {
   final T value;
@@ -6,6 +7,8 @@ class StyledDropdown<T> extends StatelessWidget {
   final String label;
   final IconData icon;
   final ValueChanged<T?> onChanged;
+  final bool enabled;
+  final StyledFieldVariant variant;
 
   const StyledDropdown({
     super.key,
@@ -14,6 +17,8 @@ class StyledDropdown<T> extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onChanged,
+    this.enabled = true,
+    this.variant = StyledFieldVariant.budget,
   });
 
   @override
@@ -25,25 +30,11 @@ class StyledDropdown<T> extends StatelessWidget {
         items: items.entries.map((e) {
           return DropdownMenuItem<T>(value: e.key, child: Text(e.value));
         }).toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.grey),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.teal, width: 2),
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
+        onChanged: enabled ? onChanged : null,
+        decoration: styledFieldDecoration(
+          label: label,
+          icon: icon,
+          variant: variant,
         ),
       ),
     );

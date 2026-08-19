@@ -8,10 +8,32 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/app/app_router.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/auth/presentation/login_screen.dart';
+import 'package:stutz/features/auth/presentation/tutorial_screen.dart';
 import 'package:stutz/features/auth/presentation/welcome_screen.dart';
 
 void main() {
   group('AppRouter', () {
+    testWidgets('shows splash screen while auth state is unresolved', (
+      tester,
+    ) async {
+      final authStream = StreamController<User?>();
+      addTearDown(authStream.close);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authStateProvider.overrideWith((ref) => authStream.stream),
+          ],
+          child: const MaterialApp(home: AppRouter()),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(WelcomeScreen), findsNothing);
+      expect(find.byType(LoginScreen), findsNothing);
+    });
+
     testWidgets('shows welcome screen before onboarding is complete', (
       tester,
     ) async {
@@ -112,4 +134,18 @@ void main() {
       expect(await container.read(seenOnboardingProvider.future), isTrue);
     },
   );
+
+  testWidgets('tutorial skip persists onboarding completion', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      const ProviderScope(child: MaterialApp(home: TutorialScreen())),
+    );
+
+    await tester.tap(find.text('Überspringen'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getBool('seenOnboarding'), isTrue);
+  });
 }

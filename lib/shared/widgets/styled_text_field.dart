@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 
 class StyledTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -6,6 +7,12 @@ class StyledTextField extends StatelessWidget {
   final IconData? icon;
   final TextInputType? keyboardType;
   final String? suffixText;
+  final FormFieldValidator<String>? validator;
+  final int? maxLines;
+  final TextCapitalization textCapitalization;
+  final bool autofocus;
+  final bool enabled;
+  final StyledFieldVariant variant;
 
   const StyledTextField({
     super.key,
@@ -14,6 +21,12 @@ class StyledTextField extends StatelessWidget {
     this.icon,
     this.keyboardType,
     this.suffixText,
+    this.validator,
+    this.maxLines = 1,
+    this.textCapitalization = TextCapitalization.none,
+    this.autofocus = false,
+    this.enabled = true,
+    this.variant = StyledFieldVariant.budget,
   });
 
   @override
@@ -23,30 +36,18 @@ class StyledTextField extends StatelessWidget {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: icon != null ? Icon(icon, color: Colors.grey) : null,
+        textCapitalization: textCapitalization,
+        autofocus: autofocus,
+        enabled: enabled,
+        maxLines: maxLines,
+        decoration: styledFieldDecoration(
+          label: label,
+          icon: icon,
           suffixText: suffixText,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Colors.teal, width: 2),
-          ),
-          filled: true,
-          fillColor: Colors.grey.shade50,
+          variant: variant,
         ),
-        validator: (v) => v!.isEmpty ? 'Pflichtfeld' : null,
+        validator:
+            validator ?? (v) => v == null || v.isEmpty ? 'Pflichtfeld' : null,
       ),
     );
   }

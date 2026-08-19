@@ -3,6 +3,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/dialog_helpers.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
 
@@ -45,20 +47,16 @@ class AddMainCategoryDialog extends HookConsumerWidget {
       ),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
-        TextButton(
+        AppTextButton(
+          label: 'Abbrechen',
+          foregroundColor: Colors.grey.shade600,
           onPressed: isSaving ? null : () => Navigator.pop(context),
-          child: Text(
-            'Abbrechen',
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        AppPrimaryButton(
+          label: 'Erstellen',
+          width: null,
+          height: null,
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
           onPressed: isSaving
               ? null
               : () async {
@@ -78,18 +76,13 @@ class AddMainCategoryDialog extends HookConsumerWidget {
                           .addExpenseNode(node);
                     } catch (_) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Erstellen fehlgeschlagen'),
-                          ),
-                        );
+                        showErrorSnackBar(context, 'Erstellen fehlgeschlagen');
                       }
                       return;
                     }
                     if (context.mounted) Navigator.pop(context);
                   }
                 },
-          child: const Text('Erstellen'),
         ),
       ],
     );

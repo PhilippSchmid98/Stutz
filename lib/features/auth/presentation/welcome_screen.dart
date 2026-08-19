@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stutz/features/auth/presentation/tutorial_screen.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -49,30 +50,20 @@ class WelcomeScreen extends StatelessWidget {
               ),
               const Spacer(),
               // Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () {
-                    // Weiter zum Tutorial
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const TutorialScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "Tour starten",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+              AppPrimaryButton(
+                label: "Tour starten",
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const TutorialScreen(),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 40),
             ],

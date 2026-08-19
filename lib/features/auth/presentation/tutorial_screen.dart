@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
 
 class _TutorialPage {
   final String title;
@@ -75,12 +76,10 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          TextButton(
+          AppTextButton(
+            label: "Überspringen",
             onPressed: _isCompleting ? null : _completeOnboarding,
-            child: const Text(
-              "Überspringen",
-              style: TextStyle(color: Colors.grey),
-            ),
+            textStyle: const TextStyle(color: Colors.grey),
           ),
         ],
       ),
@@ -121,36 +120,24 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      onPressed: () {
-                        if (_currentPage == _pages.length - 1) {
-                          _completeOnboarding();
-                        } else {
-                          _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
-                          );
-                        }
-                      },
-                      child: Text(
-                        _currentPage == _pages.length - 1
-                            ? "Alles klar"
-                            : "Weiter",
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                  AppPrimaryButton(
+                    label: _currentPage == _pages.length - 1
+                        ? "Alles klar"
+                        : "Weiter",
+                    textStyle: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
+                    onPressed: () {
+                      if (_currentPage == _pages.length - 1) {
+                        _completeOnboarding();
+                      } else {
+                        _pageController.nextPage(
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

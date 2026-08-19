@@ -5,6 +5,8 @@ import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
+import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/dialog_helpers.dart';
 import 'package:stutz/shared/widgets/styled_dropdown.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
@@ -84,32 +86,17 @@ class AddIncomeDialog extends HookConsumerWidget {
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         if (isEdit)
-          TextButton(
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          AppTextButton(
+            label: 'Löschen',
+            foregroundColor: Colors.red,
             onPressed: isSaving
                 ? null
                 : () async {
-                    final confirm = await showDialog<bool>(
+                    final confirm = await showConfirmationDialog(
                       context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text("Löschen?"),
-                        content: const Text(
-                          "Soll diese Einnahme wirklich gelöscht werden?",
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, false),
-                            child: const Text("Abbrechen"),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx, true),
-                            child: const Text(
-                              "Löschen",
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
+                      title: 'Löschen?',
+                      content: 'Soll diese Einnahme wirklich gelöscht werden?',
+                      confirmLabel: 'Löschen',
                     );
                     if (confirm == true) {
                       try {
@@ -118,43 +105,33 @@ class AddIncomeDialog extends HookConsumerWidget {
                             .deleteIncomeSource(existingItem!.id);
                       } catch (_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Löschen fehlgeschlagen'),
-                            ),
-                          );
+                          showErrorSnackBar(context, 'Löschen fehlgeschlagen');
                         }
                         return;
                       }
                       if (context.mounted) Navigator.pop(context);
                     }
                   },
-            child: const Text('Löschen'),
           ),
-        TextButton(
+        AppTextButton(
+          label: 'Abbrechen',
+          foregroundColor: Colors.grey.shade600,
           onPressed: isSaving ? null : () => Navigator.pop(context),
-          child: Text(
-            'Abbrechen',
-            style: TextStyle(color: Colors.grey.shade600),
-          ),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+        AppPrimaryButton(
+          label: 'Speichern',
+          width: null,
+          height: null,
+          borderRadius: const BorderRadius.all(Radius.circular(12)),
           onPressed: isSaving
               ? null
               : () async {
                   if (formKey.currentState!.validate()) {
                     final newAmount = parsePositiveAmount(amountCtrl.text);
                     if (newAmount == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Bitte einen gültigen Betrag eingeben'),
-                        ),
+                      showErrorSnackBar(
+                        context,
+                        'Bitte einen gültigen Betrag eingeben',
                       );
                       return;
                     }
@@ -174,10 +151,9 @@ class AddIncomeDialog extends HookConsumerWidget {
                         await mutations.updateIncomeSource(updated);
                       } catch (_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Speichern fehlgeschlagen'),
-                            ),
+                          showErrorSnackBar(
+                            context,
+                            'Speichern fehlgeschlagen',
                           );
                         }
                         return;
@@ -206,7 +182,6 @@ class AddIncomeDialog extends HookConsumerWidget {
                     if (context.mounted) Navigator.pop(context);
                   }
                 },
-          child: const Text('Speichern'),
         ),
       ],
     );
