@@ -47,7 +47,8 @@ class StyledTextField extends StatelessWidget {
           variant: variant,
         ),
         validator:
-            validator ?? (v) => v == null || v.isEmpty ? 'Pflichtfeld' : null,
+            validator ??
+            (v) => v == null || v.trim().isEmpty ? 'Pflichtfeld' : null,
       ),
     );
   }

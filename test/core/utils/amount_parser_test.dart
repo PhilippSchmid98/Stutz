@@ -12,4 +12,14 @@ void main() {
     expect(parsePositiveAmount('-10'), isNull);
     expect(parsePositiveAmount('Infinity'), isNull);
   });
+
+  test('validates required and positive amount input consistently', () {
+    expect(positiveAmountValidator(''), 'Pflichtfeld');
+    expect(positiveAmountValidator('  '), 'Pflichtfeld');
+    expect(
+      positiveAmountValidator('0'),
+      'Bitte einen gültigen Betrag eingeben',
+    );
+    expect(positiveAmountValidator('12,50'), isNull);
+  });
 }

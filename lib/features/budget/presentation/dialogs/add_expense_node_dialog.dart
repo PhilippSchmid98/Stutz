@@ -100,6 +100,7 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                     icon: Icons.attach_money,
                     keyboardType: TextInputType.number,
                     suffixText: 'CHF',
+                    validator: positiveAmountValidator,
                   ),
                   StyledDropdown<PaymentInterval>(
                     value: interval.value,
@@ -109,7 +110,9 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                     },
                     label: 'Intervall',
                     icon: Icons.calendar_today,
-                    onChanged: (v) => interval.value = v!,
+                    onChanged: (v) {
+                      if (v != null) interval.value = v;
+                    },
                   ),
                   StyledDropdown<ExpenseType>(
                     value: type.value,
@@ -119,7 +122,9 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                     },
                     label: 'Typ',
                     icon: Icons.tune,
-                    onChanged: (v) => type.value = v!,
+                    onChanged: (v) {
+                      if (v != null) type.value = v;
+                    },
                   ),
                 ] else ...[
                   Container(
@@ -212,18 +217,14 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                         ? null
                         : parsePositiveAmount(amountCtrl.text);
 
-                    if (!isGroup.value && (amount == null || amount <= 0)) {
-                      showErrorSnackBar(
-                        context,
-                        'Bitte einen gültigen Betrag eingeben',
-                      );
+                    if (!isGroup.value && amount == null) {
                       return;
                     }
 
                     final node = ExpenseNode(
                       id: id,
                       parentId: resolvedParentId,
-                      name: nameCtrl.text,
+                      name: nameCtrl.text.trim(),
                       plannedAmount: amount,
                       interval: isGroup.value ? null : interval.value,
                       type: isGroup.value ? null : type.value,

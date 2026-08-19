@@ -42,7 +42,6 @@ class SectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           InkWell(
             onTap: onHeaderTap,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
@@ -71,29 +70,7 @@ class SectionCard extends StatelessWidget {
                             color: Colors.black87,
                           ),
                         ),
-                        Builder(
-                          builder: (context) {
-                            final List<String> parts = [];
-                            if (totalMonthly > 0) {
-                              parts.add(
-                                "${totalMonthly.toStringAsFixed(2)} / Monat",
-                              );
-                            }
-                            if (totalYearly > 0) {
-                              parts.add(
-                                "${totalYearly.toStringAsFixed(2)} / Jahr",
-                              );
-                            }
-                            if (parts.isEmpty) return const SizedBox.shrink();
-                            return Text(
-                              parts.join("  -  "),
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12,
-                              ),
-                            );
-                          },
-                        ),
+                        _buildTotals(),
                       ],
                     ),
                   ),
@@ -116,7 +93,6 @@ class SectionCard extends StatelessWidget {
             endIndent: 16,
             color: iconColor.withValues(alpha: 0.1),
           ),
-          // Content
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -126,6 +102,22 @@ class SectionCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTotals() {
+    final parts = <String>[];
+    if (totalMonthly > 0) {
+      parts.add("${totalMonthly.toStringAsFixed(2)} / Monat");
+    }
+    if (totalYearly > 0) {
+      parts.add("${totalYearly.toStringAsFixed(2)} / Jahr");
+    }
+    if (parts.isEmpty) return const SizedBox.shrink();
+
+    return Text(
+      parts.join("  -  "),
+      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
     );
   }
 }

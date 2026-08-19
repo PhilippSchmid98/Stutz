@@ -64,7 +64,7 @@ class AddMainCategoryDialog extends HookConsumerWidget {
                     final node = ExpenseNode(
                       id: const Uuid().v4(),
                       parentId: null,
-                      name: nameCtrl.text,
+                      name: nameCtrl.text.trim(),
                       plannedAmount: null,
                       interval: null,
                       type: null,

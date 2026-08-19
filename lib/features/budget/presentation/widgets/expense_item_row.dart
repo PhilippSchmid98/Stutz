@@ -14,73 +14,66 @@ class ExpenseItemRow extends StatelessWidget {
     final hasChildren = node.children.isNotEmpty;
     final isFixed = node.type == ExpenseType.fixed;
 
-    Widget rowContent = InkWell(
-      onTap: () => showDialog(
-        context: context,
-        builder: (_) =>
-            AddExpenseNodeDialog(parentId: node.parentId, existingNode: node),
-      ),
-      child: Padding(
-        padding: EdgeInsets.only(left: 8.0 * depth),
-        child: Row(
-          children: [
-            Icon(
-              hasChildren
-                  ? Icons.folder_outlined
-                  : (isFixed
-                        ? Icons.lock_outline
-                        : Icons.shopping_bag_outlined),
-              size: 18,
-              color: hasChildren ? Colors.grey.shade700 : Colors.grey.shade400,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                node.name,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: hasChildren ? FontWeight.w600 : FontWeight.normal,
-                  color: isFixed ? Colors.grey.shade600 : Colors.black87,
-                ),
+    final rowContent = Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: () => showDialog(
+              context: context,
+              builder: (_) => AddExpenseNodeDialog(
+                parentId: node.parentId,
+                existingNode: node,
               ),
             ),
-            if (node.plannedAmount != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            child: Padding(
+              padding: EdgeInsets.only(left: 8.0 * depth),
+              child: Row(
                 children: [
-                  Text(
-                    node.plannedAmount!.toStringAsFixed(2),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      color: isFixed ? Colors.grey.shade600 : Colors.black87,
+                  Icon(
+                    hasChildren
+                        ? Icons.folder_outlined
+                        : (isFixed
+                              ? Icons.lock_outline
+                              : Icons.shopping_bag_outlined),
+                    size: 18,
+                    color: hasChildren
+                        ? Colors.grey.shade700
+                        : Colors.grey.shade400,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      node.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: hasChildren
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isFixed ? Colors.grey.shade600 : Colors.black87,
+                      ),
                     ),
                   ),
-                  Text(
-                    node.interval == PaymentInterval.monthly
-                        ? "Monatlich"
-                        : "Jährlich",
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-                  ),
+                  if (node.plannedAmount != null) _buildAmount(),
                 ],
               ),
-            if (hasChildren || node.plannedAmount == null)
-              IconButton(
-                icon: const Icon(
-                  Icons.add_circle_outline,
-                  size: 20,
-                  color: Colors.teal,
-                ),
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (_) => AddExpenseNodeDialog(parentId: node.id),
-                ),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-          ],
+            ),
+          ),
         ),
-      ),
+        if (hasChildren || node.plannedAmount == null)
+          IconButton(
+            icon: const Icon(
+              Icons.add_circle_outline,
+              size: 20,
+              color: Colors.teal,
+            ),
+            onPressed: () => showDialog(
+              context: context,
+              builder: (_) => AddExpenseNodeDialog(parentId: node.id),
+            ),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+      ],
     );
 
     if (hasChildren) {
@@ -99,6 +92,27 @@ class ExpenseItemRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: rowContent,
+    );
+  }
+
+  Widget _buildAmount() {
+    final isFixed = node.type == ExpenseType.fixed;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          node.plannedAmount!.toStringAsFixed(2),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            color: isFixed ? Colors.grey.shade600 : Colors.black87,
+          ),
+        ),
+        Text(
+          node.interval == PaymentInterval.monthly ? "Monatlich" : "Jährlich",
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+        ),
+      ],
     );
   }
 }

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stutz/core/connectivity/connectivity_provider.dart';
+import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
+import 'package:stutz/features/budget/presentation/budget_planning_screen.dart';
+import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_expense_node_dialog.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
@@ -14,6 +18,46 @@ import 'package:stutz/features/budget/presentation/widgets/income_section_card.d
 import 'package:stutz/shared/widgets/section_card.dart';
 
 void main() {
+  testWidgets('budget planning renders independent loaded sections', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          isOfflineProvider.overrideWith((ref) => false),
+          incomeListProvider.overrideWith(
+            (ref) => Stream.value([
+              const IncomeSource(id: 'income', name: 'Lohn', amount: 5000),
+            ]),
+          ),
+          expenseTreeProvider.overrideWith(
+            (ref) => Stream.value([
+              const ExpenseNode(id: 'housing', name: 'Wohnen'),
+            ]),
+          ),
+          budgetSummaryProvider.overrideWith(
+            (ref) => Future.value(
+              const BudgetSummary(
+                monthlyIncome: 5000,
+                monthlyExpenses: 1200,
+                fixedExpenses: 1200,
+                variableExpenses: 0,
+              ),
+            ),
+          ),
+        ],
+        child: const MaterialApp(home: BudgetPlanningScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Budget Planung'), findsOneWidget);
+    expect(find.text('Lohn'), findsOneWidget);
+    expect(find.text('WOHNEN'), findsOneWidget);
+    expect(find.text('+ 3800.00 CHF'), findsOneWidget);
+    expect(find.text('Neue Hauptkategorie erstellen'), findsOneWidget);
+  });
+
   testWidgets('section card renders totals and invokes header action', (
     tester,
   ) async {
@@ -145,6 +189,30 @@ void main() {
     expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
   });
 
+  testWidgets('adding a child does not also open the edit dialog', (
+    tester,
+  ) async {
+    const emptyGroup = ExpenseNode(id: 'group', name: 'Leer');
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(body: ExpenseItemRow(node: emptyGroup, depth: 0)),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byIcon(Icons.add_circle_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddExpenseNodeDialog), findsOneWidget);
+    final dialog = tester.widget<AddExpenseNodeDialog>(
+      find.byType(AddExpenseNodeDialog),
+    );
+    expect(dialog.parentId, 'group');
+    expect(dialog.existingNode, isNull);
+  });
+
   testWidgets('budget overview displays balance and expense split', (
     tester,
   ) async {
@@ -194,4 +262,45 @@ void main() {
 
     expect(find.text('Pflichtfeld'), findsNWidgets(2));
   });
+
+  testWidgets('group deletion warns before submitting the delete attempt', (
+    tester,
+  ) async {
+    final mutations = _TrackingBudgetMutations();
+    const group = ExpenseNode(
+      id: 'group',
+      name: 'Wohnen',
+      children: [ExpenseNode(id: 'child', name: 'Miete')],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [budgetMutationsProvider.overrideWith(() => mutations)],
+        child: const MaterialApp(
+          home: Scaffold(body: AddExpenseNodeDialog(existingNode: group)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Löschen'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ACHTUNG: Gruppe mit Inhalt löschen?'), findsOneWidget);
+
+    await tester.tap(find.text('Löschen').last);
+    await tester.pumpAndSettle();
+
+    expect(mutations._deletedId, 'group');
+  });
+}
+
+class _TrackingBudgetMutations extends BudgetMutations {
+  String? _deletedId;
+
+  @override
+  Future<void> deleteExpenseNode(String id) async {
+    _deletedId = id;
+    state = const AsyncData(null);
+  }
 }

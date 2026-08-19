@@ -40,91 +40,78 @@ class BudgetOverviewCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            "${isPositive ? '+' : ''} ${summary.balance.toStringAsFixed(2)} CHF",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 32,
-              color: balanceColor,
-            ),
-          ),
-          Text(
-            isPositive ? "Verfügbarer Überschuss" : "Budgetdefizit",
-            style: TextStyle(
-              color: balanceColor.withValues(alpha: 0.8),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          _buildBalance(balanceColor, isPositive),
           const SizedBox(height: 24),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _OverviewItem(
-                label: "Einnahmen",
-                value: summary.monthlyIncome,
-                color: Colors.green,
-              ),
-              _OverviewItem(
-                label: "Ausgaben",
-                value: summary.monthlyExpenses,
-                color: Colors.black87,
-              ),
-            ],
-          ),
+          _buildIncomeExpenseTotals(),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Monatlich fix",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      summary.fixedExpenses.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(width: 1, height: 24, color: Colors.grey.shade300),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      "Monatlich variabel",
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      summary.variableExpenses.toStringAsFixed(2),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          _buildExpenseBreakdown(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalance(Color balanceColor, bool isPositive) {
+    return Column(
+      children: [
+        Text(
+          "${isPositive ? '+' : ''} ${summary.balance.toStringAsFixed(2)} CHF",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 32,
+            color: balanceColor,
+          ),
+        ),
+        Text(
+          isPositive ? "Verfügbarer Überschuss" : "Budgetdefizit",
+          style: TextStyle(
+            color: balanceColor.withValues(alpha: 0.8),
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIncomeExpenseTotals() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        _OverviewItem(
+          label: "Einnahmen",
+          value: summary.monthlyIncome,
+          color: Colors.green,
+        ),
+        _OverviewItem(
+          label: "Ausgaben",
+          value: summary.monthlyExpenses,
+          color: Colors.black87,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpenseBreakdown() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _ExpenseBreakdownItem(
+            label: "Monatlich fix",
+            value: summary.fixedExpenses,
+          ),
+          Container(width: 1, height: 24, color: Colors.grey.shade300),
+          _ExpenseBreakdownItem(
+            label: "Monatlich variabel",
+            value: summary.variableExpenses,
+            alignEnd: true,
           ),
         ],
       ),
@@ -159,6 +146,37 @@ class _OverviewItem extends StatelessWidget {
             fontSize: 16,
             color: color,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpenseBreakdownItem extends StatelessWidget {
+  final String label;
+  final double value;
+  final bool alignEnd;
+
+  const _ExpenseBreakdownItem({
+    required this.label,
+    required this.value,
+    this.alignEnd = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: alignEnd
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+        ),
+        Text(
+          value.toStringAsFixed(2),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
       ],
     );

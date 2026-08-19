@@ -57,6 +57,7 @@ class AddIncomeDialog extends HookConsumerWidget {
                   icon: Icons.attach_money,
                   keyboardType: TextInputType.number,
                   suffixText: 'CHF',
+                  validator: positiveAmountValidator,
                 ),
                 StyledDropdown<PaymentInterval>(
                   value: interval.value,
@@ -66,7 +67,9 @@ class AddIncomeDialog extends HookConsumerWidget {
                   },
                   label: 'Intervall',
                   icon: Icons.calendar_today,
-                  onChanged: (v) => interval.value = v!,
+                  onChanged: (v) {
+                    if (v != null) interval.value = v;
+                  },
                 ),
                 StyledDropdown<IncomeGroup>(
                   value: group.value,
@@ -76,7 +79,9 @@ class AddIncomeDialog extends HookConsumerWidget {
                   },
                   label: 'Gruppe',
                   icon: Icons.category_outlined,
-                  onChanged: (v) => group.value = v!,
+                  onChanged: (v) {
+                    if (v != null) group.value = v;
+                  },
                 ),
               ],
             ),
@@ -142,7 +147,7 @@ class AddIncomeDialog extends HookConsumerWidget {
                     if (isEdit) {
                       final updated = IncomeSource(
                         id: existingItem!.id,
-                        name: nameCtrl.text,
+                        name: nameCtrl.text.trim(),
                         amount: newAmount,
                         interval: interval.value,
                         group: group.value,
@@ -161,7 +166,7 @@ class AddIncomeDialog extends HookConsumerWidget {
                     } else {
                       final src = IncomeSource(
                         id: const Uuid().v4(),
-                        name: nameCtrl.text,
+                        name: nameCtrl.text.trim(),
                         amount: newAmount,
                         interval: interval.value,
                         group: group.value,
@@ -170,10 +175,9 @@ class AddIncomeDialog extends HookConsumerWidget {
                         await mutations.addIncomeSource(src);
                       } catch (_) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Speichern fehlgeschlagen'),
-                            ),
+                          showErrorSnackBar(
+                            context,
+                            'Speichern fehlgeschlagen',
                           );
                         }
                         return;
