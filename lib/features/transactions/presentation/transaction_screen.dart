@@ -19,6 +19,8 @@ class TransactionScreen extends HookConsumerWidget {
     // Mutable flag that does not trigger a rebuild – avoids circular updates
     // when _scrollToMonth drives the list programmatically.
     final isProgrammaticScroll = useRef(false);
+    final isUserScroll = useRef(false);
+    final pageRequestedDuringScroll = useRef(false);
 
     final paginatedStateAsync = ref.watch(paginatedTransactionListProvider);
 
@@ -27,19 +29,23 @@ class TransactionScreen extends HookConsumerWidget {
         final positions = itemPositionsListener.itemPositions.value;
         if (positions.isEmpty) return;
 
-        // --- 1. LOGIK FÜR INF-SCROLL (NACHLADEN) ---
-        // Wenn das letzte Element sichtbar wird, nächste Seite laden
         final maxIndex = positions
             .map((e) => e.index)
             .reduce((a, b) => a > b ? a : b);
-        final totalItems = paginatedStateAsync.value?.groupedDays.length ?? 0;
+        final currentState = ref.read(paginatedTransactionListProvider).value;
+        final totalItems = currentState?.groupedDays.length ?? 0;
 
-        if (maxIndex >= totalItems - 2) {
-          // 2 Elemente Puffer vor dem Ende
+        if (isUserScroll.value &&
+            !pageRequestedDuringScroll.value &&
+            currentState != null &&
+            !currentState.isLoadingMore &&
+            !currentState.hasReachedMax &&
+            totalItems > 0 &&
+            maxIndex >= totalItems - 2) {
+          pageRequestedDuringScroll.value = true;
           ref.read(paginatedTransactionListProvider.notifier).loadNextPage();
         }
 
-        // --- 2. LOGIK FÜR MONATS-SELEKTION BEIM SCROLLEN ---
         if (isProgrammaticScroll.value) return;
         final visibleItems = positions
             .where((pos) => pos.itemLeadingEdge < 1 && pos.itemTrailingEdge > 0)
@@ -132,13 +138,24 @@ class TransactionScreen extends HookConsumerWidget {
           const SizedBox(height: 8),
           Divider(height: 1, color: Colors.grey.shade100),
           Expanded(
-            child: _TransactionList(
-              state: paginatedStateAsync,
-              itemScrollController: itemScrollController,
-              itemPositionsListener: itemPositionsListener,
-              onLoadNextPage: () => ref
-                  .read(paginatedTransactionListProvider.notifier)
-                  .loadNextPage(),
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                if (notification is ScrollStartNotification) {
+                  isUserScroll.value = notification.dragDetails != null;
+                  pageRequestedDuringScroll.value = false;
+                } else if (notification is ScrollEndNotification) {
+                  isUserScroll.value = false;
+                }
+                return false;
+              },
+              child: _TransactionList(
+                state: paginatedStateAsync,
+                itemScrollController: itemScrollController,
+                itemPositionsListener: itemPositionsListener,
+                onLoadNextPage: () => ref
+                    .read(paginatedTransactionListProvider.notifier)
+                    .loadNextPage(),
+              ),
             ),
           ),
         ],
