@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../data/transaction_repository.dart';
+import '../data/transaction_month.dart';
 
 part 'transaction_state.g.dart';
 
@@ -7,8 +8,7 @@ part 'transaction_state.g.dart';
 class CurrentVisibleMonth extends _$CurrentVisibleMonth {
   @override
   DateTime build() {
-    final now = DateTime.now();
-    return DateTime(now.year, now.month);
+    return TransactionMonth.current();
   }
 
   void set(DateTime date) {
@@ -19,22 +19,27 @@ class CurrentVisibleMonth extends _$CurrentVisibleMonth {
 @riverpod
 Future<List<DateTime>> availableMonths(Ref ref) async {
   final repo = ref.watch(transactionRepositoryProvider);
+  final indexedMonths = await repo.getIndexedTransactionMonths();
+  final currentMonth = repo.currentTransactionMonth;
+
+  if (indexedMonths != null) {
+    final visibleMonths = indexedMonths
+        .where((month) => !month.isAfter(currentMonth))
+        .toList();
+    return visibleMonths.isEmpty ? [currentMonth] : visibleMonths;
+  }
+
   final oldestTxn = await repo.getOldestTransaction();
 
   final List<DateTime> months = [];
-  final now = DateTime.now();
-  final currentMonth = DateTime(now.year, now.month);
 
   // Wenn keine Transaktionen existieren, nur den aktuellen Monat anzeigen
   if (oldestTxn == null) {
     return [currentMonth];
   }
 
-  var runner = DateTime(oldestTxn.dateTime.year, oldestTxn.dateTime.month);
-  final end = DateTime(
-    now.year,
-    now.month + 1,
-  ); // Bis zum nächsten Monat laufen lassen
+  var runner = TransactionMonth.fromDateTime(oldestTxn.dateTime);
+  final end = DateTime(currentMonth.year, currentMonth.month + 1);
 
   while (runner.isBefore(end)) {
     months.add(DateTime(runner.year, runner.month));

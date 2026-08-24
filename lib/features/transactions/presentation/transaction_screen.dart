@@ -78,16 +78,6 @@ class TransactionScreen extends HookConsumerWidget {
       final listNotifier = ref.read(paginatedTransactionListProvider.notifier);
       final loaded = await listNotifier.ensureMonthLoaded(month);
       if (!context.mounted || !loaded) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Für diesen Monat konnten keine Daten geladen werden.',
-              ),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
         return;
       }
 
@@ -115,15 +105,6 @@ class TransactionScreen extends HookConsumerWidget {
         } finally {
           isProgrammaticScroll.value = false;
         }
-      } else if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Für diesen Monat wurden keine Transaktionen gefunden.',
-            ),
-            duration: Duration(seconds: 2),
-          ),
-        );
       }
     }
 

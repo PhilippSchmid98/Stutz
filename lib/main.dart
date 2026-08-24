@@ -7,9 +7,11 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:stutz/firebase_options.dart';
 import 'package:stutz/app/app_router.dart';
+import 'package:stutz/features/transactions/data/transaction_month.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  TransactionMonth.initialize();
 
   if (kDebugMode) {
     WakelockPlus.enable();

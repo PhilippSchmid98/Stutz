@@ -197,6 +197,22 @@ void main() {
   });
 
   testWidgets(
+    'transaction screen does not show a snackbar for an empty month',
+    (tester) async {
+      await _pumpTransactionScreen(
+        tester,
+        paginatedMode: _TransactionScreenMode.empty,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Juni 25'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsNothing);
+    },
+  );
+
+  testWidgets(
     'transaction screen exposes a retry action for load-more errors',
     (tester) async {
       final fake = _FakePaginatedTransactionList(

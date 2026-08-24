@@ -18,6 +18,10 @@
         "flutter": true,
         "dart": true,
         "firebase": true,
-        "npm audit": true
+        "npm audit": true,
+        "/^git status --short; node --version; npm --version$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
     }
 }

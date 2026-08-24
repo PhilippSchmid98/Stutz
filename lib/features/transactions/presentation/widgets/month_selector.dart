@@ -30,18 +30,23 @@ class CleanMonthSelector extends HookConsumerWidget {
       data: (months) {
         if (months.isEmpty) return const SizedBox(height: 50);
 
+        final selectedMonth =
+            months.any((month) => _isSameMonth(month, currentMonth))
+            ? currentMonth
+            : months.last;
+
         final totalContentWidth = months.length * itemWidth;
         final isScrollable = totalContentWidth > screenWidth;
 
         if (isScrollable) {
-          final scrollKey = _monthScrollKey(months, currentMonth);
+          final scrollKey = _monthScrollKey(months, selectedMonth);
           if (lastScheduledScrollKey.value != scrollKey) {
             lastScheduledScrollKey.value = scrollKey;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!scrollController.hasClients) return;
 
               final index = months.indexWhere(
-                (month) => _isSameMonth(month, currentMonth),
+                (month) => _isSameMonth(month, selectedMonth),
               );
 
               if (index != -1) {
@@ -65,8 +70,8 @@ class CleanMonthSelector extends HookConsumerWidget {
         return SizedBox(
           height: 50,
           child: isScrollable
-              ? _buildScrollableList(months, currentMonth, scrollController)
-              : _buildCenteredList(months, currentMonth),
+              ? _buildScrollableList(months, selectedMonth, scrollController)
+              : _buildCenteredList(months, selectedMonth),
         );
       },
     );

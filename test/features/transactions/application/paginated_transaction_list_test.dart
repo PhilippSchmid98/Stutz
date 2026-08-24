@@ -77,6 +77,12 @@ class _FakeTransactionRepository implements TransactionRepository {
   @override
   String get userId => 'test-user';
 
+  @override
+  DateTime get currentTransactionMonth => DateTime(2026, 8);
+
+  @override
+  Future<List<DateTime>?> getIndexedTransactionMonths() async => null;
+
   int pageRequests = 0;
   Object? error;
 

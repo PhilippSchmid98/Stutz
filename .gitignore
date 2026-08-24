@@ -52,3 +52,10 @@ key.properties
 **/*.jks
 *.keystore
 keystore_base64.txt
+*.service-account.json
+*service-account*.json
+migration-output/
+backups/
+*.partial/
+*.restore.journal.json
+*.restore.journal.json.tmp

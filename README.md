@@ -157,6 +157,75 @@ schreibgeschützten Kategorie-Lookup angereichert.
     npm run test:rules
     ```
 
+### Transaction month index migration
+
+Existing transaction data can be indexed once with the Admin SDK. Store the
+service-account JSON outside this repository and set its path in
+`GOOGLE_APPLICATION_CREDENTIALS`. The migration writes derived
+`transactionMonths` documents and uses `Europe/Zurich` for month boundaries.
+
+#### Spark backup checkpoint
+
+Spark does not provide the managed Firestore export/import service to Cloud
+Storage. The repository therefore includes a local logical backup. It is an
+NDJSON archive with a typed Firestore value codec, a SHA-256 checksum, and a
+completion manifest. It is not the managed Firestore export format and cannot
+be passed to `gcloud firestore import`.
+
+The archive contains sensitive financial data. Keep it outside Git, store it
+with appropriate encryption and access controls, and consider pausing writes
+during backup and migration when an exact rollback point is required. Admin
+SDK reads and writes still consume Firestore quotas, including Spark quotas.
+
+The documented `transactions` scope is sufficient for the month-index
+migration. Use `--scope=all` when a recursive logical archive of all reachable
+documents and subcollections is required. Use `--max-documents=<N>` as a
+read-quota guard for large backups.
+
+Test the complete workflow against the emulator first:
+
+```powershell
+$env:FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080"
+npm run backup:firestore -- --emulator --scope=transactions --output=backups/firestore-transactions-test
+npm run restore:firestore -- --emulator --input=backups/firestore-transactions-test --dry-run
+npm run migrate:transaction-months -- --emulator --dry-run
+npm run migrate:transaction-months -- --emulator
+```
+
+For production, create and verify a transaction backup before allowing the
+migration to write. The backup command does not start the migration
+automatically:
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\outside\stutz\stutz-service-account.json"
+$backup = "backups/firestore-transactions-$(Get-Date -Format yyyy-MM-dd)"
+npm run backup:firestore -- --project-id=stutz-7ed90 --scope=transactions --output=$backup
+npm run migrate:transaction-months -- --project-id=stutz-7ed90 --dry-run --require-backup --backup-dir=$backup
+npm run migrate:transaction-months -- --project-id=stutz-7ed90 --require-backup --backup-dir=$backup
+```
+
+`--require-backup` validates the complete manifest, project ID, transaction
+scope, document count, and checksum before migration writes begin. The
+migration is safe to repeat. It writes exact per-month counts, removes stale
+month documents, and marks each completed user with the `_meta` document.
+
+To inspect or restore an archive, start with a dry run. Normal restore is an
+idempotent upsert in batches of at most 500 documents. An interrupted restore
+leaves a journal; rerun it with `--resume` to continue from the last committed
+batch:
+
+```powershell
+npm run restore:firestore -- --project-id=stutz-7ed90 --input=$backup --dry-run
+npm run restore:firestore -- --project-id=stutz-7ed90 --input=$backup --confirm
+npm run restore:firestore -- --project-id=stutz-7ed90 --input=$backup --scope=transactions --user-id=<USER_ID> --delete-missing --confirm
+```
+
+`--delete-missing` is deliberately restricted to one user's transaction
+scope. It can remove data and should only be used with a maintenance window
+and an explicit `--confirm`. Production restores require `--confirm`; a
+project mismatch is rejected unless `--allow-project-mismatch` is supplied
+intentionally.
+
 ---
 
 ## 📂 Projektstruktur
