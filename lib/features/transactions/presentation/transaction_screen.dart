@@ -7,6 +7,7 @@ import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
 class TransactionScreen extends HookConsumerWidget {
@@ -115,17 +116,17 @@ class TransactionScreen extends HookConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: const _TransactionAppBar(),
       floatingActionButton: FloatingActionButton(
         heroTag: 'transaction_screen_fab',
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
+        tooltip: 'Ausgabe hinzufügen',
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         elevation: 4,
         shape: const CircleBorder(),
         child: const Icon(Icons.add),
         onPressed: () {
-          showDialog(
+          showAppBottomSheet(
             context: context,
             builder: (_) => const AddTransactionDialog(),
           );
@@ -133,10 +134,17 @@ class TransactionScreen extends HookConsumerWidget {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 8),
-          CleanMonthSelector(onMonthSelected: scrollToMonth),
-          const SizedBox(height: 8),
-          Divider(height: 1, color: Colors.grey.shade100),
+          ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerLowest,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: CleanMonthSelector(onMonthSelected: scrollToMonth),
+            ),
+          ),
+          Divider(
+            height: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           Expanded(
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
@@ -171,7 +179,7 @@ class _EmptyState extends StatelessWidget {
     return Center(
       child: Text(
         'Keine Ausgaben.',
-        style: TextStyle(color: Colors.grey.shade400),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -190,12 +198,15 @@ class _TransactionAppBar extends StatelessWidget
       title: const Text('Transaktionen'),
       actions: [const CloudStatusIcon()],
       centerTitle: false,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: 0,
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
-        child: Container(color: Colors.grey.shade100, height: 1),
+        child: Container(
+          color: Theme.of(context).colorScheme.outlineVariant,
+          height: 1,
+        ),
       ),
     );
   }

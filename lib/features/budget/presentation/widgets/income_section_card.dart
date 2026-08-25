@@ -4,6 +4,7 @@ import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_income_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/income_item_row.dart';
 import 'package:stutz/shared/widgets/add_button.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/section_card.dart';
 
 class IncomeSectionCard extends StatelessWidget {
@@ -20,6 +21,7 @@ class IncomeSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final mainIncomes = incomes
         .where((i) => i.group == IncomeGroup.main)
         .toList();
@@ -28,12 +30,12 @@ class IncomeSectionCard extends StatelessWidget {
         .toList();
 
     return SectionCard(
-      title: "EINNAHMEN",
+      title: "Einnahmen",
       totalMonthly: monthlyTotal,
       totalYearly: yearlyTotal,
       icon: Icons.trending_up,
-      iconColor: Colors.green,
-      backgroundColor: Colors.green.shade50,
+      iconColor: colorScheme.primary,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       onHeaderTap: null,
       children: [
         if (mainIncomes.isNotEmpty) ...[
@@ -51,12 +53,12 @@ class IncomeSectionCard extends StatelessWidget {
         ],
         const SizedBox(height: 16),
         AddButton(
-          label: "Neue Einnahme",
-          onTap: () => showDialog(
+          label: "Einnahme hinzufügen",
+          onTap: () => showAppBottomSheet(
             context: context,
             builder: (_) => const AddIncomeDialog(),
           ),
-          color: Colors.green,
+          color: colorScheme.primary,
         ),
       ],
     );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/theme/app_theme.dart';
 
 enum StyledFieldVariant { budget, transaction }
 
@@ -29,7 +30,7 @@ InputDecoration styledFieldDecoration({
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.black, width: 1),
+        borderSide: const BorderSide(color: AppTheme.primary, width: 1),
       ),
     );
   }
@@ -49,7 +50,7 @@ InputDecoration styledFieldDecoration({
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Colors.teal, width: 2),
+      borderSide: const BorderSide(color: AppTheme.primary, width: 2),
     ),
     filled: true,
     fillColor: Colors.grey.shade50,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_income_dialog.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 class IncomeItemRow extends StatelessWidget {
   final IncomeSource item;
@@ -11,9 +12,10 @@ class IncomeItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMonthly = item.interval == PaymentInterval.monthly;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return InkWell(
-      onTap: () => showDialog(
+      onTap: () => showAppBottomSheet(
         context: context,
         builder: (_) => AddIncomeDialog(existingItem: item),
       ),
@@ -24,7 +26,7 @@ class IncomeItemRow extends StatelessWidget {
             Icon(
               Icons.monetization_on_outlined,
               size: 20,
-              color: Colors.grey.shade500,
+              color: colorScheme.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -34,15 +36,17 @@ class IncomeItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  item.amount.toStringAsFixed(2),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+                  "${item.amount.toStringAsFixed(2)} CHF",
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   isMonthly ? "Monatlich" : "Jährlich",
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0,
+                  ),
                 ),
               ],
             ),

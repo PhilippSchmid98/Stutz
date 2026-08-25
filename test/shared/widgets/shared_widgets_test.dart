@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:stutz/core/theme/app_theme.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
@@ -33,7 +34,7 @@ void main() {
     final focusedBorder = decoration.focusedBorder! as OutlineInputBorder;
 
     expect(decoration.labelText, 'Name');
-    expect(focusedBorder.borderSide.color, Colors.teal);
+    expect(focusedBorder.borderSide.color, AppTheme.primary);
     expect(focusedBorder.borderRadius, BorderRadius.circular(12));
   });
 
@@ -62,7 +63,7 @@ void main() {
         .decoration;
 
     final focusedBorder = decoration.focusedBorder! as OutlineInputBorder;
-    expect(focusedBorder.borderSide.color, Colors.black);
+    expect(focusedBorder.borderSide.color, AppTheme.primary);
   });
 
   testWidgets('styled dropdown uses the shared field decoration', (

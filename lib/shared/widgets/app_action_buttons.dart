@@ -6,7 +6,7 @@ class AppPrimaryButton extends StatelessWidget {
   final double? height;
   final BorderRadius borderRadius;
   final EdgeInsetsGeometry? padding;
-  final Color backgroundColor;
+  final Color? backgroundColor;
   final double? elevation;
   final TextStyle? textStyle;
   final double? width;
@@ -18,7 +18,7 @@ class AppPrimaryButton extends StatelessWidget {
     this.height = 56,
     this.borderRadius = const BorderRadius.all(Radius.circular(16)),
     this.padding,
-    this.backgroundColor = Colors.black,
+    this.backgroundColor,
     this.elevation,
     this.textStyle,
     this.width = double.infinity,
@@ -32,7 +32,8 @@ class AppPrimaryButton extends StatelessWidget {
       child: FilledButton(
         onPressed: onPressed,
         style: FilledButton.styleFrom(
-          backgroundColor: backgroundColor,
+          backgroundColor:
+              backgroundColor ?? Theme.of(context).colorScheme.primary,
           padding: padding,
           elevation: elevation,
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
@@ -75,7 +76,9 @@ class AppOutlinedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = OutlinedButton.styleFrom(
       foregroundColor: foregroundColor,
-      side: side ?? BorderSide(color: Colors.grey.shade300),
+      side:
+          side ??
+          BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
       shape: RoundedRectangleBorder(borderRadius: borderRadius),
     );
 

@@ -11,8 +11,10 @@ import 'package:stutz/features/transactions/application/transaction_service.dart
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
 import 'package:stutz/shared/widgets/styled_field_decoration.dart';
+import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
 
 class AddTransactionDialog extends HookConsumerWidget {
   final TransactionWithCategory? existingItem;
@@ -51,27 +53,11 @@ class AddTransactionDialog extends HookConsumerWidget {
         initialDate: selectedDate.value,
         firstDate: DateTime(2020),
         lastDate: now,
-        builder: (context, child) {
-          return Theme(
-            data: ThemeData.light().copyWith(
-              colorScheme: const ColorScheme.light(primary: Colors.black),
-            ),
-            child: child!,
-          );
-        },
       );
       if (date != null && context.mounted) {
         final time = await showTimePicker(
           context: context,
           initialTime: TimeOfDay.fromDateTime(selectedDate.value),
-          builder: (context, child) {
-            return Theme(
-              data: ThemeData.light().copyWith(
-                colorScheme: const ColorScheme.light(primary: Colors.black),
-              ),
-              child: child!,
-            );
-          },
         );
         if (time != null) {
           selectedDate.value = DateTime(
@@ -82,6 +68,21 @@ class AddTransactionDialog extends HookConsumerWidget {
             time.minute,
           );
         }
+      }
+    }
+
+    Future<void> pickCategory() async {
+      FocusScope.of(context).unfocus();
+      final selection = await showAppBottomSheet<ExpenseNode>(
+        context: context,
+        builder: (_) => CategoryPickerSheet(
+          categories: selectableCategoriesAsync,
+          selectedNodeId: selectedNodeId.value,
+        ),
+      );
+      if (selection != null && context.mounted) {
+        selectedNodeId.value = selection.id;
+        selectedNodeName.value = selection.name;
       }
     }
 
@@ -130,7 +131,7 @@ class AddTransactionDialog extends HookConsumerWidget {
         context: context,
         title: "Löschen",
         content: "Wirklich löschen?",
-        cancelColor: Colors.grey,
+        cancelColor: Theme.of(context).colorScheme.onSurfaceVariant,
         confirmLabel: "Löschen",
       );
 
@@ -149,110 +150,38 @@ class AddTransactionDialog extends HookConsumerWidget {
       }
     }
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+    return AppBottomSheet(
+      title: isEdit ? 'Ausgabe bearbeiten' : 'Neue Ausgabe',
+      onClose: isSaving ? null : () => Navigator.pop(context),
+      content: Form(
+        key: formKey,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            _TransactionDialogHeader(
-              isEdit: isEdit,
-              isSaving: isSaving,
-              onClose: () => Navigator.pop(context),
-            ),
-
-            const SizedBox(height: 16),
-
-            Flexible(
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    children: [
-                      _TransactionAmountField(
-                        controller: amountCtrl,
-                        autofocus: !isEdit,
-                      ),
-                      const SizedBox(height: 24),
-
-                      _TransactionCategoryField(
-                        categories: selectableCategoriesAsync,
-                        selectedNodeId: selectedNodeId.value,
-                        selectedNodeName: selectedNodeName.value,
-                        onSelected: (selection) {
-                          selectedNodeId.value = selection.id;
-                          selectedNodeName.value = selection.name;
-                        },
-                        onTextChanged: (text) {
-                          if (selectedNodeId.value != null) {
-                            selectedNodeId.value = null;
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      _TransactionDateField(
-                        selectedDate: selectedDate.value,
-                        onTap: pickDateTime,
-                      ),
-                      const SizedBox(height: 16),
-
-                      _TransactionNoteField(controller: noteCtrl),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-
+            _TransactionAmountField(controller: amountCtrl, autofocus: !isEdit),
             const SizedBox(height: 24),
-
-            _TransactionDialogActions(
-              isEdit: isEdit,
-              isSaving: isSaving,
-              onDelete: deleteTransaction,
-              onSave: saveTransaction,
+            _TransactionCategoryField(
+              categories: selectableCategoriesAsync,
+              selectedNodeId: selectedNodeId.value,
+              selectedNodeName: selectedNodeName.value,
+              onTap: pickCategory,
             ),
+            const SizedBox(height: 16),
+            _TransactionDateField(
+              selectedDate: selectedDate.value,
+              onTap: pickDateTime,
+            ),
+            const SizedBox(height: 16),
+            _TransactionNoteField(controller: noteCtrl),
           ],
         ),
       ),
-    );
-  }
-}
-
-class _TransactionDialogHeader extends StatelessWidget {
-  final bool isEdit;
-  final bool isSaving;
-  final VoidCallback onClose;
-
-  const _TransactionDialogHeader({
-    required this.isEdit,
-    required this.isSaving,
-    required this.onClose,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          isEdit ? "Bearbeiten" : "Neue Ausgabe",
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
-        IconButton(
-          onPressed: isSaving ? null : onClose,
-          icon: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.close, size: 18),
+      actions: [
+        Expanded(
+          child: _TransactionDialogActions(
+            isEdit: isEdit,
+            isSaving: isSaving,
+            onDelete: deleteTransaction,
+            onSave: saveTransaction,
           ),
         ),
       ],
@@ -279,21 +208,23 @@ class _TransactionAmountField extends StatelessWidget {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.center,
           autofocus: autofocus,
-          style: const TextStyle(
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
             fontSize: 42,
             fontWeight: FontWeight.w900,
-            color: Colors.black,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             hintText: '0.00',
             suffixText: ' CHF',
             suffixStyle: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.grey,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             border: InputBorder.none,
-            hintStyle: TextStyle(color: Colors.black12),
+            hintStyle: TextStyle(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
             contentPadding: EdgeInsets.zero,
           ),
           validator: (value) => value == null || value.isEmpty ? '' : null,
@@ -356,21 +287,26 @@ class _TransactionCategoryField extends StatelessWidget {
   final AsyncValue<List<ExpenseNode>> categories;
   final String? selectedNodeId;
   final String selectedNodeName;
-  final ValueChanged<ExpenseNode> onSelected;
-  final ValueChanged<String> onTextChanged;
+  final VoidCallback onTap;
 
   const _TransactionCategoryField({
     required this.categories,
     required this.selectedNodeId,
     required this.selectedNodeName,
-    required this.onSelected,
-    required this.onTextChanged,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return categories.when(
-      loading: () => const LinearProgressIndicator(),
+      loading: () => InputDecorator(
+        decoration: styledFieldDecoration(
+          label: "Kategorie",
+          icon: Icons.category_outlined,
+          variant: StyledFieldVariant.transaction,
+        ),
+        child: const LinearProgressIndicator(),
+      ),
       error: (_, __) => const Padding(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Align(
@@ -378,84 +314,21 @@ class _TransactionCategoryField extends StatelessWidget {
           child: Text('Kategorien konnten nicht geladen werden.'),
         ),
       ),
-      data: (allNodes) => LayoutBuilder(
-        builder: (context, constraints) => RawAutocomplete<ExpenseNode>(
-          initialValue: selectedNodeId != null
-              ? TextEditingValue(text: selectedNodeName)
-              : null,
-          optionsBuilder: (textEditingValue) {
-            if (textEditingValue.text.isEmpty) return allNodes;
-            return allNodes.where(
-              (option) => option.name.toLowerCase().contains(
-                textEditingValue.text.toLowerCase(),
-              ),
-            );
-          },
-          onSelected: (selection) {
-            onSelected(selection);
-            FocusScope.of(context).unfocus();
-          },
-          displayStringForOption: (option) => option.name,
-          fieldViewBuilder:
-              (context, textController, focusNode, onFieldSubmitted) {
-                if (selectedNodeId != null && textController.text.isEmpty) {
-                  textController.text = selectedNodeName;
-                }
-
-                return TextFormField(
-                  controller: textController,
-                  focusNode: focusNode,
-                  decoration:
-                      styledFieldDecoration(
-                        label: "Kategorie (Suchen...)",
-                        icon: Icons.category_outlined,
-                        variant: StyledFieldVariant.transaction,
-                      ).copyWith(
-                        suffixIcon: const Icon(
-                          Icons.keyboard_arrow_down_rounded,
-                          color: Colors.grey,
-                        ),
-                      ),
-                  validator: (value) =>
-                      selectedNodeId == null ? 'Bitte Kategorie wählen' : null,
-                  onChanged: onTextChanged,
-                );
-              },
-          optionsViewBuilder: (context, onOptionSelected, options) => Align(
-            alignment: Alignment.topLeft,
-            child: Material(
-              elevation: 4.0,
-              borderRadius: BorderRadius.circular(16),
-              color: Colors.white,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxHeight: 200,
-                  maxWidth: constraints.maxWidth,
-                ),
-                child: ListView.separated(
-                  padding: EdgeInsets.zero,
-                  shrinkWrap: true,
-                  itemCount: options.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, indent: 16, endIndent: 16),
-                  itemBuilder: (context, index) {
-                    final option = options.elementAt(index);
-                    return InkWell(
-                      onTap: () => onOptionSelected(option),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        child: Text(
-                          option.name,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+      data: (_) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: InputDecorator(
+          decoration: styledFieldDecoration(
+            label: "Kategorie",
+            icon: Icons.category_outlined,
+            variant: StyledFieldVariant.transaction,
+          ).copyWith(suffixIcon: const Icon(Icons.chevron_right)),
+          child: Text(
+            selectedNodeId == null ? 'Kategorie wählen' : selectedNodeName,
+            style: TextStyle(
+              color: selectedNodeId == null
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),

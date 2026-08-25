@@ -70,8 +70,13 @@ class CleanMonthSelector extends HookConsumerWidget {
         return SizedBox(
           height: 50,
           child: isScrollable
-              ? _buildScrollableList(months, selectedMonth, scrollController)
-              : _buildCenteredList(months, selectedMonth),
+              ? _buildScrollableList(
+                  context,
+                  months,
+                  selectedMonth,
+                  scrollController,
+                )
+              : _buildCenteredList(context, months, selectedMonth),
         );
       },
     );
@@ -93,6 +98,7 @@ class CleanMonthSelector extends HookConsumerWidget {
   }
 
   Widget _buildScrollableList(
+    BuildContext context,
     List<DateTime> months,
     DateTime currentMonth,
     ScrollController scrollController,
@@ -103,37 +109,55 @@ class CleanMonthSelector extends HookConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: months.length,
       itemBuilder: (context, index) {
-        return _buildItem(months[index], currentMonth);
+        return _buildItem(context, months[index], currentMonth);
       },
     );
   }
 
-  Widget _buildCenteredList(List<DateTime> months, DateTime currentMonth) {
+  Widget _buildCenteredList(
+    BuildContext context,
+    List<DateTime> months,
+    DateTime currentMonth,
+  ) {
     return Center(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
-        children: months.map((date) => _buildItem(date, currentMonth)).toList(),
+        children: months
+            .map((date) => _buildItem(context, date, currentMonth))
+            .toList(),
       ),
     );
   }
 
-  Widget _buildItem(DateTime date, DateTime currentMonth) {
+  Widget _buildItem(
+    BuildContext context,
+    DateTime date,
+    DateTime currentMonth,
+  ) {
     final isSelected = _isSameMonth(date, currentMonth);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return GestureDetector(
+    return InkWell(
       onTap: () => onMonthSelected(date),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: 80,
+        height: 44,
         alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? colorScheme.surfaceContainerLow : null,
+          borderRadius: BorderRadius.circular(12),
+        ),
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 200),
           style: TextStyle(
-            fontFamily: 'Roboto',
             fontSize: isSelected ? 18 : 15,
             fontWeight: isSelected ? FontWeight.w900 : FontWeight.w500,
-            color: isSelected ? Colors.black : Colors.grey.shade400,
+            color: isSelected
+                ? colorScheme.primary
+                : colorScheme.onSurfaceVariant,
           ),
           child: Text(_formatMonth(date)),
         ),

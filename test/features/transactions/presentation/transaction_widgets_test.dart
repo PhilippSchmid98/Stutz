@@ -18,6 +18,8 @@ import 'package:stutz/features/transactions/presentation/transaction_screen.dart
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
 import 'package:stutz/features/transactions/presentation/widgets/transaction_item.dart';
+import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 void main() {
   setUpAll(() async {
@@ -49,7 +51,7 @@ void main() {
 
     expect(find.text('Restaurant'), findsOneWidget);
     expect(find.text('Abendessen'), findsOneWidget);
-    expect(find.text('-42.50'), findsOneWidget);
+    expect(find.text('-42.50 CHF'), findsOneWidget);
   });
 
   testWidgets('daily transaction group renders localized date and total', (
@@ -71,7 +73,7 @@ void main() {
 
     expect(find.text('15.06'), findsOneWidget);
     expect(find.text('Sonntag'), findsOneWidget);
-    expect(find.text('-42.50'), findsNWidgets(2));
+    expect(find.text('-42.50 CHF'), findsNWidgets(2));
   });
 
   testWidgets('month selector exposes loaded months and selection callback', (
@@ -102,6 +104,46 @@ void main() {
 
     await tester.tap(find.text('Feb 25'));
     expect(selectedMonth, months.last);
+  });
+
+  testWidgets('category picker filters and returns a selected category', (
+    tester,
+  ) async {
+    const categories = [
+      ExpenseNode(id: 'food', name: 'Lebensmittel'),
+      ExpenseNode(id: 'transport', name: 'ÖV'),
+    ];
+    ExpenseNode? selectedCategory;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ElevatedButton(
+            onPressed: () async {
+              selectedCategory = await showAppBottomSheet<ExpenseNode>(
+                context: tester.element(find.byType(ElevatedButton)),
+                builder: (_) => const CategoryPickerSheet(
+                  categories: AsyncData(categories),
+                  selectedNodeId: null,
+                ),
+              );
+            },
+            child: const Text('Kategorie öffnen'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Kategorie öffnen'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'lebens');
+    await tester.pumpAndSettle();
+    expect(find.text('Lebensmittel'), findsOneWidget);
+    expect(find.text('ÖV'), findsNothing);
+
+    await tester.tap(find.text('Lebensmittel'));
+    await tester.pumpAndSettle();
+    expect(selectedCategory?.id, 'food');
   });
 
   testWidgets('transaction dialog requires a category before saving', (

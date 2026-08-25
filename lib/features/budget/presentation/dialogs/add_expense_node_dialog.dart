@@ -6,8 +6,9 @@ import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
+import 'package:stutz/shared/widgets/choice_group.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
-import 'package:stutz/shared/widgets/styled_dropdown.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
 import 'package:uuid/uuid.dart';
 
@@ -45,126 +46,88 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
       title = "Hinzufügen";
     }
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isEdit) ...[
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _TypeSelectorButton(
-                            label: "Eintrag",
-                            icon: Icons.receipt_long,
-                            isSelected: !isGroup.value,
-                            onTap: () => isGroup.value = false,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: _TypeSelectorButton(
-                            label: "Gruppe",
-                            icon: Icons.folder_open,
-                            isSelected: isGroup.value,
-                            onTap: () => isGroup.value = true,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-                StyledTextField(
-                  controller: nameCtrl,
-                  label: 'Bezeichnung',
-                  icon: isGroup.value ? Icons.folder_outlined : Icons.tag,
-                ),
-                if (!isGroup.value) ...[
-                  StyledTextField(
-                    controller: amountCtrl,
-                    label: 'Betrag',
-                    icon: Icons.attach_money,
-                    keyboardType: TextInputType.number,
-                    suffixText: 'CHF',
-                    validator: positiveAmountValidator,
-                  ),
-                  StyledDropdown<PaymentInterval>(
-                    value: interval.value,
-                    items: const {
-                      PaymentInterval.monthly: 'Monatlich',
-                      PaymentInterval.yearly: 'Jährlich',
-                    },
-                    label: 'Intervall',
-                    icon: Icons.calendar_today,
-                    onChanged: (v) {
-                      if (v != null) interval.value = v;
-                    },
-                  ),
-                  StyledDropdown<ExpenseType>(
-                    value: type.value,
-                    items: const {
-                      ExpenseType.fixed: 'Fix',
-                      ExpenseType.variable: 'Variabel',
-                    },
-                    label: 'Typ',
-                    icon: Icons.tune,
-                    onChanged: (v) {
-                      if (v != null) type.value = v;
-                    },
-                  ),
-                ] else ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.blue.shade700,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text(
-                            "Eine Gruppe enthält Unterkategorien. Sie hat keinen eigenen Betrag.",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return AppBottomSheet(
+      title: title,
+      onClose: isSaving ? null : () => Navigator.pop(context),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!isEdit) ...[
+              AppChoiceGroup<bool>(
+                value: isGroup.value,
+                items: const {false: 'Eintrag', true: 'Gruppe'},
+                label: 'Art',
+                onChanged: (value) => isGroup.value = value,
+              ),
+            ],
+            StyledTextField(
+              controller: nameCtrl,
+              label: 'Bezeichnung',
+              icon: isGroup.value ? Icons.folder_outlined : Icons.tag,
             ),
-          ),
+            if (!isGroup.value) ...[
+              StyledTextField(
+                controller: amountCtrl,
+                label: 'Betrag',
+                icon: Icons.attach_money,
+                keyboardType: TextInputType.number,
+                suffixText: 'CHF',
+                validator: positiveAmountValidator,
+              ),
+              AppChoiceGroup<PaymentInterval>(
+                value: interval.value,
+                items: const {
+                  PaymentInterval.monthly: 'Monatlich',
+                  PaymentInterval.yearly: 'Jährlich',
+                },
+                label: 'Intervall',
+                onChanged: (value) => interval.value = value,
+              ),
+              AppChoiceGroup<ExpenseType>(
+                value: type.value,
+                items: const {
+                  ExpenseType.fixed: 'Fix',
+                  ExpenseType.variable: 'Variabel',
+                },
+                label: 'Typ',
+                onChanged: (value) => type.value = value,
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: colorScheme.primary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        "Eine Gruppe enthält Unterkategorien. Sie hat keinen eigenen Betrag.",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       actions: [
         if (isEdit)
-          AppTextButton(
+          AppDestructiveButton(
             label: 'Löschen',
-            foregroundColor: Colors.red,
             onPressed: isSaving
                 ? null
                 : () async {
@@ -195,115 +158,68 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                     }
                   },
           ),
+        if (isEdit) const Spacer(),
         AppTextButton(
           label: 'Abbrechen',
-          foregroundColor: Colors.grey.shade600,
+          foregroundColor: colorScheme.onSurfaceVariant,
           onPressed: isSaving ? null : () => Navigator.pop(context),
         ),
-        AppPrimaryButton(
-          label: 'Speichern',
-          width: null,
-          height: null,
-          borderRadius: const BorderRadius.all(Radius.circular(12)),
-          onPressed: isSaving
-              ? null
-              : () async {
-                  if (formKey.currentState!.validate()) {
-                    final resolvedParentId = isEdit
-                        ? existingNode!.parentId
-                        : parentId;
-                    final id = isEdit ? existingNode!.id : const Uuid().v4();
-                    final amount = isGroup.value
-                        ? null
-                        : parsePositiveAmount(amountCtrl.text);
+        const SizedBox(width: 8),
+        Expanded(
+          child: AppPrimaryButton(
+            label: 'Speichern',
+            width: null,
+            height: 48,
+            borderRadius: const BorderRadius.all(Radius.circular(10)),
+            onPressed: isSaving
+                ? null
+                : () async {
+                    if (formKey.currentState!.validate()) {
+                      final resolvedParentId = isEdit
+                          ? existingNode!.parentId
+                          : parentId;
+                      final id = isEdit ? existingNode!.id : const Uuid().v4();
+                      final amount = isGroup.value
+                          ? null
+                          : parsePositiveAmount(amountCtrl.text);
 
-                    if (!isGroup.value && amount == null) {
-                      return;
-                    }
+                      if (!isGroup.value && amount == null) {
+                        return;
+                      }
 
-                    final node = ExpenseNode(
-                      id: id,
-                      parentId: resolvedParentId,
-                      name: nameCtrl.text.trim(),
-                      plannedAmount: amount,
-                      interval: isGroup.value ? null : interval.value,
-                      type: isGroup.value ? null : type.value,
-                      children: isEdit ? existingNode!.children : [],
-                    );
-                    try {
-                      final mutations = ref.read(
-                        budgetMutationsProvider.notifier,
+                      final node = ExpenseNode(
+                        id: id,
+                        parentId: resolvedParentId,
+                        name: nameCtrl.text.trim(),
+                        plannedAmount: amount,
+                        interval: isGroup.value ? null : interval.value,
+                        type: isGroup.value ? null : type.value,
+                        children: isEdit ? existingNode!.children : [],
                       );
-                      if (isEdit) {
-                        await mutations.updateExpenseNode(node);
-                      } else {
-                        await mutations.addExpenseNode(node);
+                      try {
+                        final mutations = ref.read(
+                          budgetMutationsProvider.notifier,
+                        );
+                        if (isEdit) {
+                          await mutations.updateExpenseNode(node);
+                        } else {
+                          await mutations.addExpenseNode(node);
+                        }
+                      } catch (_) {
+                        if (context.mounted) {
+                          showErrorSnackBar(
+                            context,
+                            'Speichern fehlgeschlagen',
+                          );
+                        }
+                        return;
                       }
-                    } catch (_) {
-                      if (context.mounted) {
-                        showErrorSnackBar(context, 'Speichern fehlgeschlagen');
-                      }
-                      return;
+                      if (context.mounted) Navigator.pop(context);
                     }
-                    if (context.mounted) Navigator.pop(context);
-                  }
-                },
+                  },
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _TypeSelectorButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TypeSelectorButton({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : [],
-        ),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 18, color: isSelected ? Colors.teal : Colors.grey),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.black : Colors.grey.shade600,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

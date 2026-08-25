@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 class TransactionItem extends StatelessWidget {
   final TransactionWithCategory item;
@@ -11,7 +12,7 @@ class TransactionItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        showDialog(
+        showAppBottomSheet(
           context: context,
           builder: (_) => AddTransactionDialog(existingItem: item),
         );
@@ -23,12 +24,12 @@ class TransactionItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.shopping_bag_outlined,
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.primary,
                 size: 20,
               ),
             ),
@@ -39,9 +40,8 @@ class TransactionItem extends StatelessWidget {
                 children: [
                   Text(
                     item.categoryName,
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      fontSize: 16,
                     ),
                   ),
                   if (item.transaction.note != null &&
@@ -50,9 +50,8 @@ class TransactionItem extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 2),
                       child: Text(
                         item.transaction.note!,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -62,8 +61,10 @@ class TransactionItem extends StatelessWidget {
               ),
             ),
             Text(
-              '-${item.transaction.amount.toStringAsFixed(2)}',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              '-${item.transaction.amount.toStringAsFixed(2)} CHF',
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ),

@@ -53,9 +53,9 @@ void main() {
 
     expect(find.text('Budget Planung'), findsOneWidget);
     expect(find.text('Lohn'), findsOneWidget);
-    expect(find.text('WOHNEN'), findsOneWidget);
+    expect(find.text('Wohnen'), findsOneWidget);
     expect(find.text('+ 3800.00 CHF'), findsOneWidget);
-    expect(find.text('Neue Hauptkategorie erstellen'), findsOneWidget);
+    expect(find.text('Hauptkategorie hinzufügen'), findsOneWidget);
   });
 
   testWidgets('section card renders totals and invokes header action', (
@@ -118,8 +118,8 @@ void main() {
       ),
     );
 
-    expect(find.text('HAUPTEINNAHMEN'), findsOneWidget);
-    expect(find.text('NEBENEINNAHMEN'), findsOneWidget);
+    expect(find.text('Haupteinnahmen'), findsOneWidget);
+    expect(find.text('Nebeneinnahmen'), findsOneWidget);
     expect(find.text('Lohn'), findsOneWidget);
     expect(find.text('Nebenjob'), findsOneWidget);
   });
@@ -154,10 +154,41 @@ void main() {
       ),
     );
 
-    expect(find.text('WOHNEN'), findsOneWidget);
+    expect(find.text('Wohnen'), findsOneWidget);
     expect(find.text('Miete'), findsOneWidget);
     expect(find.byIcon(Icons.folder_open), findsOneWidget);
     expect(find.text('+ Eintrag hinzufügen'), findsOneWidget);
+  });
+
+  testWidgets('expense groups can collapse and reopen their children', (
+    tester,
+  ) async {
+    const root = ExpenseNode(
+      id: 'housing',
+      name: 'Wohnen',
+      children: [ExpenseNode(id: 'rent', name: 'Miete')],
+    );
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: ExpenseSectionCard(
+            rootNode: root,
+            monthlyTotal: 0,
+            yearlyTotal: 0,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Miete'), findsOneWidget);
+    await tester.tap(find.byTooltip('Einklappen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Miete'), findsNothing);
+
+    await tester.tap(find.byTooltip('Ausklappen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Miete'), findsOneWidget);
   });
 
   testWidgets('leaf rows show amounts while empty groups show child action', (
@@ -176,7 +207,7 @@ void main() {
         home: Scaffold(body: ExpenseItemRow(node: leaf, depth: 0)),
       ),
     );
-    expect(find.text('120.00'), findsOneWidget);
+    expect(find.text('120.00 CHF'), findsOneWidget);
     expect(find.byIcon(Icons.add_circle_outline), findsNothing);
 
     const emptyGroup = ExpenseNode(id: 'group', name: 'Leer');
@@ -231,8 +262,10 @@ void main() {
 
     expect(find.text('+ 2500.00 CHF'), findsOneWidget);
     expect(find.text('Verfügbarer Überschuss'), findsOneWidget);
-    expect(find.text('1800.00'), findsOneWidget);
-    expect(find.text('700.00'), findsOneWidget);
+    expect(find.text('Nach Fixkosten verfügbar'), findsOneWidget);
+    expect(find.text('3200.00 CHF'), findsOneWidget);
+    expect(find.text('1800.00 CHF'), findsOneWidget);
+    expect(find.text('700.00 CHF'), findsOneWidget);
   });
 
   testWidgets('main category dialog validates a required name', (tester) async {

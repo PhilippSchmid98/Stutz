@@ -9,6 +9,10 @@ class SectionCard extends StatelessWidget {
   final Color backgroundColor;
   final List<Widget> children;
   final VoidCallback? onHeaderTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onAdd;
+  final bool expandable;
+  final bool initiallyExpanded;
 
   const SectionCard({
     super.key,
@@ -20,104 +24,187 @@ class SectionCard extends StatelessWidget {
     required this.backgroundColor,
     required this.children,
     this.onHeaderTap,
+    this.onEdit,
+    this.onAdd,
+    this.expandable = false,
+    this.initiallyExpanded = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return _SectionCardBody(
+      title: title,
+      totalMonthly: totalMonthly,
+      totalYearly: totalYearly,
+      icon: icon,
+      iconColor: iconColor,
+      backgroundColor: backgroundColor,
+      onHeaderTap: onHeaderTap,
+      onEdit: onEdit,
+      onAdd: onAdd,
+      expandable: expandable,
+      initiallyExpanded: initiallyExpanded,
+      children: children,
+    );
+  }
+}
+
+class _SectionCardBody extends StatefulWidget {
+  final String title;
+  final double totalMonthly;
+  final double totalYearly;
+  final IconData icon;
+  final Color iconColor;
+  final Color backgroundColor;
+  final List<Widget> children;
+  final VoidCallback? onHeaderTap;
+  final VoidCallback? onEdit;
+  final VoidCallback? onAdd;
+  final bool expandable;
+  final bool initiallyExpanded;
+
+  const _SectionCardBody({
+    required this.title,
+    required this.totalMonthly,
+    required this.totalYearly,
+    required this.icon,
+    required this.iconColor,
+    required this.backgroundColor,
+    required this.children,
+    required this.onHeaderTap,
+    required this.onEdit,
+    required this.onAdd,
+    required this.expandable,
+    required this.initiallyExpanded,
+  });
+
+  @override
+  State<_SectionCardBody> createState() => _SectionCardBodyState();
+}
+
+class _SectionCardBodyState extends State<_SectionCardBody> {
+  late bool _isExpanded = widget.initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasHeaderAction = widget.onEdit != null || widget.onAdd != null;
+    final header = Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: widget.iconColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(widget.icon, color: widget.iconColor),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                _buildTotals(context),
+              ],
+            ),
+          ),
+          if (widget.totalYearly > 0)
+            Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                "Ø ${(widget.totalMonthly + widget.totalYearly / 12).toStringAsFixed(0)}",
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: widget.iconColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          if (widget.onEdit != null)
+            IconButton(
+              tooltip: 'Bearbeiten',
+              onPressed: widget.onEdit,
+              icon: const Icon(Icons.edit_outlined),
+              visualDensity: VisualDensity.compact,
+            ),
+          if (widget.onAdd != null)
+            IconButton(
+              tooltip: 'Eintrag hinzufügen',
+              onPressed: widget.onAdd,
+              icon: const Icon(Icons.add),
+              visualDensity: VisualDensity.compact,
+            ),
+          if (widget.expandable)
+            IconButton(
+              tooltip: _isExpanded ? 'Einklappen' : 'Ausklappen',
+              onPressed: () => setState(() => _isExpanded = !_isExpanded),
+              icon: Icon(_isExpanded ? Icons.expand_less : Icons.expand_more),
+              visualDensity: VisualDensity.compact,
+            ),
         ],
-        border: backgroundColor != Colors.white
-            ? Border.all(color: iconColor.withValues(alpha: 0.2))
-            : null,
       ),
+    );
+
+    final headerWithInteraction = widget.expandable
+        ? header
+        : widget.onHeaderTap != null
+        ? InkWell(
+            onTap: widget.onHeaderTap,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: header,
+          )
+        : header;
+
+    return Card(
+      color: widget.backgroundColor,
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: onHeaderTap,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, color: iconColor),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        _buildTotals(),
-                      ],
-                    ),
-                  ),
-                  if (totalYearly > 0)
-                    Text(
-                      "Ø ${(totalMonthly + totalYearly / 12).toStringAsFixed(0)}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: iconColor,
-                      ),
-                    ),
-                ],
+          headerWithInteraction,
+          if ((!widget.expandable || _isExpanded) &&
+              (hasHeaderAction || widget.children.isNotEmpty))
+            Divider(
+              height: 1,
+              indent: 16,
+              endIndent: 16,
+              color: colorScheme.outlineVariant,
+            ),
+          if (!widget.expandable || _isExpanded)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: widget.children,
               ),
             ),
-          ),
-          Divider(
-            height: 1,
-            indent: 16,
-            endIndent: 16,
-            color: iconColor.withValues(alpha: 0.1),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: children,
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildTotals() {
+  Widget _buildTotals(BuildContext context) {
     final parts = <String>[];
-    if (totalMonthly > 0) {
-      parts.add("${totalMonthly.toStringAsFixed(2)} / Monat");
+    if (widget.totalMonthly > 0) {
+      parts.add("${widget.totalMonthly.toStringAsFixed(2)} / Monat");
     }
-    if (totalYearly > 0) {
-      parts.add("${totalYearly.toStringAsFixed(2)} / Jahr");
+    if (widget.totalYearly > 0) {
+      parts.add("${widget.totalYearly.toStringAsFixed(2)} / Jahr");
     }
     if (parts.isEmpty) return const SizedBox.shrink();
 
     return Text(
       parts.join("  -  "),
-      style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
     );
   }
 }
@@ -132,12 +219,10 @@ class SubsectionTitle extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
       child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
+        title,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.bold,
-          color: Colors.grey.shade600,
-          letterSpacing: 1.1,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );

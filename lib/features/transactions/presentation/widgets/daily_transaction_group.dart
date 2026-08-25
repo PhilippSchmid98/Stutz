@@ -27,23 +27,23 @@ class DailyTransactionGroup extends StatelessWidget {
                 children: [
                   Text(
                     dayFormat.format(group.date),
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                      color: Colors.black,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     weekDayFormat.format(group.date),
-                    style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),
               Text(
-                '-${group.totalAmount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
+                '-${group.totalAmount.toStringAsFixed(2)} CHF',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.bold,
                 ),
               ),

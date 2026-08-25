@@ -10,8 +10,8 @@ import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dia
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_section_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/income_section_card.dart';
-import 'package:stutz/features/budget/presentation/widgets/legend_row.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
+import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
 class BudgetPlanningScreen extends ConsumerWidget {
@@ -24,26 +24,23 @@ class BudgetPlanningScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(budgetSummaryProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
       appBar: _buildAppBar(ref),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         child: Column(
           children: [
-            _buildIncomeSection(incomeAsync),
-
-            const SizedBox(height: 32),
-
-            _buildExpenseDivider(),
-            const SizedBox(height: 16),
-
-            _buildExpenseSection(expenseRootsAsync, context),
+            _buildSummarySection(summaryAsync),
 
             const SizedBox(height: 24),
 
-            _buildSummarySection(summaryAsync),
+            _buildIncomeSection(incomeAsync),
 
-            const LegendRow(),
+            const SizedBox(height: 28),
+
+            _buildSectionHeading(context),
+            const SizedBox(height: 12),
+
+            _buildExpenseSection(expenseRootsAsync, context),
           ],
         ),
       ),
@@ -62,8 +59,8 @@ class BudgetPlanningScreen extends ConsumerWidget {
           },
         ),
       ],
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
+      foregroundColor: Theme.of(ref.context).colorScheme.onSurface,
       elevation: 0,
     );
   }
@@ -83,23 +80,23 @@ class BudgetPlanningScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExpenseDivider() {
+  Widget _buildSectionHeading(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Divider(color: Colors.grey.shade300)),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            "AUSGABEN",
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.5,
-            ),
+        Text(
+          'Geplante Ausgaben',
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
         ),
-        Expanded(child: Divider(color: Colors.grey.shade300)),
+        const Spacer(),
+        Text(
+          'Nach Kategorie',
+          style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 13),
+        ),
       ],
     );
   }
@@ -136,18 +133,20 @@ class BudgetPlanningScreen extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: SizedBox(
         width: double.infinity,
-        height: 50,
+        height: 48,
         child: OutlinedButton.icon(
           icon: const Icon(Icons.create_new_folder_outlined),
-          label: const Text("Neue Hauptkategorie erstellen"),
+          label: const Text("Hauptkategorie hinzufügen"),
           style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Colors.grey.shade400),
-            foregroundColor: Colors.grey.shade700,
+            side: BorderSide(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+            foregroundColor: Theme.of(context).colorScheme.primary,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
-          onPressed: () => showDialog(
+          onPressed: () => showAppBottomSheet(
             context: context,
             builder: (_) => const AddMainCategoryDialog(),
           ),
