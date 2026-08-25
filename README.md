@@ -163,6 +163,17 @@ Existing transaction data can be indexed once with the Admin SDK. Store the
 service-account JSON outside this repository and set its path in
 `GOOGLE_APPLICATION_CREDENTIALS`. The migration writes derived
 `transactionMonths` documents and uses `Europe/Zurich` for month boundaries.
+Migration version 2 also stores `year`, `month`, and per-category totals in
+each month document so the Dashboard can load a year of budget analytics
+without reading every raw transaction. Rerun the migration after deploying this
+version, including when version 1 month indexes already exist.
+
+Deploy the declared Firestore index before opening a category drill-down in the
+Dashboard:
+
+```bash
+firebase deploy --only firestore:indexes
+```
 
 #### Spark backup checkpoint
 
@@ -206,8 +217,9 @@ npm run migrate:transaction-months -- --project-id=stutz-7ed90 --require-backup 
 
 `--require-backup` validates the complete manifest, project ID, transaction
 scope, document count, and checksum before migration writes begin. The
-migration is safe to repeat. It writes exact per-month counts, removes stale
-month documents, and marks each completed user with the `_meta` document.
+migration is safe to repeat. It writes exact per-month counts and category
+totals, removes stale month documents, and marks each completed user with the
+`_meta` document.
 
 To inspect or restore an archive, start with a dry run. Normal restore is an
 idempotent upsert in batches of at most 500 documents. An interrupted restore

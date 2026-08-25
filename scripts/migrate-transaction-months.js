@@ -7,6 +7,7 @@ const { FieldValue, getFirestore } = require('firebase-admin/firestore');
 const {
     TIME_ZONE,
     countMonthKeys,
+    summarizeTransactions,
 } = require('./transaction-months');
 const {
     validateArchive,
@@ -105,23 +106,27 @@ function initializeFirestore(options) {
     return getFirestore(app);
 }
 
-function buildOperations(userReference, counts, existingMonthIds) {
+function buildOperations(userReference, summaries, existingMonthIds) {
     const monthCollection = userReference.collection(MONTH_COLLECTION);
     const operations = [];
 
-    for (const [monthKey, transactionCount] of counts) {
+    for (const [monthKey, summary] of summaries) {
+        const [year, month] = monthKey.split('-').map(Number);
         operations.push({
             type: 'set',
             reference: monthCollection.doc(monthKey),
             data: {
                 monthKey,
-                transactionCount,
+                year,
+                month,
+                transactionCount: summary.transactionCount,
+                categoryTotals: summary.categoryTotals,
             },
         });
     }
 
     for (const monthId of existingMonthIds) {
-        if (monthId !== META_DOCUMENT && !counts.has(monthId)) {
+        if (monthId !== META_DOCUMENT && !summaries.has(monthId)) {
             operations.push({
                 type: 'delete',
                 reference: monthCollection.doc(monthId),
@@ -133,7 +138,7 @@ function buildOperations(userReference, counts, existingMonthIds) {
         type: 'set',
         reference: monthCollection.doc(META_DOCUMENT),
         data: {
-            migrationVersion: 1,
+            migrationVersion: 2,
             status: 'complete',
             timezone: TIME_ZONE,
             updatedAt: FieldValue.serverTimestamp(),
@@ -146,7 +151,7 @@ function buildOperations(userReference, counts, existingMonthIds) {
 async function setMigrationStatus(db, userReference, status) {
     const reference = userReference.collection(MONTH_COLLECTION).doc(META_DOCUMENT);
     await db.batch().set(reference, {
-        migrationVersion: 1,
+        migrationVersion: 2,
         status,
         timezone: TIME_ZONE,
         updatedAt: FieldValue.serverTimestamp(),
@@ -168,24 +173,26 @@ async function applyOperations(db, operations) {
     }
 }
 
-async function migrateUser(db, userReference, { dryRun, transactionDates }) {
-    let dates = transactionDates;
-    if (dates == null) {
+async function migrateUser(db, userReference, { dryRun, transactionRecords }) {
+    let records = transactionRecords;
+    if (records == null) {
         const transactionSnapshot = await userReference
             .collection('transactions')
-            .select('dateTime')
+            .select('dateTime', 'expenseNodeId', 'amount')
             .get();
-        dates = transactionSnapshot.docs.map((document) =>
-            document.get('dateTime'),
-        );
+        records = transactionSnapshot.docs.map((document) => ({
+            dateTime: document.get('dateTime'),
+            expenseNodeId: document.get('expenseNodeId'),
+            amount: document.get('amount'),
+        }));
     }
 
-    const counts = countMonthKeys(dates);
+    const summaries = summarizeTransactions(records);
     const existingSnapshot = await userReference
         .collection(MONTH_COLLECTION)
         .get();
     const existingMonthIds = existingSnapshot.docs.map((document) => document.id);
-    const operations = buildOperations(userReference, counts, existingMonthIds);
+    const operations = buildOperations(userReference, summaries, existingMonthIds);
 
     if (!dryRun) {
         await setMigrationStatus(db, userReference, 'running');
@@ -193,10 +200,10 @@ async function migrateUser(db, userReference, { dryRun, transactionDates }) {
     }
 
     return {
-        transactionCount: dates.length,
-        monthCount: counts.size,
+        transactionCount: records.length,
+        monthCount: summaries.size,
         staleMonthCount: existingMonthIds.filter(
-            (monthId) => monthId !== META_DOCUMENT && !counts.has(monthId),
+            (monthId) => monthId !== META_DOCUMENT && !summaries.has(monthId),
         ).length,
         operationCount: operations.length,
     };
@@ -215,7 +222,7 @@ async function main(argv = process.argv.slice(2)) {
 
     try {
         const userReferences = new Map();
-        const transactionDatesByUser = new Map();
+        const transactionRecordsByUser = new Map();
 
         if (options.userId) {
             const userReference = db.collection('users').doc(options.userId);
@@ -228,16 +235,20 @@ async function main(argv = process.argv.slice(2)) {
 
             const transactionSnapshot = await db
                 .collectionGroup('transactions')
-                .select('dateTime')
+                .select('dateTime', 'expenseNodeId', 'amount')
                 .get();
             for (const document of transactionSnapshot.docs) {
                 const userReference = document.ref.parent.parent;
                 if (userReference == null) continue;
 
                 userReferences.set(userReference.path, userReference);
-                const dates = transactionDatesByUser.get(userReference.path) ?? [];
-                dates.push(document.get('dateTime'));
-                transactionDatesByUser.set(userReference.path, dates);
+                const records = transactionRecordsByUser.get(userReference.path) ?? [];
+                records.push({
+                    dateTime: document.get('dateTime'),
+                    expenseNodeId: document.get('expenseNodeId'),
+                    amount: document.get('amount'),
+                });
+                transactionRecordsByUser.set(userReference.path, records);
             }
         }
 
@@ -247,7 +258,7 @@ async function main(argv = process.argv.slice(2)) {
             try {
                 const result = await migrateUser(db, userReference, {
                     ...options,
-                    transactionDates: transactionDatesByUser.get(userReference.path),
+                    transactionRecords: transactionRecordsByUser.get(userReference.path),
                 });
                 processedUsers++;
                 scannedTransactions += result.transactionCount;

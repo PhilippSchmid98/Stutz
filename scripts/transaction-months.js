@@ -41,8 +41,38 @@ function countMonthKeys(values) {
     ));
 }
 
+function summarizeTransactions(transactions) {
+    const summaries = new Map();
+    for (const transaction of transactions) {
+        const monthKey = monthKeyFromDate(transaction.dateTime);
+        if (typeof transaction.expenseNodeId !== 'string'
+            || transaction.expenseNodeId.length === 0) {
+            throw new Error(`Invalid expense node ID for month ${monthKey}`);
+        }
+        if (typeof transaction.amount !== 'number'
+            || !Number.isFinite(transaction.amount)) {
+            throw new Error(`Invalid transaction amount for month ${monthKey}`);
+        }
+
+        const summary = summaries.get(monthKey) ?? {
+            transactionCount: 0,
+            categoryTotals: {},
+        };
+        summary.transactionCount += 1;
+        summary.categoryTotals[transaction.expenseNodeId] = (
+            summary.categoryTotals[transaction.expenseNodeId] ?? 0
+        ) + transaction.amount;
+        summaries.set(monthKey, summary);
+    }
+
+    return new Map([...summaries.entries()].sort(([left], [right]) =>
+        left.localeCompare(right),
+    ));
+}
+
 module.exports = {
     TIME_ZONE,
     countMonthKeys,
     monthKeyFromDate,
+    summarizeTransactions,
 };

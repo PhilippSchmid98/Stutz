@@ -5,6 +5,7 @@ import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/data/transaction_repository.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
+import 'package:stutz/features/transactions/domain/entities/transaction_month_summary.dart';
 
 void main() {
   test('initial empty results reach the end and do not fetch again', () async {
@@ -83,6 +84,10 @@ class _FakeTransactionRepository implements TransactionRepository {
   @override
   Future<List<DateTime>?> getIndexedTransactionMonths() async => null;
 
+  @override
+  Stream<List<TransactionMonthSummary>> watchMonthSummariesForYear(int year) =>
+      const Stream.empty();
+
   int pageRequests = 0;
   Object? error;
 
@@ -108,4 +113,11 @@ class _FakeTransactionRepository implements TransactionRepository {
 
   @override
   Future<AppTransaction?> getOldestTransaction() async => null;
+
+  @override
+  Future<List<AppTransaction>> getCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) async => [];
 }

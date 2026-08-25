@@ -10,6 +10,7 @@ const { createBackup } = require('../scripts/firestore-backup');
 const {
     countMonthKeys,
     monthKeyFromDate,
+    summarizeTransactions,
 } = require('../scripts/transaction-months');
 const {
     buildOperations: buildMigrationOperations,
@@ -41,6 +42,28 @@ test('accepts Firestore-like timestamps', () => {
     );
 });
 
+test('summarizes category totals per Zurich month', () => {
+    const summaries = summarizeTransactions([
+        {
+            dateTime: '2026-01-31T23:30:00.000Z',
+            expenseNodeId: 'tech',
+            amount: 1000,
+        },
+        {
+            dateTime: '2026-02-01T00:30:00.000Z',
+            expenseNodeId: 'groceries',
+            amount: 25.5,
+        },
+    ]);
+
+    assert.deepEqual([...summaries.entries()], [
+        ['2026-02', {
+            transactionCount: 2,
+            categoryTotals: { tech: 1000, groceries: 25.5 },
+        }],
+    ]);
+});
+
 test('builds deterministic month writes and puts completion last', () => {
     const userReference = {
         collection: () => ({
@@ -49,7 +72,16 @@ test('builds deterministic month writes and puts completion last', () => {
     };
     const operations = buildMigrationOperations(
         userReference,
-        new Map([['2026-01', 2], ['2026-03', 1]]),
+        new Map([
+            ['2026-01', {
+                transactionCount: 2,
+                categoryTotals: { groceries: 100 },
+            }],
+            ['2026-03', {
+                transactionCount: 1,
+                categoryTotals: { tech: 1000 },
+            }],
+        ]),
         ['2026-01', '2025-12', '_meta'],
     );
 
@@ -62,6 +94,14 @@ test('builds deterministic month writes and puts completion last', () => {
     assert.equal(operations[2].reference.id, '2025-12');
     assert.equal(operations[3].reference.id, '_meta');
     assert.equal(operations[3].data.status, 'complete');
+    assert.deepEqual(operations[0].data, {
+        monthKey: '2026-01',
+        year: 2026,
+        month: 1,
+        transactionCount: 2,
+        categoryTotals: { groceries: 100 },
+    });
+    assert.equal(operations[3].data.migrationVersion, 2);
 });
 
 test('requires and validates a transaction backup before migration writes', async () => {

@@ -16,6 +16,11 @@ class TransactionMonth {
 
   static DateTime current() => fromDateTime(DateTime.now());
 
+  static DateTime startOfMonth(DateTime month) {
+    initialize();
+    return tz.TZDateTime(tz.getLocation(timezoneName), month.year, month.month);
+  }
+
   static DateTime fromDateTime(DateTime dateTime) {
     initialize();
     final zurichDate = tz.TZDateTime.from(

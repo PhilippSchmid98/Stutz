@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/data/transaction_repository.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
+import 'package:stutz/features/transactions/domain/entities/transaction_month_summary.dart';
 
 void main() {
   test('available months reads only indexed months after migration', () async {
@@ -66,10 +67,21 @@ class _FakeTransactionRepository implements TransactionRepository {
   Future<List<DateTime>?> getIndexedTransactionMonths() async => indexedMonths;
 
   @override
+  Stream<List<TransactionMonthSummary>> watchMonthSummariesForYear(int year) =>
+      const Stream.empty();
+
+  @override
   Future<AppTransaction?> getOldestTransaction() async {
     oldestTransactionCalls++;
     return oldestTransaction;
   }
+
+  @override
+  Future<List<AppTransaction>> getCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) async => [];
 
   @override
   Future<void> addTransaction(AppTransaction transaction) async {}

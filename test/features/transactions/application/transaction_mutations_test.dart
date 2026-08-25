@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/data/transaction_repository.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
+import 'package:stutz/features/transactions/domain/entities/transaction_month_summary.dart';
 
 void main() {
   test(
@@ -76,6 +77,10 @@ class _FakeTransactionRepository implements TransactionRepository {
   @override
   Future<List<DateTime>?> getIndexedTransactionMonths() async => null;
 
+  @override
+  Stream<List<TransactionMonthSummary>> watchMonthSummariesForYear(int year) =>
+      const Stream.empty();
+
   final added = <AppTransaction>[];
   Object? error;
 
@@ -93,6 +98,13 @@ class _FakeTransactionRepository implements TransactionRepository {
 
   @override
   Future<AppTransaction?> getOldestTransaction() async => null;
+
+  @override
+  Future<List<AppTransaction>> getCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) async => [];
 
   @override
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
