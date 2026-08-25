@@ -8,6 +8,50 @@ import 'package:stutz/features/transactions/data/transaction_repository.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 
+class DashboardIntervalDetailScreen extends StatelessWidget {
+  final List<DashboardCategoryProgress> categories;
+  final DateTime selectedMonth;
+  final PaymentInterval interval;
+
+  const DashboardIntervalDetailScreen({
+    super.key,
+    required this.categories,
+    required this.selectedMonth,
+    required this.interval,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = interval == PaymentInterval.monthly
+        ? 'Monatliche Ausgaben'
+        : 'Jährliche Ausgaben';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.transparent,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          if (categories.isEmpty)
+            _EmptyCategoryState(interval: interval)
+          else
+            ...categories.map(
+              (category) => _DashboardCategorySectionCard(
+                category: category,
+                selectedMonth: selectedMonth,
+                interval: interval,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class DashboardCategoryDetailScreen extends ConsumerWidget {
   final DashboardCategoryProgress category;
   final DateTime selectedMonth;
@@ -36,10 +80,11 @@ class DashboardCategoryDetailScreen extends ConsumerWidget {
           const SizedBox(height: 24),
           if (category.children.isNotEmpty)
             ...category.children.map(
-              (child) => _ChildCategoryRow(
+              (child) => _DashboardCategoryProgressRow(
                 category: child,
                 selectedMonth: selectedMonth,
                 interval: interval,
+                depth: 0,
               ),
             )
           else
@@ -104,35 +149,290 @@ class _CategorySummary extends StatelessWidget {
   }
 }
 
-class _ChildCategoryRow extends StatelessWidget {
+class _DashboardCategorySectionCard extends StatefulWidget {
   final DashboardCategoryProgress category;
   final DateTime selectedMonth;
   final PaymentInterval interval;
 
-  const _ChildCategoryRow({
+  const _DashboardCategorySectionCard({
     required this.category,
     required this.selectedMonth,
     required this.interval,
   });
 
   @override
+  State<_DashboardCategorySectionCard> createState() =>
+      _DashboardCategorySectionCardState();
+}
+
+class _DashboardCategorySectionCardState
+    extends State<_DashboardCategorySectionCard> {
+  var _isExpanded = true;
+
+  @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(category.categoryName),
-      subtitle: Text(
-        '${_amount(category.actual)} von ${_amount(category.planned)}',
+    final category = widget.category;
+    final colorScheme = Theme.of(context).colorScheme;
+    final statusColor = category.isOverBudget
+        ? colorScheme.error
+        : colorScheme.primary;
+    final hasChildren = category.children.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.folder_outlined, color: statusColor, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          category.categoryName,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Text(
+                        _amount(category.actual),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      if (hasChildren)
+                        IconButton(
+                          tooltip: _isExpanded ? 'Einklappen' : 'Ausklappen',
+                          onPressed: () =>
+                              setState(() => _isExpanded = !_isExpanded),
+                          icon: Icon(
+                            _isExpanded ? Icons.expand_less : Icons.expand_more,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  LinearProgressIndicator(
+                    value: category.ratio.clamp(0.0, 1.0).toDouble(),
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(3),
+                    color: statusColor,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${_amount(category.planned)} geplant',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (hasChildren && _isExpanded) ...[
+              Divider(
+                height: 1,
+                indent: 16,
+                endIndent: 16,
+                color: colorScheme.outlineVariant,
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    for (final child in category.children)
+                      _DashboardCategoryProgressRow(
+                        category: child,
+                        selectedMonth: widget.selectedMonth,
+                        interval: widget.interval,
+                        depth: 0,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => DashboardCategoryDetailScreen(
-            category: category,
-            selectedMonth: selectedMonth,
-            interval: interval,
+    );
+  }
+}
+
+class _DashboardCategoryProgressRow extends StatefulWidget {
+  final DashboardCategoryProgress category;
+  final DateTime selectedMonth;
+  final PaymentInterval interval;
+  final int depth;
+
+  const _DashboardCategoryProgressRow({
+    required this.category,
+    required this.selectedMonth,
+    required this.interval,
+    required this.depth,
+  });
+
+  @override
+  State<_DashboardCategoryProgressRow> createState() =>
+      _DashboardCategoryProgressRowState();
+}
+
+class _DashboardCategoryProgressRowState
+    extends State<_DashboardCategoryProgressRow> {
+  late bool _isExpanded;
+
+  @override
+  void initState() {
+    super.initState();
+    _isExpanded = widget.category.isGroup;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final category = widget.category;
+    final colorScheme = Theme.of(context).colorScheme;
+    final statusColor = category.isOverBudget
+        ? colorScheme.error
+        : colorScheme.primary;
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.only(left: widget.depth * 16.0, bottom: 4),
+          child: InkWell(
+            onTap: category.isGroup
+                ? () => setState(() => _isExpanded = !_isExpanded)
+                : () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DashboardCategoryDetailScreen(
+                        category: category,
+                        selectedMonth: widget.selectedMonth,
+                        interval: widget.interval,
+                      ),
+                    ),
+                  ),
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      if (category.isGroup)
+                        Icon(
+                          _isExpanded
+                              ? Icons.keyboard_arrow_down
+                              : Icons.keyboard_arrow_right,
+                          size: 20,
+                          color: colorScheme.onSurfaceVariant,
+                        )
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 4),
+                      Icon(
+                        category.isGroup
+                            ? Icons.folder_outlined
+                            : Icons.sell_outlined,
+                        size: 18,
+                        color: category.isGroup
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          category.categoryName,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                fontWeight: category.isGroup
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                        ),
+                      ),
+                      Text(
+                        _amount(category.actual),
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        width: 18,
+                        child: category.isGroup
+                            ? null
+                            : Icon(
+                                Icons.chevron_right,
+                                size: 18,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: category.ratio.clamp(0.0, 1.0).toDouble(),
+                    minHeight: 5,
+                    borderRadius: BorderRadius.circular(3),
+                    color: statusColor,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                  ),
+                  const SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '${_amount(category.planned)} geplant',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
+        if (category.isGroup && _isExpanded)
+          for (final child in category.children)
+            _DashboardCategoryProgressRow(
+              category: child,
+              selectedMonth: widget.selectedMonth,
+              interval: widget.interval,
+              depth: widget.depth + 1,
+            ),
+      ],
+    );
+  }
+}
+
+class _EmptyCategoryState extends StatelessWidget {
+  final PaymentInterval interval;
+
+  const _EmptyCategoryState({required this.interval});
+
+  @override
+  Widget build(BuildContext context) {
+    final message = interval == PaymentInterval.monthly
+        ? 'Noch keine monatlichen variablen Kategorien geplant.'
+        : 'Noch keine jährlichen variablen Kategorien geplant.';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -244,7 +544,7 @@ DateTime intervalEnd(DateTime month, PaymentInterval interval) {
   return TransactionMonth.startOfMonth(
     interval == PaymentInterval.monthly
         ? DateTime(month.year, month.month + 1)
-        : DateTime(month.year, month.month + 1),
+        : DateTime(month.year + 1),
   );
 }
 

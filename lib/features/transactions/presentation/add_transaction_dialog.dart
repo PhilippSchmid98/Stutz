@@ -31,7 +31,7 @@ class AddTransactionDialog extends HookConsumerWidget {
       text: existingItem?.transaction.note ?? '',
     );
     final selectedDate = useState<DateTime>(
-      existingItem?.transaction.dateTime ?? DateTime.now(),
+      _dateOnly(existingItem?.transaction.dateTime ?? DateTime.now()),
     );
 
     final selectedNodeId = useState<String?>(
@@ -44,7 +44,7 @@ class AddTransactionDialog extends HookConsumerWidget {
     final isSaving = mutationAsync.isLoading;
     final isEdit = existingItem != null;
 
-    Future<void> pickDateTime() async {
+    Future<void> pickDate() async {
       FocusScope.of(context).unfocus(); // Close keyboard
 
       final now = DateTime.now();
@@ -55,19 +55,7 @@ class AddTransactionDialog extends HookConsumerWidget {
         lastDate: now,
       );
       if (date != null && context.mounted) {
-        final time = await showTimePicker(
-          context: context,
-          initialTime: TimeOfDay.fromDateTime(selectedDate.value),
-        );
-        if (time != null) {
-          selectedDate.value = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        }
+        selectedDate.value = _dateOnly(date);
       }
     }
 
@@ -168,7 +156,7 @@ class AddTransactionDialog extends HookConsumerWidget {
             const SizedBox(height: 16),
             _TransactionDateField(
               selectedDate: selectedDate.value,
-              onTap: pickDateTime,
+              onTap: pickDate,
             ),
             const SizedBox(height: 16),
             _TransactionNoteField(controller: noteCtrl),
@@ -255,13 +243,15 @@ class _TransactionDateField extends StatelessWidget {
           variant: StyledFieldVariant.transaction,
         ),
         child: Text(
-          DateFormat('dd.MM.yyyy, HH:mm').format(selectedDate),
+          DateFormat('dd.MM.yyyy').format(selectedDate),
           style: const TextStyle(fontSize: 15),
         ),
       ),
     );
   }
 }
+
+DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 class _TransactionNoteField extends StatelessWidget {
   final TextEditingController controller;

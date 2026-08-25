@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$BudgetSummary {
 
- double get monthlyIncome; double get monthlyExpenses; double get fixedExpenses; double get variableExpenses;
+ double get averageMonthlyIncome; double get fixedMonthlyExpenses; double get fixedYearlyExpenses; double get variableMonthlyExpenses; double get variableYearlyExpenses;
 /// Create a copy of BudgetSummary
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $BudgetSummaryCopyWith<BudgetSummary> get copyWith => _$BudgetSummaryCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is BudgetSummary&&(identical(other.monthlyIncome, monthlyIncome) || other.monthlyIncome == monthlyIncome)&&(identical(other.monthlyExpenses, monthlyExpenses) || other.monthlyExpenses == monthlyExpenses)&&(identical(other.fixedExpenses, fixedExpenses) || other.fixedExpenses == fixedExpenses)&&(identical(other.variableExpenses, variableExpenses) || other.variableExpenses == variableExpenses));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is BudgetSummary&&(identical(other.averageMonthlyIncome, averageMonthlyIncome) || other.averageMonthlyIncome == averageMonthlyIncome)&&(identical(other.fixedMonthlyExpenses, fixedMonthlyExpenses) || other.fixedMonthlyExpenses == fixedMonthlyExpenses)&&(identical(other.fixedYearlyExpenses, fixedYearlyExpenses) || other.fixedYearlyExpenses == fixedYearlyExpenses)&&(identical(other.variableMonthlyExpenses, variableMonthlyExpenses) || other.variableMonthlyExpenses == variableMonthlyExpenses)&&(identical(other.variableYearlyExpenses, variableYearlyExpenses) || other.variableYearlyExpenses == variableYearlyExpenses));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,monthlyIncome,monthlyExpenses,fixedExpenses,variableExpenses);
+int get hashCode => Object.hash(runtimeType,averageMonthlyIncome,fixedMonthlyExpenses,fixedYearlyExpenses,variableMonthlyExpenses,variableYearlyExpenses);
 
 @override
 String toString() {
-  return 'BudgetSummary(monthlyIncome: $monthlyIncome, monthlyExpenses: $monthlyExpenses, fixedExpenses: $fixedExpenses, variableExpenses: $variableExpenses)';
+  return 'BudgetSummary(averageMonthlyIncome: $averageMonthlyIncome, fixedMonthlyExpenses: $fixedMonthlyExpenses, fixedYearlyExpenses: $fixedYearlyExpenses, variableMonthlyExpenses: $variableMonthlyExpenses, variableYearlyExpenses: $variableYearlyExpenses)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $BudgetSummaryCopyWith<$Res>  {
   factory $BudgetSummaryCopyWith(BudgetSummary value, $Res Function(BudgetSummary) _then) = _$BudgetSummaryCopyWithImpl;
 @useResult
 $Res call({
- double monthlyIncome, double monthlyExpenses, double fixedExpenses, double variableExpenses
+ double averageMonthlyIncome, double fixedMonthlyExpenses, double fixedYearlyExpenses, double variableMonthlyExpenses, double variableYearlyExpenses
 });
 
 
@@ -62,12 +62,13 @@ class _$BudgetSummaryCopyWithImpl<$Res>
 
 /// Create a copy of BudgetSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? monthlyIncome = null,Object? monthlyExpenses = null,Object? fixedExpenses = null,Object? variableExpenses = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? averageMonthlyIncome = null,Object? fixedMonthlyExpenses = null,Object? fixedYearlyExpenses = null,Object? variableMonthlyExpenses = null,Object? variableYearlyExpenses = null,}) {
   return _then(_self.copyWith(
-monthlyIncome: null == monthlyIncome ? _self.monthlyIncome : monthlyIncome // ignore: cast_nullable_to_non_nullable
-as double,monthlyExpenses: null == monthlyExpenses ? _self.monthlyExpenses : monthlyExpenses // ignore: cast_nullable_to_non_nullable
-as double,fixedExpenses: null == fixedExpenses ? _self.fixedExpenses : fixedExpenses // ignore: cast_nullable_to_non_nullable
-as double,variableExpenses: null == variableExpenses ? _self.variableExpenses : variableExpenses // ignore: cast_nullable_to_non_nullable
+averageMonthlyIncome: null == averageMonthlyIncome ? _self.averageMonthlyIncome : averageMonthlyIncome // ignore: cast_nullable_to_non_nullable
+as double,fixedMonthlyExpenses: null == fixedMonthlyExpenses ? _self.fixedMonthlyExpenses : fixedMonthlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,fixedYearlyExpenses: null == fixedYearlyExpenses ? _self.fixedYearlyExpenses : fixedYearlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,variableMonthlyExpenses: null == variableMonthlyExpenses ? _self.variableMonthlyExpenses : variableMonthlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,variableYearlyExpenses: null == variableYearlyExpenses ? _self.variableYearlyExpenses : variableYearlyExpenses // ignore: cast_nullable_to_non_nullable
 as double,
   ));
 }
@@ -153,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double monthlyIncome,  double monthlyExpenses,  double fixedExpenses,  double variableExpenses)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double averageMonthlyIncome,  double fixedMonthlyExpenses,  double fixedYearlyExpenses,  double variableMonthlyExpenses,  double variableYearlyExpenses)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _BudgetSummary() when $default != null:
-return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_that.variableExpenses);case _:
+return $default(_that.averageMonthlyIncome,_that.fixedMonthlyExpenses,_that.fixedYearlyExpenses,_that.variableMonthlyExpenses,_that.variableYearlyExpenses);case _:
   return orElse();
 
 }
@@ -174,10 +175,10 @@ return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double monthlyIncome,  double monthlyExpenses,  double fixedExpenses,  double variableExpenses)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double averageMonthlyIncome,  double fixedMonthlyExpenses,  double fixedYearlyExpenses,  double variableMonthlyExpenses,  double variableYearlyExpenses)  $default,) {final _that = this;
 switch (_that) {
 case _BudgetSummary():
-return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_that.variableExpenses);case _:
+return $default(_that.averageMonthlyIncome,_that.fixedMonthlyExpenses,_that.fixedYearlyExpenses,_that.variableMonthlyExpenses,_that.variableYearlyExpenses);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -194,10 +195,10 @@ return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double monthlyIncome,  double monthlyExpenses,  double fixedExpenses,  double variableExpenses)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double averageMonthlyIncome,  double fixedMonthlyExpenses,  double fixedYearlyExpenses,  double variableMonthlyExpenses,  double variableYearlyExpenses)?  $default,) {final _that = this;
 switch (_that) {
 case _BudgetSummary() when $default != null:
-return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_that.variableExpenses);case _:
+return $default(_that.averageMonthlyIncome,_that.fixedMonthlyExpenses,_that.fixedYearlyExpenses,_that.variableMonthlyExpenses,_that.variableYearlyExpenses);case _:
   return null;
 
 }
@@ -209,13 +210,14 @@ return $default(_that.monthlyIncome,_that.monthlyExpenses,_that.fixedExpenses,_t
 
 
 class _BudgetSummary extends BudgetSummary {
-  const _BudgetSummary({required this.monthlyIncome, required this.monthlyExpenses, required this.fixedExpenses, required this.variableExpenses}): super._();
+  const _BudgetSummary({required this.averageMonthlyIncome, required this.fixedMonthlyExpenses, required this.fixedYearlyExpenses, required this.variableMonthlyExpenses, required this.variableYearlyExpenses}): super._();
   
 
-@override final  double monthlyIncome;
-@override final  double monthlyExpenses;
-@override final  double fixedExpenses;
-@override final  double variableExpenses;
+@override final  double averageMonthlyIncome;
+@override final  double fixedMonthlyExpenses;
+@override final  double fixedYearlyExpenses;
+@override final  double variableMonthlyExpenses;
+@override final  double variableYearlyExpenses;
 
 /// Create a copy of BudgetSummary
 /// with the given fields replaced by the non-null parameter values.
@@ -227,16 +229,16 @@ _$BudgetSummaryCopyWith<_BudgetSummary> get copyWith => __$BudgetSummaryCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BudgetSummary&&(identical(other.monthlyIncome, monthlyIncome) || other.monthlyIncome == monthlyIncome)&&(identical(other.monthlyExpenses, monthlyExpenses) || other.monthlyExpenses == monthlyExpenses)&&(identical(other.fixedExpenses, fixedExpenses) || other.fixedExpenses == fixedExpenses)&&(identical(other.variableExpenses, variableExpenses) || other.variableExpenses == variableExpenses));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _BudgetSummary&&(identical(other.averageMonthlyIncome, averageMonthlyIncome) || other.averageMonthlyIncome == averageMonthlyIncome)&&(identical(other.fixedMonthlyExpenses, fixedMonthlyExpenses) || other.fixedMonthlyExpenses == fixedMonthlyExpenses)&&(identical(other.fixedYearlyExpenses, fixedYearlyExpenses) || other.fixedYearlyExpenses == fixedYearlyExpenses)&&(identical(other.variableMonthlyExpenses, variableMonthlyExpenses) || other.variableMonthlyExpenses == variableMonthlyExpenses)&&(identical(other.variableYearlyExpenses, variableYearlyExpenses) || other.variableYearlyExpenses == variableYearlyExpenses));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,monthlyIncome,monthlyExpenses,fixedExpenses,variableExpenses);
+int get hashCode => Object.hash(runtimeType,averageMonthlyIncome,fixedMonthlyExpenses,fixedYearlyExpenses,variableMonthlyExpenses,variableYearlyExpenses);
 
 @override
 String toString() {
-  return 'BudgetSummary(monthlyIncome: $monthlyIncome, monthlyExpenses: $monthlyExpenses, fixedExpenses: $fixedExpenses, variableExpenses: $variableExpenses)';
+  return 'BudgetSummary(averageMonthlyIncome: $averageMonthlyIncome, fixedMonthlyExpenses: $fixedMonthlyExpenses, fixedYearlyExpenses: $fixedYearlyExpenses, variableMonthlyExpenses: $variableMonthlyExpenses, variableYearlyExpenses: $variableYearlyExpenses)';
 }
 
 
@@ -247,7 +249,7 @@ abstract mixin class _$BudgetSummaryCopyWith<$Res> implements $BudgetSummaryCopy
   factory _$BudgetSummaryCopyWith(_BudgetSummary value, $Res Function(_BudgetSummary) _then) = __$BudgetSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- double monthlyIncome, double monthlyExpenses, double fixedExpenses, double variableExpenses
+ double averageMonthlyIncome, double fixedMonthlyExpenses, double fixedYearlyExpenses, double variableMonthlyExpenses, double variableYearlyExpenses
 });
 
 
@@ -264,12 +266,13 @@ class __$BudgetSummaryCopyWithImpl<$Res>
 
 /// Create a copy of BudgetSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? monthlyIncome = null,Object? monthlyExpenses = null,Object? fixedExpenses = null,Object? variableExpenses = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? averageMonthlyIncome = null,Object? fixedMonthlyExpenses = null,Object? fixedYearlyExpenses = null,Object? variableMonthlyExpenses = null,Object? variableYearlyExpenses = null,}) {
   return _then(_BudgetSummary(
-monthlyIncome: null == monthlyIncome ? _self.monthlyIncome : monthlyIncome // ignore: cast_nullable_to_non_nullable
-as double,monthlyExpenses: null == monthlyExpenses ? _self.monthlyExpenses : monthlyExpenses // ignore: cast_nullable_to_non_nullable
-as double,fixedExpenses: null == fixedExpenses ? _self.fixedExpenses : fixedExpenses // ignore: cast_nullable_to_non_nullable
-as double,variableExpenses: null == variableExpenses ? _self.variableExpenses : variableExpenses // ignore: cast_nullable_to_non_nullable
+averageMonthlyIncome: null == averageMonthlyIncome ? _self.averageMonthlyIncome : averageMonthlyIncome // ignore: cast_nullable_to_non_nullable
+as double,fixedMonthlyExpenses: null == fixedMonthlyExpenses ? _self.fixedMonthlyExpenses : fixedMonthlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,fixedYearlyExpenses: null == fixedYearlyExpenses ? _self.fixedYearlyExpenses : fixedYearlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,variableMonthlyExpenses: null == variableMonthlyExpenses ? _self.variableMonthlyExpenses : variableMonthlyExpenses // ignore: cast_nullable_to_non_nullable
+as double,variableYearlyExpenses: null == variableYearlyExpenses ? _self.variableYearlyExpenses : variableYearlyExpenses // ignore: cast_nullable_to_non_nullable
 as double,
   ));
 }

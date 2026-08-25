@@ -81,8 +81,13 @@ void main() {
 
       final summary = calc.calculateSummary(sources, roots);
 
-      expect(summary.monthlyIncome, 3100.0);
+      expect(summary.averageMonthlyIncome, 3100.0);
+      expect(summary.yearlyIncome, 37200.0);
       expect(summary.monthlyExpenses, 1250.0);
+      expect(summary.fixedMonthlyExpenses, 1200.0);
+      expect(summary.fixedYearlyExpenses, 0.0);
+      expect(summary.variableMonthlyExpenses, 0.0);
+      expect(summary.variableYearlyExpenses, 600.0);
       expect(summary.fixedExpenses, 1200.0);
       expect(summary.variableExpenses, 50.0);
       expect(summary.balance, 1850.0);

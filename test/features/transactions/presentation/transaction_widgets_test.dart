@@ -174,6 +174,25 @@ void main() {
     expect(find.text('Bitte Kategorie wählen'), findsOneWidget);
   });
 
+  testWidgets('transaction dialog renders dates without a time', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          selectableCategoriesProvider.overrideWith((ref) async => const []),
+        ],
+        child: MaterialApp(
+          home: Scaffold(body: AddTransactionDialog(existingItem: item)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('15.06.2025'), findsOneWidget);
+    expect(find.textContaining('18:30'), findsNothing);
+  });
+
   testWidgets('transaction dialog shows category loading errors', (
     tester,
   ) async {

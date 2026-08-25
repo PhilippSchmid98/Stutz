@@ -46,6 +46,28 @@ void main() {
     expect(analysis.yearly.planned, 2000);
   });
 
+  test('includes the full year in annual progress', () {
+    final analysis = calculator.calculate(
+      selectedMonth: DateTime(2026, 3),
+      expenseRoots: expenseRoots,
+      monthSummaries: [
+        TransactionMonthSummary(
+          month: DateTime(2026, 2),
+          transactionCount: 1,
+          categoryTotals: {'tech': 400},
+        ),
+        TransactionMonthSummary(
+          month: DateTime(2026, 11),
+          transactionCount: 1,
+          categoryTotals: {'tech': 600},
+        ),
+      ],
+    );
+
+    expect(analysis.yearly.actual, 1000);
+    expect(analysis.yearly.planned, 2000);
+  });
+
   test('reclassifies historical totals from the current category interval', () {
     final analysis = calculator.calculate(
       selectedMonth: DateTime(2026, 6),

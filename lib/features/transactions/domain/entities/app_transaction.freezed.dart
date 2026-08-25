@@ -211,7 +211,7 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 
 class _AppTransaction implements AppTransaction {
   const _AppTransaction({required this.id, required this.expenseNodeId, required this.amount, required this.dateTime, this.note});
-
+  
 
 @override final  String id;
 @override final  String expenseNodeId;

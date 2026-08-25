@@ -42,7 +42,7 @@ final class CurrentVisibleMonthProvider
 }
 
 String _$currentVisibleMonthHash() =>
-    r'918be05bc0b0fae197a21b69eb379dbe206baabb';
+    r'a5eda458f4db8fd230310585a8071a4aeb5499b8';
 
 abstract class _$CurrentVisibleMonth extends $Notifier<DateTime> {
   DateTime build();
@@ -100,4 +100,4 @@ final class AvailableMonthsProvider
   }
 }
 
-String _$availableMonthsHash() => r'f494cad622446c41d67198cd3734b819fb7641a2';
+String _$availableMonthsHash() => r'8e4febe7597b2f1d6f31f3052020784f93bbbdd2';

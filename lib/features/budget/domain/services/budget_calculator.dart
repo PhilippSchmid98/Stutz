@@ -67,19 +67,26 @@ class BudgetCalculator {
     List<IncomeSource> sources,
     List<ExpenseNode> roots,
   ) {
-    var fixedExpenses = 0.0;
-    var variableExpenses = 0.0;
+    var fixedMonthlyExpenses = 0.0;
+    var fixedYearlyExpenses = 0.0;
+    var variableMonthlyExpenses = 0.0;
+    var variableYearlyExpenses = 0.0;
 
     void collectExpenseTypes(List<ExpenseNode> nodes) {
       for (final node in nodes) {
         if (node.plannedAmount != null) {
-          final amount = node.interval == PaymentInterval.yearly
-              ? node.plannedAmount! / 12
-              : node.plannedAmount!;
-          if (node.type == ExpenseType.fixed) {
-            fixedExpenses += amount;
-          } else {
-            variableExpenses += amount;
+          final amount = node.plannedAmount!;
+          switch ((node.type, node.interval)) {
+            case (ExpenseType.fixed, PaymentInterval.monthly):
+              fixedMonthlyExpenses += amount;
+            case (ExpenseType.fixed, PaymentInterval.yearly):
+              fixedYearlyExpenses += amount;
+            case (ExpenseType.variable, PaymentInterval.monthly):
+              variableMonthlyExpenses += amount;
+            case (ExpenseType.variable, PaymentInterval.yearly):
+              variableYearlyExpenses += amount;
+            case (_, _):
+              break;
           }
         }
         collectExpenseTypes(node.children);
@@ -89,10 +96,11 @@ class BudgetCalculator {
     collectExpenseTypes(roots);
 
     return BudgetSummary(
-      monthlyIncome: totalMonthlyIncome(sources),
-      monthlyExpenses: totalMonthlyExpenses(roots),
-      fixedExpenses: fixedExpenses,
-      variableExpenses: variableExpenses,
+      averageMonthlyIncome: totalMonthlyIncome(sources),
+      fixedMonthlyExpenses: fixedMonthlyExpenses,
+      fixedYearlyExpenses: fixedYearlyExpenses,
+      variableMonthlyExpenses: variableMonthlyExpenses,
+      variableYearlyExpenses: variableYearlyExpenses,
     );
   }
 }

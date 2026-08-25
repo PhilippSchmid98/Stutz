@@ -11,7 +11,6 @@ class BudgetOverviewCard extends StatelessWidget {
     final isPositive = summary.balance >= 0;
     final colorScheme = Theme.of(context).colorScheme;
     final balanceColor = isPositive ? colorScheme.primary : colorScheme.error;
-    final availableAfterFixed = summary.monthlyIncome - summary.fixedExpenses;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -34,7 +33,36 @@ class BudgetOverviewCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildBalance(context, balanceColor, isPositive),
                 const SizedBox(height: 20),
-                _buildIncomeExpenseTotals(context),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _BudgetMetric(
+                        label: 'Ø Einnahmen pro Monat',
+                        value: summary.averageMonthlyIncome,
+                        valueStyle: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              color: colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: colorScheme.outlineVariant,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _BudgetMetric(
+                        label: 'Geplante Ausgaben pro Monat',
+                        value: summary.monthlyExpenses,
+                        valueStyle: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                        alignEnd: true,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -43,9 +71,34 @@ class BudgetOverviewCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
             child: Column(
               children: [
-                _buildFixedCostAvailability(context, availableAfterFixed),
+                _BudgetMetricList(
+                  title: 'Jahresplanung',
+                  metrics: [
+                    _BudgetMetricData(
+                      label: 'Jahreseinnahmen',
+                      value: summary.yearlyIncome,
+                      color: colorScheme.primary,
+                    ),
+                    _BudgetMetricData(
+                      label: 'Jährliche Fixkosten',
+                      value: summary.fixedYearlyExpenses,
+                    ),
+                    _BudgetMetricData(
+                      label: 'Jährliche variable Ausgaben',
+                      value: summary.variableYearlyExpenses,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 16),
-                _buildExpenseBreakdown(context),
+                Divider(height: 1, color: colorScheme.outlineVariant),
+                const SizedBox(height: 16),
+                _BudgetSummarySection(
+                  title: 'Monatliche Ausgaben',
+                  leftLabel: 'Fixkosten',
+                  leftValue: summary.fixedMonthlyExpenses,
+                  rightLabel: 'Variable Ausgaben',
+                  rightValue: summary.variableMonthlyExpenses,
+                ),
               ],
             ),
           ),
@@ -69,7 +122,9 @@ class BudgetOverviewCard extends StatelessWidget {
           ),
         ),
         Text(
-          isPositive ? "Verfügbarer Überschuss" : "Budgetdefizit",
+          isPositive
+              ? "Verfügbarer Überschuss pro Monat"
+              : "Budgetdefizit pro Monat",
           style: TextStyle(
             color: balanceColor.withValues(alpha: 0.8),
             fontSize: 14,
@@ -79,104 +134,145 @@ class BudgetOverviewCard extends StatelessWidget {
       ],
     );
   }
+}
 
-  Widget _buildIncomeExpenseTotals(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Row(
+class _BudgetMetricList extends StatelessWidget {
+  final String title;
+  final List<_BudgetMetricData> metrics;
+
+  const _BudgetMetricList({required this.title, required this.metrics});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _OverviewItem(
-            label: "Einnahmen",
-            value: summary.monthlyIncome,
-            color: colorScheme.primary,
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 4),
+        for (final metric in metrics)
+          _BudgetMetricRow(
+            label: metric.label,
+            value: metric.value,
+            color: metric.color,
           ),
-        ),
-        Expanded(
-          child: _OverviewItem(
-            label: "Geplante Ausgaben",
-            value: summary.monthlyExpenses,
-            color: colorScheme.onSurface,
-            alignEnd: true,
-          ),
-        ),
       ],
     );
   }
+}
 
-  Widget _buildFixedCostAvailability(
-    BuildContext context,
-    double availableAfterFixed,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final availabilityColor = availableAfterFixed >= 0
-        ? colorScheme.primary
-        : colorScheme.error;
+class _BudgetMetricData {
+  final String label;
+  final double value;
+  final Color? color;
 
-    return Row(
-      children: [
-        Icon(Icons.lock_open_outlined, size: 20, color: availabilityColor),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Nach Fixkosten verfügbar",
-                style: Theme.of(context).textTheme.bodyMedium,
+  const _BudgetMetricData({
+    required this.label,
+    required this.value,
+    this.color,
+  });
+}
+
+class _BudgetMetricRow extends StatelessWidget {
+  final String label;
+  final double value;
+  final Color? color;
+
+  const _BudgetMetricRow({
+    required this.label,
+    required this.value,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              Text(
-                "Einnahmen minus monatliche Fixkosten",
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-        Text(
-          "${availableAfterFixed.toStringAsFixed(2)} CHF",
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: availabilityColor,
-            fontWeight: FontWeight.bold,
+          Text(
+            '${value.toStringAsFixed(2)} CHF',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+}
 
-  Widget _buildExpenseBreakdown(BuildContext context) {
+class _BudgetSummarySection extends StatelessWidget {
+  final String title;
+  final String leftLabel;
+  final double leftValue;
+  final String rightLabel;
+  final double rightValue;
+
+  const _BudgetSummarySection({
+    required this.title,
+    required this.leftLabel,
+    required this.leftValue,
+    required this.rightLabel,
+    required this.rightValue,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Row(
+    final valueStyle = Theme.of(
+      context,
+    ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _ExpenseBreakdownItem(
-            label: "Monatlich fix",
-            value: summary.fixedExpenses,
-          ),
-        ),
-        Container(width: 1, height: 32, color: colorScheme.outlineVariant),
-        Expanded(
-          child: _ExpenseBreakdownItem(
-            label: "Monatlich variabel",
-            value: summary.variableExpenses,
-            alignEnd: true,
-          ),
+        Text(title, style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _BudgetMetric(
+                label: leftLabel,
+                value: leftValue,
+                valueStyle: valueStyle,
+              ),
+            ),
+            Container(width: 1, height: 36, color: colorScheme.outlineVariant),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _BudgetMetric(
+                label: rightLabel,
+                value: rightValue,
+                valueStyle: valueStyle,
+                alignEnd: true,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _OverviewItem extends StatelessWidget {
+class _BudgetMetric extends StatelessWidget {
   final String label;
   final double value;
-  final Color color;
+  final TextStyle? valueStyle;
   final bool alignEnd;
 
-  const _OverviewItem({
+  const _BudgetMetric({
     required this.label,
     required this.value,
-    required this.color,
+    required this.valueStyle,
     this.alignEnd = false,
   });
 
@@ -193,48 +289,7 @@ class _OverviewItem extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        Text(
-          "${value.toStringAsFixed(2)} CHF",
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ExpenseBreakdownItem extends StatelessWidget {
-  final String label;
-  final double value;
-  final bool alignEnd;
-
-  const _ExpenseBreakdownItem({
-    required this.label,
-    required this.value,
-    this.alignEnd = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignEnd
-          ? CrossAxisAlignment.end
-          : CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          "${value.toStringAsFixed(2)} CHF",
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
+        Text('${value.toStringAsFixed(2)} CHF', style: valueStyle),
       ],
     );
   }

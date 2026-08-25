@@ -27,7 +27,7 @@ class DashboardCalculator {
       roots: expenseRoots,
       nodesById: nodesById,
       summaries: [
-        for (var month = 1; month <= normalizedMonth.month; month++)
+        for (var month = 1; month <= 12; month++)
           summariesByMonth[_monthKey(DateTime(normalizedMonth.year, month))],
       ],
       interval: PaymentInterval.yearly,

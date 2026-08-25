@@ -18,12 +18,9 @@ class DashboardScreen extends HookConsumerWidget {
     final analysisAsync = ref.watch(dashboardAnalysisProvider);
 
     Future<void> chooseMonth() async {
-      final selected = await showDatePicker(
+      final selected = await showDialog<DateTime>(
         context: context,
-        initialDate: selectedMonth,
-        firstDate: DateTime(2020),
-        lastDate: DateTime.now(),
-        helpText: 'Monat wählen',
+        builder: (_) => _MonthPickerDialog(initialMonth: selectedMonth),
       );
       if (selected != null && context.mounted) {
         ref.read(dashboardSelectedMonthProvider.notifier).select(selected);
@@ -125,6 +122,119 @@ class _PeriodSelector extends StatelessWidget {
   }
 }
 
+class _MonthPickerDialog extends StatefulWidget {
+  final DateTime initialMonth;
+
+  const _MonthPickerDialog({required this.initialMonth});
+
+  @override
+  State<_MonthPickerDialog> createState() => _MonthPickerDialogState();
+}
+
+class _MonthPickerDialogState extends State<_MonthPickerDialog> {
+  static const _firstYear = 2020;
+  late int _displayedYear;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayedYear = widget.initialMonth.year;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+    final canGoBack = _displayedYear > _firstYear;
+    final canGoForward = _displayedYear < now.year;
+
+    return AlertDialog(
+      title: const Text('Monat wählen'),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: 'Vorheriges Jahr',
+                  onPressed: canGoBack
+                      ? () => setState(() => _displayedYear--)
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Text(
+                    _displayedYear.toString(),
+                    textAlign: TextAlign.center,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Nächstes Jahr',
+                  onPressed: canGoForward
+                      ? () => setState(() => _displayedYear++)
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            GridView.builder(
+              shrinkWrap: true,
+              itemCount: 12,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 2.2,
+              ),
+              itemBuilder: (context, index) {
+                final month = index + 1;
+                final isFuture =
+                    _displayedYear == now.year && month > now.month;
+                final isSelected =
+                    _displayedYear == widget.initialMonth.year &&
+                    month == widget.initialMonth.month;
+                final label = DateFormat.MMM(
+                  'de_CH',
+                ).format(DateTime(_displayedYear, month)).replaceAll('.', '');
+
+                return Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: TextButton(
+                    onPressed: isFuture
+                        ? null
+                        : () => Navigator.pop(
+                            context,
+                            DateTime(_displayedYear, month),
+                          ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: isSelected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurface,
+                      backgroundColor: isSelected ? colorScheme.primary : null,
+                    ),
+                    child: Text(label),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Abbrechen'),
+        ),
+      ],
+    );
+  }
+}
+
 class _DashboardContent extends HookWidget {
   final DashboardAnalysis analysis;
 
@@ -132,101 +242,57 @@ class _DashboardContent extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final interval = useState(PaymentInterval.monthly);
-    final categories = interval.value == PaymentInterval.monthly
-        ? analysis.monthlyCategories
-        : analysis.yearlyCategories;
-    final history = interval.value == PaymentInterval.monthly
-        ? analysis.monthlyHistory
-        : analysis.yearlyHistory;
-
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
       children: [
         _BudgetProgressCard(
-          title: 'Monatliche variable Ausgaben',
+          title: 'Monatlich',
           subtitle: 'Bisher ausgegeben',
           progress: analysis.monthly,
           icon: Icons.calendar_view_month_outlined,
+          categories: analysis.monthlyCategories,
+          selectedMonth: analysis.selectedMonth,
+          interval: PaymentInterval.monthly,
         ),
         const SizedBox(height: 12),
         _BudgetProgressCard(
-          title: 'Jährliche variable Ausgaben · ${analysis.selectedMonth.year}',
+          title: 'Jährlich · ${analysis.selectedMonth.year}',
           subtitle: 'Seit Jahresbeginn ausgegeben',
           progress: analysis.yearly,
           icon: Icons.calendar_today_outlined,
-        ),
-        const SizedBox(height: 28),
-        Text('Nach Kategorie', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
-        SegmentedButton<PaymentInterval>(
-          segments: const [
-            ButtonSegment(
-              value: PaymentInterval.monthly,
-              icon: Icon(Icons.calendar_view_month_outlined),
-              label: Text('Monatlich'),
-            ),
-            ButtonSegment(
-              value: PaymentInterval.yearly,
-              icon: Icon(Icons.calendar_today_outlined),
-              label: Text('Jährlich'),
-            ),
-          ],
-          selected: {interval.value},
-          onSelectionChanged: (selection) => interval.value = selection.single,
+          categories: analysis.yearlyCategories,
+          selectedMonth: analysis.selectedMonth,
+          interval: PaymentInterval.yearly,
         ),
         const SizedBox(height: 12),
-        if (categories.every((category) => category.planned == 0))
-          _EmptyBudgetState(interval: interval.value)
-        else
-          ...categories.map(
-            (category) => _CategoryProgressRow(
-              category,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => DashboardCategoryDetailScreen(
-                    category: category,
-                    selectedMonth: analysis.selectedMonth,
-                    interval: interval.value,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        const SizedBox(height: 28),
-        Text('Verlauf', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 4),
-        Text(
-          interval.value == PaymentInterval.monthly
-              ? 'Variable Ausgaben je Monat'
-              : 'Kumulierte variable Jahresausgaben',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _HistoryChart(history: history, selectedMonth: analysis.selectedMonth),
+        _HistoryCard(analysis: analysis),
       ],
     );
   }
 }
 
-class _BudgetProgressCard extends StatelessWidget {
+class _BudgetProgressCard extends HookWidget {
   final String title;
   final String subtitle;
   final DashboardProgress progress;
   final IconData icon;
+  final List<DashboardCategoryProgress> categories;
+  final DateTime selectedMonth;
+  final PaymentInterval interval;
 
   const _BudgetProgressCard({
     required this.title,
     required this.subtitle,
     required this.progress,
     required this.icon,
+    required this.categories,
+    required this.selectedMonth,
+    required this.interval,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isExpanded = useState(true);
     final colorScheme = Theme.of(context).colorScheme;
     final statusColor = progress.isOverBudget
         ? colorScheme.error
@@ -251,6 +317,15 @@ class _BudgetProgressCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: isExpanded.value
+                      ? 'Ausgaben ausblenden'
+                      : 'Ausgaben anzeigen',
+                  onPressed: () => isExpanded.value = !isExpanded.value,
+                  icon: Icon(
+                    isExpanded.value ? Icons.expand_less : Icons.expand_more,
                   ),
                 ),
               ],
@@ -286,6 +361,32 @@ class _BudgetProgressCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (isExpanded.value) ...[
+              const SizedBox(height: 20),
+              _TopExpenses(
+                categories: categories,
+                selectedMonth: selectedMonth,
+                interval: interval,
+              ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DashboardIntervalDetailScreen(
+                        categories: categories,
+                        selectedMonth: selectedMonth,
+                        interval: interval,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_forward, size: 18),
+                  label: const Text('Alle Kategorien'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -293,107 +394,153 @@ class _BudgetProgressCard extends StatelessWidget {
   }
 }
 
-class _CategoryProgressRow extends StatelessWidget {
-  final DashboardCategoryProgress category;
-  final VoidCallback onTap;
+class _TopExpenses extends StatelessWidget {
+  final List<DashboardCategoryProgress> categories;
+  final DateTime selectedMonth;
+  final PaymentInterval interval;
 
-  const _CategoryProgressRow(this.category, {required this.onTap});
+  const _TopExpenses({
+    required this.categories,
+    required this.selectedMonth,
+    required this.interval,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final expenses = _leafExpenses(categories)
+      ..sort((left, right) => right.actual.compareTo(left.actual));
+    final topExpenses = expenses.take(3).toList();
+
+    if (topExpenses.isEmpty) {
+      return Text(
+        'Noch keine variablen Ausgaben geplant.',
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+      );
+    }
+
+    return Column(
+      children: [
+        for (final expense in topExpenses)
+          _ExpensePreviewRow(
+            expense: expense,
+            selectedMonth: selectedMonth,
+            interval: interval,
+          ),
+      ],
+    );
+  }
+}
+
+class _ExpensePreviewRow extends StatelessWidget {
+  final DashboardCategoryProgress expense;
+  final DateTime selectedMonth;
+  final PaymentInterval interval;
+
+  const _ExpensePreviewRow({
+    required this.expense,
+    required this.selectedMonth,
+    required this.interval,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final statusColor = category.isOverBudget
+    final statusColor = expense.isOverBudget
         ? colorScheme.error
         : colorScheme.primary;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Card(
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardCategoryDetailScreen(
+            category: expense,
+            selectedMonth: selectedMonth,
+            interval: interval,
+          ),
+        ),
+      ),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Icon(
-                      category.isGroup
-                          ? Icons.folder_outlined
-                          : Icons.sell_outlined,
-                      color: statusColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        category.categoryName,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      _amount(category.actual),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: statusColor,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      size: 20,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: category.ratio.clamp(0.0, 1.0).toDouble(),
-                  minHeight: 6,
-                  borderRadius: BorderRadius.circular(3),
-                  color: statusColor,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${_amount(category.planned)} geplant',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                Expanded(child: Text(expense.categoryName)),
+                Text(
+                  '${_amount(expense.actual)} / ${_amount(expense.planned)}',
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.w800,
                   ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ],
             ),
-          ),
+            const SizedBox(height: 7),
+            LinearProgressIndicator(
+              value: expense.ratio.clamp(0.0, 1.0).toDouble(),
+              minHeight: 5,
+              borderRadius: BorderRadius.circular(3),
+              color: statusColor,
+              backgroundColor: colorScheme.surfaceContainerHighest,
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _EmptyBudgetState extends StatelessWidget {
-  final PaymentInterval interval;
+class _HistoryCard extends StatelessWidget {
+  final DashboardAnalysis analysis;
 
-  const _EmptyBudgetState({required this.interval});
+  const _HistoryCard({required this.analysis});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 28),
-      child: Text(
-        interval == PaymentInterval.monthly
-            ? 'Noch keine monatlichen variablen Kategorien geplant.'
-            : 'Noch keine jährlichen variablen Kategorien geplant.',
-        textAlign: TextAlign.center,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Verlauf', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Text(
+              'Variable Ausgaben je Monat',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _HistoryChart(
+              history: analysis.monthlyHistory,
+              selectedMonth: analysis.selectedMonth,
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+List<DashboardCategoryProgress> _leafExpenses(
+  List<DashboardCategoryProgress> categories,
+) {
+  return [
+    for (final category in categories)
+      if (category.children.isEmpty)
+        category
+      else
+        ..._leafExpenses(category.children),
+  ];
 }
 
 class _HistoryChart extends StatelessWidget {

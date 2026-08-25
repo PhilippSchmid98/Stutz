@@ -38,10 +38,11 @@ void main() {
           budgetSummaryProvider.overrideWith(
             (ref) => Future.value(
               const BudgetSummary(
-                monthlyIncome: 5000,
-                monthlyExpenses: 1200,
-                fixedExpenses: 1200,
-                variableExpenses: 0,
+                averageMonthlyIncome: 5000,
+                fixedMonthlyExpenses: 1200,
+                fixedYearlyExpenses: 0,
+                variableMonthlyExpenses: 0,
+                variableYearlyExpenses: 0,
               ),
             ),
           ),
@@ -209,6 +210,9 @@ void main() {
     );
     expect(find.text('120.00 CHF'), findsOneWidget);
     expect(find.byIcon(Icons.add_circle_outline), findsNothing);
+    expect(find.byIcon(Icons.sell_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.lock_outline), findsNothing);
+    expect(find.byIcon(Icons.shopping_bag_outlined), findsNothing);
 
     const emptyGroup = ExpenseNode(id: 'group', name: 'Leer');
     await tester.pumpWidget(
@@ -218,6 +222,7 @@ void main() {
     );
     expect(find.text('Leer'), findsOneWidget);
     expect(find.byIcon(Icons.add_circle_outline), findsOneWidget);
+    expect(find.byIcon(Icons.folder_outlined), findsOneWidget);
   });
 
   testWidgets('adding a child does not also open the edit dialog', (
@@ -248,10 +253,11 @@ void main() {
     tester,
   ) async {
     const summary = BudgetSummary(
-      monthlyIncome: 5000,
-      monthlyExpenses: 2500,
-      fixedExpenses: 1800,
-      variableExpenses: 700,
+      averageMonthlyIncome: 5000,
+      fixedMonthlyExpenses: 1800,
+      fixedYearlyExpenses: 2400,
+      variableMonthlyExpenses: 500,
+      variableYearlyExpenses: 2400,
     );
 
     await tester.pumpWidget(
@@ -260,12 +266,22 @@ void main() {
       ),
     );
 
-    expect(find.text('+ 2500.00 CHF'), findsOneWidget);
-    expect(find.text('Verfügbarer Überschuss'), findsOneWidget);
-    expect(find.text('Nach Fixkosten verfügbar'), findsOneWidget);
-    expect(find.text('3200.00 CHF'), findsOneWidget);
+    expect(find.text('+ 2300.00 CHF'), findsOneWidget);
+    expect(find.text('Verfügbarer Überschuss pro Monat'), findsOneWidget);
+    expect(find.text('Ø Einnahmen pro Monat'), findsOneWidget);
+    expect(find.text('Geplante Ausgaben pro Monat'), findsOneWidget);
+    expect(find.text('2700.00 CHF'), findsOneWidget);
+    expect(find.text('Jahresplanung'), findsOneWidget);
+    expect(find.text('Jahreseinnahmen'), findsOneWidget);
+    expect(find.text('Jährliche Fixkosten'), findsOneWidget);
+    expect(find.text('Jährliche variable Ausgaben'), findsOneWidget);
+    expect(find.text('60000.00 CHF'), findsOneWidget);
+    expect(find.text('Monatliche Ausgaben'), findsOneWidget);
+    expect(find.text('Fixkosten'), findsOneWidget);
+    expect(find.text('Variable Ausgaben'), findsOneWidget);
     expect(find.text('1800.00 CHF'), findsOneWidget);
-    expect(find.text('700.00 CHF'), findsOneWidget);
+    expect(find.text('2400.00 CHF'), findsNWidgets(2));
+    expect(find.text('500.00 CHF'), findsOneWidget);
   });
 
   testWidgets('main category dialog validates a required name', (tester) async {

@@ -15,12 +15,15 @@ class ExpenseItemRow extends StatefulWidget {
 }
 
 class _ExpenseItemRowState extends State<ExpenseItemRow> {
+  static const _indentPerLevel = 16.0;
+
   bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
     final node = widget.node;
     final hasChildren = node.children.isNotEmpty;
+    final isGroup = node.plannedAmount == null;
     final isFixed = node.type == ExpenseType.fixed;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -38,7 +41,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
             borderRadius: BorderRadius.circular(10),
             child: Padding(
               padding: EdgeInsets.only(
-                left: 8.0 * widget.depth,
+                left: _indentPerLevel * widget.depth,
                 top: 6,
                 bottom: 6,
               ),
@@ -56,11 +59,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
                     const SizedBox(width: 20),
                   const SizedBox(width: 4),
                   Icon(
-                    hasChildren
-                        ? Icons.folder_outlined
-                        : (isFixed
-                              ? Icons.lock_outline
-                              : Icons.shopping_bag_outlined),
+                    isGroup ? Icons.folder_outlined : Icons.sell_outlined,
                     size: 18,
                     color: hasChildren
                         ? colorScheme.primary
