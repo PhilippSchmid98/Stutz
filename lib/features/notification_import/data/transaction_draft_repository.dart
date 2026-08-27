@@ -180,7 +180,8 @@ class TransactionDraftRepository implements TransactionDraftStore {
 @riverpod
 TransactionDraftRepository transactionDraftRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);
-  if (uid == null)
+  if (uid == null) {
     throw Exception('Not logged in (TransactionDraftRepository)');
+  }
   return TransactionDraftRepository(uid, FirebaseFirestore.instance);
 }
