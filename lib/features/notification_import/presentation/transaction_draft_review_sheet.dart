@@ -14,20 +14,103 @@ import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
 import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 
-Future<void> showTransactionDraftReview(
+Future<DraftReviewSessionResult> showTransactionDraftReviewSession(
   BuildContext context,
-  TransactionDraft draft,
-) {
-  return showAppBottomSheet(
+  List<TransactionDraft> drafts,
+) async {
+  assert(drafts.isNotEmpty);
+  final result = await showAppBottomSheet<DraftReviewSessionResult>(
     context: context,
-    builder: (_) => TransactionDraftReviewSheet(draft: draft),
+    builder: (_) => TransactionDraftReviewSheet(drafts: drafts),
   );
+  return result ?? const DraftReviewSessionResult.deferRemaining();
 }
 
-class TransactionDraftReviewSheet extends HookConsumerWidget {
-  final TransactionDraft draft;
+class DraftReviewSessionResult {
+  final Set<String> handledDraftIds;
+  final bool deferredRemainingDrafts;
 
-  const TransactionDraftReviewSheet({super.key, required this.draft});
+  const DraftReviewSessionResult({
+    required this.handledDraftIds,
+    required this.deferredRemainingDrafts,
+  });
+
+  const DraftReviewSessionResult.deferRemaining()
+    : handledDraftIds = const {},
+      deferredRemainingDrafts = true;
+}
+
+class TransactionDraftReviewSheet extends ConsumerStatefulWidget {
+  final List<TransactionDraft> drafts;
+
+  const TransactionDraftReviewSheet({super.key, required this.drafts});
+
+  @override
+  ConsumerState<TransactionDraftReviewSheet> createState() =>
+      _TransactionDraftReviewSheetState();
+}
+
+class _TransactionDraftReviewSheetState
+    extends ConsumerState<TransactionDraftReviewSheet> {
+  final Set<String> _handledDraftIds = {};
+  int _currentIndex = 0;
+
+  TransactionDraft get _draft => widget.drafts[_currentIndex];
+
+  void _handleProcessedDraft(String draftId) {
+    _handledDraftIds.add(draftId);
+    if (_currentIndex == widget.drafts.length - 1) {
+      Navigator.pop(
+        context,
+        DraftReviewSessionResult(
+          handledDraftIds: _handledDraftIds,
+          deferredRemainingDrafts: false,
+        ),
+      );
+      return;
+    }
+    setState(() => _currentIndex += 1);
+  }
+
+  void _deferRemainingDrafts() {
+    Navigator.pop(
+      context,
+      DraftReviewSessionResult(
+        handledDraftIds: _handledDraftIds,
+        deferredRemainingDrafts: true,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return KeyedSubtree(
+      key: ValueKey(_draft.id),
+      child: _TransactionDraftReviewForm(
+        draft: _draft,
+        position: _currentIndex + 1,
+        total: widget.drafts.length,
+        onProcessed: _handleProcessedDraft,
+        onDefer: _deferRemainingDrafts,
+      ),
+    );
+  }
+}
+
+class _TransactionDraftReviewForm extends HookConsumerWidget {
+  final TransactionDraft draft;
+  final int position;
+  final int total;
+  final ValueChanged<String> onProcessed;
+  final VoidCallback onDefer;
+
+  const _TransactionDraftReviewForm({
+    required this.draft,
+    required this.position,
+    required this.total,
+    required this.onProcessed,
+    required this.onDefer,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -107,11 +190,12 @@ class TransactionDraftReviewSheet extends HookConsumerWidget {
               ),
             );
       } catch (_) {
-        if (context.mounted)
+        if (context.mounted) {
           showErrorSnackBar(context, 'Speichern fehlgeschlagen');
+        }
         return;
       }
-      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) onProcessed(draft.id);
     }
 
     Future<void> discard() async {
@@ -128,11 +212,12 @@ class TransactionDraftReviewSheet extends HookConsumerWidget {
             .read(transactionDraftMutationsProvider.notifier)
             .discard(draft.id);
       } catch (_) {
-        if (context.mounted)
+        if (context.mounted) {
           showErrorSnackBar(context, 'Verwerfen fehlgeschlagen');
+        }
         return;
       }
-      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) onProcessed(draft.id);
     }
 
     final selectedCategoryName = _categoryName(
@@ -161,6 +246,13 @@ class TransactionDraftReviewSheet extends HookConsumerWidget {
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
+            const SizedBox(height: 12),
+            Text(
+              '$position von $total',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: 6),
+            LinearProgressIndicator(value: position / total),
             const SizedBox(height: 20),
             TextFormField(
               controller: amountController,
@@ -228,7 +320,7 @@ class TransactionDraftReviewSheet extends HookConsumerWidget {
         AppTextButton(
           label: 'Später',
           foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          onPressed: isSaving ? null : () => Navigator.pop(context),
+          onPressed: isSaving ? null : onDefer,
         ),
         const SizedBox(width: 8),
         Expanded(

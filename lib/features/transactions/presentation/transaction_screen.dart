@@ -232,7 +232,7 @@ class _PendingDraftsAction extends ConsumerWidget {
       label: Text('${drafts.length}'),
       child: IconButton(
         tooltip: 'Erfasste Ausgaben prüfen',
-        onPressed: () => showTransactionDraftReview(context, drafts.first),
+        onPressed: () => showTransactionDraftReviewSession(context, drafts),
         icon: const Icon(Icons.playlist_add_check_outlined),
       ),
     );

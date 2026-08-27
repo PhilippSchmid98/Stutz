@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:stutz/app/app_loading_screen.dart';
 import 'package:stutz/app/home_screen.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/auth/presentation/login_screen.dart';
@@ -44,7 +45,7 @@ class AppRouter extends ConsumerWidget {
     });
 
     return authAsync.when(
-      loading: () => const _SplashScreen(),
+      loading: () => const AppLoadingScreen(message: 'Anmeldung wird geprüft'),
       error: (_, __) => _RouterErrorScreen(
         message: 'Die Anmeldung konnte nicht geladen werden.',
         onRetry: () => ref.invalidate(authStateProvider),
@@ -63,47 +64,82 @@ class _AuthenticatedHome extends ConsumerStatefulWidget {
 }
 
 class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome> {
-  bool _isShowingDraft = false;
+  final Set<String> _handledDraftIds = {};
+  final Set<String> _deferredDraftIds = {};
+  List<TransactionDraft> _latestPendingDrafts = const [];
+  bool _isReviewOpen = false;
+  bool _reviewIsScheduled = false;
+  late final ProviderSubscription<AsyncValue<List<TransactionDraft>>>
+  _pendingDraftsSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _pendingDraftsSubscription = ref
+        .listenManual<AsyncValue<List<TransactionDraft>>>(
+          pendingTransactionDraftsProvider,
+          (_, next) {
+            final drafts = next.asData?.value;
+            if (drafts == null) return;
+            _latestPendingDrafts = drafts;
+            _startReviewIfNeeded();
+          },
+          fireImmediately: true,
+        );
+  }
+
+  @override
+  void dispose() {
+    _pendingDraftsSubscription.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pendingDraftsAsync = ref.watch(pendingTransactionDraftsProvider);
-    ref.listen<AsyncValue<List<TransactionDraft>>>(
-      pendingTransactionDraftsProvider,
-      (_, next) {
-        final drafts = next.asData?.value;
-        if (drafts != null && drafts.isNotEmpty) _showDraft(drafts.first);
-      },
-    );
-    final pendingDrafts = pendingDraftsAsync.asData?.value;
-    if (pendingDrafts != null && pendingDrafts.isNotEmpty) {
-      _showDraft(pendingDrafts.first);
-    }
-
     return const HomeScreen();
   }
 
-  void _showDraft(TransactionDraft draft) {
-    if (_isShowingDraft) return;
-    _isShowingDraft = true;
+  void _startReviewIfNeeded() {
+    if (_isReviewOpen || _reviewIsScheduled) return;
 
+    final drafts = _eligibleDrafts;
+    if (drafts.isEmpty) return;
+
+    _reviewIsScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      await showTransactionDraftReview(context, draft);
+      _reviewIsScheduled = false;
+      if (!mounted || _isReviewOpen) return;
+
+      final sessionDrafts = _eligibleDrafts;
+      if (sessionDrafts.isEmpty) return;
+
+      _isReviewOpen = true;
+      final result = await showTransactionDraftReviewSession(
+        context,
+        sessionDrafts,
+      );
       if (!mounted) return;
 
-      _isShowingDraft = false;
-      final pendingDrafts = ref
-          .read(pendingTransactionDraftsProvider)
-          .asData
-          ?.value;
-      if (pendingDrafts != null &&
-          pendingDrafts.isNotEmpty &&
-          pendingDrafts.first.id != draft.id) {
-        _showDraft(pendingDrafts.first);
+      _handledDraftIds.addAll(result.handledDraftIds);
+      if (result.deferredRemainingDrafts) {
+        _deferredDraftIds.addAll(
+          _latestPendingDrafts
+              .where((draft) => !_handledDraftIds.contains(draft.id))
+              .map((draft) => draft.id),
+        );
       }
+      _isReviewOpen = false;
+      _startReviewIfNeeded();
     });
   }
+
+  List<TransactionDraft> get _eligibleDrafts => _latestPendingDrafts
+      .where(
+        (draft) =>
+            !_handledDraftIds.contains(draft.id) &&
+            !_deferredDraftIds.contains(draft.id),
+      )
+      .toList();
 }
 
 class _SignedOutRouter extends ConsumerWidget {
@@ -114,24 +150,13 @@ class _SignedOutRouter extends ConsumerWidget {
     final onboardingAsync = ref.watch(seenOnboardingProvider);
 
     return onboardingAsync.when(
-      loading: () => const _SplashScreen(),
+      loading: () =>
+          const AppLoadingScreen(message: 'Einstellungen werden geladen'),
       error: (_, __) => _RouterErrorScreen(
         message: 'Die App-Einstellungen konnten nicht geladen werden.',
         onRetry: () => ref.invalidate(seenOnboardingProvider),
       ),
       data: (seen) => seen ? const LoginScreen() : const WelcomeScreen(),
-    );
-  }
-}
-
-class _SplashScreen extends StatelessWidget {
-  const _SplashScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(child: CircularProgressIndicator(color: Colors.black)),
     );
   }
 }
