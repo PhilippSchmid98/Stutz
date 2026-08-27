@@ -1,0 +1,27 @@
+{
+    // Flutter & Dart debugging
+    "dart.debugExternalPackageLibraries": false,
+    "dart.debugSdkLibraries": false,
+    "dart.openDevTools": "flutter",
+    // Testing window — test file discovery and runner behaviour
+    "dart.allowTestsOutsideTestFolder": false,
+    // Editor comfort for Dart files
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.selectionHighlight": false,
+        "editor.suggest.snippetsPreventQuickSuggestions": false,
+        "editor.suggestSelection": "first",
+        "editor.tabCompletion": "onlySnippets",
+        "editor.wordBasedSuggestions": "off"
+    },
+    "chat.tools.terminal.autoApprove": {
+        "flutter": true,
+        "dart": true,
+        "firebase": true,
+        "npm audit": true,
+        "/^git status --short; node --version; npm --version$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

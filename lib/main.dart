@@ -1,70 +1,80 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stutz/app/app_loading_screen.dart';
+import 'package:stutz/app/app_router.dart';
+import 'package:stutz/core/theme/app_theme.dart';
 import 'package:stutz/firebase_options.dart';
-import 'package:stutz/presentation/screens/home_screen.dart';
-import 'package:stutz/presentation/screens/onboarding/welcome_screen.dart';
-import 'package:stutz/presentation/screens/onboarding/login_screen.dart';
+import 'package:stutz/features/transactions/data/transaction_month.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  TransactionMonth.initialize();
 
   if (kDebugMode) {
     WakelockPlus.enable();
-    print("🚀 Wakelock enabled: The screen will stay on.");
   }
 
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  final prefs = await SharedPreferences.getInstance();
-  final seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
-
-  final user = FirebaseAuth.instance.currentUser;
-
-  Widget startScreen;
-
-  if (user != null) {
-    startScreen = const HomeScreen();
-  } else if (seenOnboarding) {
-    startScreen = const LoginScreen();
-  } else {
-    startScreen = const WelcomeScreen();
-  }
-
-  runApp(ProviderScope(child: MainApp(startScreen: startScreen)));
+  runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends StatelessWidget {
-  final Widget startScreen;
+class MainApp extends StatefulWidget {
+  final Future<void> Function() initializeFirebase;
 
-  const MainApp({super.key, required this.startScreen});
+  const MainApp({super.key, this.initializeFirebase = _initializeFirebase});
+
+  @override
+  State<MainApp> createState() => _MainAppState();
+}
+
+class _MainAppState extends State<MainApp> {
+  late Future<void> _initialization;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialization = widget.initializeFirebase();
+  }
+
+  void _retryInitialization() {
+    setState(() {
+      _initialization = widget.initializeFirebase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
-      supportedLocales: const [
-        Locale('de', 'CH'), // German (Switzerland)
-      ],
+      supportedLocales: const [Locale('de', 'CH')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.light,
-        ),
+      theme: AppTheme.lightTheme,
+      home: FutureBuilder<void>(
+        future: _initialization,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return AppInitializationErrorScreen(onRetry: _retryInitialization);
+          }
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const AppLoadingScreen(message: 'Stutz wird gestartet');
+          }
+          return const AppRouter();
+        },
       ),
-      home: startScreen,
     );
   }
+}
+
+Future<void> _initializeFirebase() {
+  return Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 }

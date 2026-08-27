@@ -63,10 +63,23 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Name deiner echten App
+            manifestPlaceholders["appName"] = "Stutz" 
+        }
+        
+        // Den Debug-Block fügen wir hier explizit hinzu
+        getByName("debug") {
+            applicationIdSuffix = ".debug"
+            // Name für deine Debug-Version
+            manifestPlaceholders["appName"] = "Stutz (Debug)" 
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }
