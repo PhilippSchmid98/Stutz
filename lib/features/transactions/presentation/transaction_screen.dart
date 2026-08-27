@@ -7,6 +7,9 @@ import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
+import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
+import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
@@ -196,11 +199,15 @@ class _TransactionAppBar extends StatelessWidget
   Widget build(BuildContext context) {
     return AppBar(
       title: const Text('Transaktionen'),
-      actions: [const CloudStatusIcon()],
       centerTitle: false,
       backgroundColor: Colors.transparent,
       foregroundColor: Theme.of(context).colorScheme.onSurface,
       elevation: 0,
+      actions: const [
+        _NotificationCaptureAccessAction(),
+        _PendingDraftsAction(),
+        CloudStatusIcon(),
+      ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(
@@ -208,6 +215,51 @@ class _TransactionAppBar extends StatelessWidget
           height: 1,
         ),
       ),
+    );
+  }
+}
+
+class _PendingDraftsAction extends ConsumerWidget {
+  const _PendingDraftsAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final draftsAsync = ref.watch(pendingTransactionDraftsProvider);
+    final drafts = draftsAsync.asData?.value;
+    if (drafts == null || drafts.isEmpty) return const SizedBox.shrink();
+
+    return Badge(
+      label: Text('${drafts.length}'),
+      child: IconButton(
+        tooltip: 'Erfasste Ausgaben prüfen',
+        onPressed: () => showTransactionDraftReview(context, drafts.first),
+        icon: const Icon(Icons.playlist_add_check_outlined),
+      ),
+    );
+  }
+}
+
+class _NotificationCaptureAccessAction extends ConsumerWidget {
+  const _NotificationCaptureAccessAction();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gateway = ref.watch(notificationCaptureGatewayProvider);
+    if (!gateway.isSupported) return const SizedBox.shrink();
+
+    final isGranted = ref
+        .watch(notificationCaptureAccessGrantedProvider)
+        .asData
+        ?.value;
+    if (isGranted != false) return const SizedBox.shrink();
+
+    return IconButton(
+      tooltip: 'Benachrichtigungszugriff aktivieren',
+      onPressed: () async {
+        await gateway.openNotificationAccessSettings();
+        ref.invalidate(notificationCaptureAccessGrantedProvider);
+      },
+      icon: const Icon(Icons.notifications_off_outlined),
     );
   }
 }

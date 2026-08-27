@@ -4,6 +4,10 @@ import 'package:stutz/app/home_screen.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/auth/presentation/login_screen.dart';
 import 'package:stutz/features/auth/presentation/welcome_screen.dart';
+import 'package:stutz/features/notification_import/application/notification_draft_sync.dart';
+import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
+import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
 
 /// Root routing widget that reacts to auth state changes automatically.
 ///
@@ -16,6 +20,7 @@ class AppRouter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authStateProvider);
+    ref.watch(synchronizeNotificationDraftsProvider);
 
     // Detect involuntary logouts (e.g. account disabled in Firebase Console).
     // If the transition from signed-in → signed-out was NOT voluntary, show a
@@ -45,8 +50,59 @@ class AppRouter extends ConsumerWidget {
         onRetry: () => ref.invalidate(authStateProvider),
       ),
       data: (user) =>
-          user == null ? const _SignedOutRouter() : const HomeScreen(),
+          user == null ? const _SignedOutRouter() : const _AuthenticatedHome(),
     );
+  }
+}
+
+class _AuthenticatedHome extends ConsumerStatefulWidget {
+  const _AuthenticatedHome();
+
+  @override
+  ConsumerState<_AuthenticatedHome> createState() => _AuthenticatedHomeState();
+}
+
+class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome> {
+  bool _isShowingDraft = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final pendingDraftsAsync = ref.watch(pendingTransactionDraftsProvider);
+    ref.listen<AsyncValue<List<TransactionDraft>>>(
+      pendingTransactionDraftsProvider,
+      (_, next) {
+        final drafts = next.asData?.value;
+        if (drafts != null && drafts.isNotEmpty) _showDraft(drafts.first);
+      },
+    );
+    final pendingDrafts = pendingDraftsAsync.asData?.value;
+    if (pendingDrafts != null && pendingDrafts.isNotEmpty) {
+      _showDraft(pendingDrafts.first);
+    }
+
+    return const HomeScreen();
+  }
+
+  void _showDraft(TransactionDraft draft) {
+    if (_isShowingDraft) return;
+    _isShowingDraft = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await showTransactionDraftReview(context, draft);
+      if (!mounted) return;
+
+      _isShowingDraft = false;
+      final pendingDrafts = ref
+          .read(pendingTransactionDraftsProvider)
+          .asData
+          ?.value;
+      if (pendingDrafts != null &&
+          pendingDrafts.isNotEmpty &&
+          pendingDrafts.first.id != draft.id) {
+        _showDraft(pendingDrafts.first);
+      }
+    });
   }
 }
 

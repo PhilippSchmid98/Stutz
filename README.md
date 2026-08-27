@@ -157,6 +157,24 @@ schreibgeschützten Kategorie-Lookup angereichert.
     npm run test:rules
     ```
 
+### Google Wallet notification inspection
+
+The active Android notification drawer can be exported into a readable report
+for notification-template development. Connect one Android device with USB
+debugging enabled, then run this from the project root:
+
+```powershell
+adb devices
+.\scripts\inspect-wallet-notifications.ps1
+```
+
+The report is written to `wallet-notifications.txt`. Use `-Serial <SERIAL>`
+when more than one device is connected. Add `-IncludeRawDump` when the full
+Android dump is needed for investigating new notification layouts. These files
+can contain payment data and are ignored by Git. The command reads currently
+active notifications only; it cannot recover notifications that Android has
+already removed.
+
 ### Transaction month index migration
 
 Existing transaction data can be indexed once with the Admin SDK. Store the
