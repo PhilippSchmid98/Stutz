@@ -75,6 +75,21 @@ class TransactionRepository {
     return snapshot.docs;
   }
 
+  /// Loads a calendar month directly so month navigation does not need to
+  /// page through every newer transaction first.
+  Future<List<AppTransaction>> getTransactionsForMonth(DateTime month) async {
+    final start = TransactionMonth.startOfMonth(month);
+    final end = TransactionMonth.startOfMonth(
+      DateTime(month.year, month.month + 1),
+    );
+    final snapshot = await _collection
+        .where('dateTime', isGreaterThanOrEqualTo: start)
+        .where('dateTime', isLessThan: end)
+        .orderBy('dateTime', descending: true)
+        .get();
+    return snapshot.docs.map(TransactionMapper.fromDocument).toList();
+  }
+
   /// Holt die absolut älteste Transaktion, um das Startdatum für die Monatsliste zu kennen.
   Future<AppTransaction?> getOldestTransaction() async {
     final snapshot = await _collection

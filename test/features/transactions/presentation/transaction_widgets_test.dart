@@ -310,7 +310,9 @@ Future<void> _pumpTransactionScreen(
       overrides: [
         isOfflineProvider.overrideWithValue(false),
         availableMonthsProvider.overrideWith((ref) async => [month]),
-        currentVisibleMonthProvider.overrideWithValue(month),
+        currentVisibleMonthProvider.overrideWith(
+          () => _FakeCurrentVisibleMonth(month),
+        ),
         paginatedTransactionListProvider.overrideWith(
           () =>
               paginatedNotifier ??
@@ -323,6 +325,15 @@ Future<void> _pumpTransactionScreen(
 }
 
 enum _TransactionScreenMode { loading, error, empty, loadMoreError }
+
+class _FakeCurrentVisibleMonth extends CurrentVisibleMonth {
+  final DateTime initialMonth;
+
+  _FakeCurrentVisibleMonth(this.initialMonth);
+
+  @override
+  DateTime build() => initialMonth;
+}
 
 class _FakePaginatedTransactionList extends PaginatedTransactionList {
   final _TransactionScreenMode _mode;
@@ -349,6 +360,9 @@ class _FakePaginatedTransactionList extends PaginatedTransactionList {
   Future<void> loadNextPage() async {
     _loadNextPageCalls++;
   }
+
+  @override
+  Future<bool> ensureMonthLoaded(DateTime month) async => false;
 }
 
 PaginatedTransactionsState _emptyTransactionState() {

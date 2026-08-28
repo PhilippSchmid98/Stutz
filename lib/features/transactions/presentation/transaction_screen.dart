@@ -12,6 +12,7 @@ import 'package:stutz/features/notification_import/application/notification_capt
 import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
+import 'package:stutz/shared/widgets/dialog_helpers.dart';
 
 class TransactionScreen extends HookConsumerWidget {
   const TransactionScreen({super.key});
@@ -86,8 +87,20 @@ class TransactionScreen extends HookConsumerWidget {
 
     Future<void> scrollToMonth(DateTime month) async {
       final listNotifier = ref.read(paginatedTransactionListProvider.notifier);
+      ref.read(currentVisibleMonthProvider.notifier).set(month);
       final loaded = await listNotifier.ensureMonthLoaded(month);
-      if (!context.mounted || !loaded) {
+      if (!context.mounted) return;
+      if (!loaded) {
+        final loadError = ref
+            .read(paginatedTransactionListProvider)
+            .value
+            ?.loadMonthError;
+        if (loadError != null) {
+          showErrorSnackBar(
+            context,
+            'Monat konnte nicht geladen werden. Bitte versuche es erneut.',
+          );
+        }
         return;
       }
 
@@ -105,8 +118,6 @@ class TransactionScreen extends HookConsumerWidget {
       if (index != -1) {
         isProgrammaticScroll.value = true;
         try {
-          ref.read(currentVisibleMonthProvider.notifier).set(month);
-
           await itemScrollController.scrollTo(
             index: index,
             duration: const Duration(milliseconds: 600),
@@ -149,27 +160,59 @@ class TransactionScreen extends HookConsumerWidget {
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
           Expanded(
-            child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification is ScrollStartNotification) {
-                  isUserScroll.value = notification.dragDetails != null;
-                  pageRequestedDuringScroll.value = false;
-                } else if (notification is ScrollEndNotification) {
-                  isUserScroll.value = false;
-                }
-                return false;
-              },
-              child: _TransactionList(
-                state: paginatedStateAsync,
-                itemScrollController: itemScrollController,
-                itemPositionsListener: itemPositionsListener,
-                onLoadNextPage: () => ref
-                    .read(paginatedTransactionListProvider.notifier)
-                    .loadNextPage(),
-              ),
+            child: Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollStartNotification) {
+                      isUserScroll.value = notification.dragDetails != null;
+                      pageRequestedDuringScroll.value = false;
+                    } else if (notification is ScrollEndNotification) {
+                      isUserScroll.value = false;
+                    }
+                    return false;
+                  },
+                  child: _TransactionList(
+                    state: paginatedStateAsync,
+                    itemScrollController: itemScrollController,
+                    itemPositionsListener: itemPositionsListener,
+                    onLoadNextPage: () => ref
+                        .read(paginatedTransactionListProvider.notifier)
+                        .loadNextPage(),
+                  ),
+                ),
+                if (paginatedStateAsync.value?.isLoadingMonth == true)
+                  const _MonthLoadingOverlay(),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MonthLoadingOverlay extends StatelessWidget {
+  const _MonthLoadingOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: ColoredBox(
+          color: colorScheme.surface.withValues(alpha: 0.72),
+          child: const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text('Monat wird geladen'),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

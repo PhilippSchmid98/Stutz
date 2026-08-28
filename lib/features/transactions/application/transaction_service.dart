@@ -18,6 +18,8 @@ class PaginatedTransactionsState {
   final bool hasReachedMax;
   final bool isLoadingMore;
   final Object? loadMoreError;
+  final bool isLoadingMonth;
+  final Object? loadMonthError;
 
   PaginatedTransactionsState({
     required this.groupedDays,
@@ -26,6 +28,8 @@ class PaginatedTransactionsState {
     required this.hasReachedMax,
     this.isLoadingMore = false,
     this.loadMoreError,
+    this.isLoadingMonth = false,
+    this.loadMonthError,
   });
 
   PaginatedTransactionsState copyWith({
@@ -36,6 +40,9 @@ class PaginatedTransactionsState {
     bool? isLoadingMore,
     Object? loadMoreError,
     bool clearLoadMoreError = false,
+    bool? isLoadingMonth,
+    Object? loadMonthError,
+    bool clearLoadMonthError = false,
   }) {
     return PaginatedTransactionsState(
       groupedDays: groupedDays ?? this.groupedDays,
@@ -46,6 +53,10 @@ class PaginatedTransactionsState {
       loadMoreError: clearLoadMoreError
           ? null
           : loadMoreError ?? this.loadMoreError,
+      isLoadingMonth: isLoadingMonth ?? this.isLoadingMonth,
+      loadMonthError: clearLoadMonthError
+          ? null
+          : loadMonthError ?? this.loadMonthError,
     );
   }
 }
@@ -79,7 +90,10 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
     );
 
     final newTransactions = docs.map(TransactionMapper.fromDocument).toList();
-    final allTransactions = [...currentTransactions, ...newTransactions];
+    final allTransactions = _mergeTransactions(
+      currentTransactions,
+      newTransactions,
+    );
 
     // Nutzen den existierenden puren Domain Service zum Gruppieren
     final grouped = const TransactionGrouper().groupByDay(
@@ -97,7 +111,10 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
   Future<void> loadNextPage() async {
     final current = state.value;
-    if (current == null || current.isLoadingMore || current.hasReachedMax) {
+    if (current == null ||
+        current.isLoadingMore ||
+        current.isLoadingMonth ||
+        current.hasReachedMax) {
       return;
     }
 
@@ -126,27 +143,68 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
   }
 
   Future<bool> ensureMonthLoaded(DateTime month) async {
-    while (true) {
-      final current = state.value;
-      if (current == null) return false;
+    final current = state.value;
+    if (current == null || current.isLoadingMonth) return false;
 
-      final isLoaded = current.groupedDays.any(
-        (group) =>
-            group.date.year == month.year && group.date.month == month.month,
+    final normalizedMonth = DateTime(month.year, month.month);
+    final isLoaded = current.groupedDays.any(
+      (group) =>
+          group.date.year == normalizedMonth.year &&
+          group.date.month == normalizedMonth.month,
+    );
+    if (isLoaded) return true;
+
+    state = AsyncData(
+      current.copyWith(isLoadingMonth: true, clearLoadMonthError: true),
+    );
+
+    try {
+      final repo = ref.read(transactionRepositoryProvider);
+      final categories = await ref.read(categoryLookupsProvider.future);
+      final monthTransactions = await repo.getTransactionsForMonth(
+        normalizedMonth,
       );
-      if (isLoaded) return true;
-      if (current.hasReachedMax || current.loadMoreError != null) return false;
+      final transactions = _mergeTransactions(
+        current.rawTransactions,
+        monthTransactions,
+      );
+      final grouped = const TransactionGrouper().groupByDay(
+        transactions,
+        categories,
+      );
 
-      final transactionCount = current.rawTransactions.length;
-      await loadNextPage();
-
-      final next = state.value;
-      if (next == null ||
-          next.rawTransactions.length == transactionCount ||
-          next.loadMoreError != null) {
-        return false;
-      }
+      state = AsyncData(
+        current.copyWith(
+          rawTransactions: transactions,
+          groupedDays: grouped,
+          isLoadingMonth: false,
+          clearLoadMonthError: true,
+        ),
+      );
+      return grouped.any(
+        (group) =>
+            group.date.year == normalizedMonth.year &&
+            group.date.month == normalizedMonth.month,
+      );
+    } catch (error) {
+      state = AsyncData(
+        current.copyWith(isLoadingMonth: false, loadMonthError: error),
+      );
+      return false;
     }
+  }
+
+  List<AppTransaction> _mergeTransactions(
+    List<AppTransaction> current,
+    List<AppTransaction> additional,
+  ) {
+    final transactionsById = <String, AppTransaction>{
+      for (final transaction in current) transaction.id: transaction,
+    };
+    for (final transaction in additional) {
+      transactionsById[transaction.id] = transaction;
+    }
+    return transactionsById.values.toList();
   }
 }
 

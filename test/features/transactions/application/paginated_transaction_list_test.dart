@@ -72,6 +72,37 @@ void main() {
       expect(repository.pageRequests, 1);
     },
   );
+
+  test('ensureMonthLoaded fetches an unloaded month directly', () async {
+    final repository = _FakeTransactionRepository()
+      ..monthTransactions = [
+        AppTransaction(
+          id: 'past-transaction',
+          expenseNodeId: 'category',
+          amount: 12,
+          dateTime: DateTime(2024, 1, 15),
+        ),
+      ];
+    final container = ProviderContainer(
+      overrides: [
+        transactionRepositoryProvider.overrideWith((ref) => repository),
+        categoryLookupsProvider.overrideWith((ref) async => const []),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(paginatedTransactionListProvider.future);
+    final loaded = await container
+        .read(paginatedTransactionListProvider.notifier)
+        .ensureMonthLoaded(DateTime(2024, 1));
+
+    final state = container.read(paginatedTransactionListProvider).value!;
+    expect(loaded, isTrue);
+    expect(repository.pageRequests, 1);
+    expect(repository.monthRequests, 1);
+    expect(state.groupedDays.single.date, DateTime(2024, 1, 15));
+    expect(state.isLoadingMonth, isFalse);
+  });
 }
 
 class _FakeTransactionRepository implements TransactionRepository {
@@ -89,7 +120,9 @@ class _FakeTransactionRepository implements TransactionRepository {
       const Stream.empty();
 
   int pageRequests = 0;
+  int monthRequests = 0;
   Object? error;
+  List<AppTransaction> monthTransactions = const [];
 
   @override
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
@@ -100,6 +133,12 @@ class _FakeTransactionRepository implements TransactionRepository {
     pageRequests++;
     if (error != null) throw error!;
     return [];
+  }
+
+  @override
+  Future<List<AppTransaction>> getTransactionsForMonth(DateTime month) async {
+    monthRequests++;
+    return monthTransactions;
   }
 
   @override

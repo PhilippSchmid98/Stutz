@@ -98,4 +98,8 @@ class _FakeTransactionRepository implements TransactionRepository {
     required int limit,
     QueryDocumentSnapshot<Object?>? startAfter,
   }) async => [];
+
+  @override
+  Future<List<AppTransaction>> getTransactionsForMonth(DateTime month) async =>
+      [];
 }
