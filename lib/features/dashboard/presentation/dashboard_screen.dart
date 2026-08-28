@@ -580,6 +580,7 @@ class _HistoryChart extends HookWidget {
           child: ListView.separated(
             controller: scrollController,
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(bottom: 12),
             itemCount: history.length,
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
