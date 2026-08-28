@@ -543,7 +543,7 @@ List<DashboardCategoryProgress> _leafExpenses(
   ];
 }
 
-class _HistoryChart extends StatelessWidget {
+class _HistoryChart extends HookWidget {
   final List<DashboardHistoryPoint> history;
   final DateTime selectedMonth;
 
@@ -551,6 +551,7 @@ class _HistoryChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scrollController = useScrollController();
     final maxValue = history.fold<double>(
       0,
       (maximum, point) => [
@@ -560,68 +561,87 @@ class _HistoryChart extends StatelessWidget {
       ].reduce((left, right) => left > right ? left : right),
     );
     final scale = maxValue == 0 ? 1.0 : maxValue;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
       height: 150,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: history.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final point = history[index];
-          final isSelected = point.month.month == selectedMonth.month;
-          final colorScheme = Theme.of(context).colorScheme;
-          final actualHeight = (point.actual / scale * 84).clamp(0.0, 84.0);
-          final plannedHeight = (point.planned / scale * 84).clamp(0.0, 84.0);
+      child: ScrollbarTheme(
+        data: ScrollbarTheme.of(context).copyWith(
+          thumbColor: WidgetStatePropertyAll(
+            colorScheme.outlineVariant.withValues(alpha: 0.65),
+          ),
+          thickness: const WidgetStatePropertyAll(4),
+          radius: const Radius.circular(4),
+        ),
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: true,
+          radius: const Radius.circular(4),
+          child: ListView.separated(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            itemCount: history.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final point = history[index];
+              final isSelected = point.month.month == selectedMonth.month;
+              final colorScheme = Theme.of(context).colorScheme;
+              final actualHeight = (point.actual / scale * 84).clamp(0.0, 84.0);
+              final plannedHeight = (point.planned / scale * 84).clamp(
+                0.0,
+                84.0,
+              );
 
-          return SizedBox(
-            width: 34,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(
-                  height: 92,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      Container(
-                        width: 22,
-                        height: plannedHeight.toDouble(),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+              return SizedBox(
+                width: 34,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      height: 92,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Container(
+                            width: 22,
+                            height: plannedHeight.toDouble(),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Container(
+                            width: 14,
+                            height: actualHeight.toDouble(),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        width: 14,
-                        height: actualHeight.toDouble(),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      DateFormat(
+                        'MMM',
+                        'de_CH',
+                      ).format(point.month).replaceAll('.', ''),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                        fontWeight: isSelected ? FontWeight.w800 : null,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat(
-                    'MMM',
-                    'de_CH',
-                  ).format(point.month).replaceAll('.', ''),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: isSelected ? FontWeight.w800 : null,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
