@@ -30,7 +30,7 @@ class ExpenseSectionCard extends StatelessWidget {
         iconColor: Theme.of(context).colorScheme.primary,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
         expandable: true,
-        onEdit: () => showAppBottomSheet(
+        onHeaderTap: () => showAppBottomSheet(
           context: context,
           builder: (_) => AddExpenseNodeDialog(
             parentId: rootNode.parentId,

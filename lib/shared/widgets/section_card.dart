@@ -152,9 +152,7 @@ class _SectionCardBodyState extends State<_SectionCardBody> {
       ),
     );
 
-    final headerWithInteraction = widget.expandable
-        ? header
-        : widget.onHeaderTap != null
+    final headerWithInteraction = widget.onHeaderTap != null
         ? InkWell(
             onTap: widget.onHeaderTap,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),

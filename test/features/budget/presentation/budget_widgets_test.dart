@@ -10,6 +10,7 @@ import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
 import 'package:stutz/features/budget/presentation/budget_planning_screen.dart';
 import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_expense_node_dialog.dart';
+import 'package:stutz/features/budget/presentation/dialogs/add_income_dialog.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dialog.dart';
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_item_row.dart';
@@ -158,7 +159,33 @@ void main() {
     expect(find.text('Wohnen'), findsOneWidget);
     expect(find.text('Miete'), findsOneWidget);
     expect(find.byIcon(Icons.folder_open), findsOneWidget);
+    expect(find.byIcon(Icons.edit_outlined), findsNothing);
     expect(find.text('+ Eintrag hinzufügen'), findsOneWidget);
+  });
+
+  testWidgets('tapping a main expense group opens its edit sheet', (
+    tester,
+  ) async {
+    const root = ExpenseNode(id: 'housing', name: 'Wohnen');
+
+    await tester.pumpWidget(
+      const ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: ExpenseSectionCard(
+              rootNode: root,
+              monthlyTotal: 0,
+              yearlyTotal: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Wohnen'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddExpenseNodeDialog), findsOneWidget);
   });
 
   testWidgets('expense groups can collapse and reopen their children', (
@@ -311,6 +338,43 @@ void main() {
 
     expect(find.text('Pflichtfeld'), findsNWidgets(2));
   });
+
+  testWidgets(
+    'edit sheets rely on their close icon instead of a cancel action',
+    (tester) async {
+      const group = ExpenseNode(id: 'group', name: 'Wohnen');
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(body: AddExpenseNodeDialog(existingNode: group)),
+          ),
+        ),
+      );
+      expect(find.text('Abbrechen'), findsNothing);
+      expect(find.text('Speichern'), findsOneWidget);
+      expect(find.byTooltip('Schließen'), findsOneWidget);
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: AddIncomeDialog(
+                existingItem: IncomeSource(
+                  id: 'income',
+                  name: 'Lohn',
+                  amount: 1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Abbrechen'), findsNothing);
+      expect(find.text('Speichern'), findsOneWidget);
+      expect(find.byTooltip('Schließen'), findsOneWidget);
+    },
+  );
 
   testWidgets('group deletion warns before submitting the delete attempt', (
     tester,

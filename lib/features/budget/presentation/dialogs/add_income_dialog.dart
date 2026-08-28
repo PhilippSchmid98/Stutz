@@ -104,12 +104,14 @@ class AddIncomeDialog extends HookConsumerWidget {
                   },
           ),
         if (isEdit) const Spacer(),
-        AppTextButton(
-          label: 'Abbrechen',
-          foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          onPressed: isSaving ? null : () => Navigator.pop(context),
-        ),
-        const SizedBox(width: 8),
+        if (!isEdit) ...[
+          AppTextButton(
+            label: 'Abbrechen',
+            foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            onPressed: isSaving ? null : () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           child: AppPrimaryButton(
             label: 'Speichern',
