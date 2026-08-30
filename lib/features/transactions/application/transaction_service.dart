@@ -13,32 +13,60 @@ part 'transaction_service.g.dart';
 
 class PaginatedTransactionsState {
   final List<DailyTransactions> groupedDays;
-  final List<AppTransaction> rawTransactions; // Beibehalten für den Grouper
-  final QueryDocumentSnapshot? lastSnapshot;
-  final bool hasReachedMax;
-  final bool isLoadingMore;
-  final Object? loadMoreError;
+  final List<AppTransaction> rawTransactions;
+  final QueryDocumentSnapshot? newestSnapshot;
+  final QueryDocumentSnapshot? oldestSnapshot;
+  final bool hasReachedNewest;
+  final bool hasReachedOldest;
+  final bool isLoadingNewer;
+  final bool isLoadingOlder;
+  final Object? loadNewerError;
+  final Object? loadOlderError;
   final bool isLoadingMonth;
   final Object? loadMonthError;
 
   PaginatedTransactionsState({
     required this.groupedDays,
     required this.rawTransactions,
-    this.lastSnapshot,
-    required this.hasReachedMax,
-    this.isLoadingMore = false,
-    this.loadMoreError,
+    this.newestSnapshot,
+    this.oldestSnapshot,
+    bool? hasReachedNewest,
+    bool? hasReachedOldest,
+    bool? hasReachedMax,
+    bool? isLoadingNewer,
+    bool? isLoadingOlder,
+    bool? isLoadingMore,
+    this.loadNewerError,
+    Object? loadOlderError,
+    Object? loadMoreError,
     this.isLoadingMonth = false,
     this.loadMonthError,
-  });
+  }) : hasReachedNewest = hasReachedNewest ?? false,
+       hasReachedOldest = hasReachedOldest ?? hasReachedMax ?? false,
+       isLoadingNewer = isLoadingNewer ?? false,
+       isLoadingOlder = isLoadingOlder ?? isLoadingMore ?? false,
+       loadOlderError = loadOlderError ?? loadMoreError;
+
+  QueryDocumentSnapshot? get lastSnapshot => oldestSnapshot;
+  bool get hasReachedMax => hasReachedOldest;
+  bool get isLoadingMore => isLoadingOlder;
+  Object? get loadMoreError => loadOlderError;
 
   PaginatedTransactionsState copyWith({
     List<DailyTransactions>? groupedDays,
     List<AppTransaction>? rawTransactions,
-    QueryDocumentSnapshot? lastSnapshot,
-    bool? hasReachedMax,
+    QueryDocumentSnapshot? newestSnapshot,
+    QueryDocumentSnapshot? oldestSnapshot,
+    bool? hasReachedNewest,
+    bool? hasReachedOldest,
+    bool? isLoadingNewer,
+    bool? isLoadingOlder,
     bool? isLoadingMore,
+    Object? loadNewerError,
+    bool clearLoadNewerError = false,
+    Object? loadOlderError,
     Object? loadMoreError,
+    bool clearLoadOlderError = false,
     bool clearLoadMoreError = false,
     bool? isLoadingMonth,
     Object? loadMonthError,
@@ -47,12 +75,18 @@ class PaginatedTransactionsState {
     return PaginatedTransactionsState(
       groupedDays: groupedDays ?? this.groupedDays,
       rawTransactions: rawTransactions ?? this.rawTransactions,
-      lastSnapshot: lastSnapshot ?? this.lastSnapshot,
-      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      loadMoreError: clearLoadMoreError
+      newestSnapshot: newestSnapshot ?? this.newestSnapshot,
+      oldestSnapshot: oldestSnapshot ?? this.oldestSnapshot,
+      hasReachedNewest: hasReachedNewest ?? this.hasReachedNewest,
+      hasReachedOldest: hasReachedOldest ?? this.hasReachedOldest,
+      isLoadingNewer: isLoadingNewer ?? this.isLoadingNewer,
+      isLoadingOlder: isLoadingOlder ?? isLoadingMore ?? this.isLoadingOlder,
+      loadNewerError: clearLoadNewerError
           ? null
-          : loadMoreError ?? this.loadMoreError,
+          : loadNewerError ?? this.loadNewerError,
+      loadOlderError: clearLoadOlderError || clearLoadMoreError
+          ? null
+          : loadOlderError ?? loadMoreError ?? this.loadOlderError,
       isLoadingMonth: isLoadingMonth ?? this.isLoadingMonth,
       loadMonthError: clearLoadMonthError
           ? null
@@ -104,56 +138,115 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
     return PaginatedTransactionsState(
       groupedDays: grouped,
       rawTransactions: allTransactions,
-      lastSnapshot: docs.isNotEmpty ? docs.last : null,
-      hasReachedMax: docs.length < _pageSize,
+      newestSnapshot: docs.isEmpty ? null : docs.first,
+      oldestSnapshot: docs.isEmpty ? null : docs.last,
+      hasReachedNewest: true,
+      hasReachedOldest: docs.length < _pageSize,
     );
   }
 
-  Future<void> loadNextPage() async {
+  Future<void> loadOlderPage() async {
     final current = state.value;
     if (current == null ||
-        current.isLoadingMore ||
+        current.isLoadingOlder ||
+        current.isLoadingNewer ||
         current.isLoadingMonth ||
-        current.hasReachedMax) {
+        current.hasReachedOldest) {
       return;
     }
 
     state = AsyncData(
-      current.copyWith(isLoadingMore: true, clearLoadMoreError: true),
+      current.copyWith(isLoadingOlder: true, clearLoadOlderError: true),
     );
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
       final categories = await ref.read(categoryLookupsProvider.future);
-      final nextState = await _fetchPage(
-        repo: repo,
-        categories: categories,
+      final docs = await repo.getPagedTransactions(
+        limit: _pageSize,
         startAfter: current.lastSnapshot,
-        currentTransactions: current.rawTransactions,
+      );
+      final transactions = _mergeTransactions(
+        current.rawTransactions,
+        docs.map(TransactionMapper.fromDocument).toList(),
       );
 
       state = AsyncData(
-        nextState.copyWith(isLoadingMore: false, clearLoadMoreError: true),
+        current.copyWith(
+          rawTransactions: transactions,
+          groupedDays: _groupTransactions(transactions, categories),
+          oldestSnapshot: docs.isEmpty ? null : docs.last,
+          hasReachedOldest: docs.length < _pageSize,
+          isLoadingOlder: false,
+          clearLoadOlderError: true,
+        ),
       );
     } catch (e) {
       state = AsyncData(
-        current.copyWith(isLoadingMore: false, loadMoreError: e),
+        current.copyWith(isLoadingOlder: false, loadOlderError: e),
+      );
+    }
+  }
+
+  Future<void> loadNextPage() => loadOlderPage();
+
+  Future<void> loadNewerPage() async {
+    final current = state.value;
+    if (current == null ||
+        current.isLoadingNewer ||
+        current.isLoadingOlder ||
+        current.isLoadingMonth ||
+        current.hasReachedNewest) {
+      return;
+    }
+
+    state = AsyncData(
+      current.copyWith(isLoadingNewer: true, clearLoadNewerError: true),
+    );
+
+    try {
+      final repo = ref.read(transactionRepositoryProvider);
+      final categories = await ref.read(categoryLookupsProvider.future);
+      final docs = await repo.getPagedTransactions(
+        limit: _pageSize,
+        startAfter: current.newestSnapshot,
+        descending: false,
+      );
+      final transactions = _mergeTransactions(
+        current.rawTransactions,
+        docs.map(TransactionMapper.fromDocument).toList(),
+      );
+
+      state = AsyncData(
+        current.copyWith(
+          rawTransactions: transactions,
+          groupedDays: _groupTransactions(transactions, categories),
+          newestSnapshot: docs.isEmpty ? null : docs.last,
+          hasReachedNewest: docs.length < _pageSize,
+          isLoadingNewer: false,
+          clearLoadNewerError: true,
+        ),
+      );
+    } catch (e) {
+      state = AsyncData(
+        current.copyWith(isLoadingNewer: false, loadNewerError: e),
       );
     }
   }
 
   Future<bool> ensureMonthLoaded(DateTime month) async {
+    return ensureMonthWindowLoaded(month);
+  }
+
+  Future<bool> ensureMonthWindowLoaded(
+    DateTime month, {
+    DateTime? olderMonth,
+    DateTime? newerMonth,
+  }) async {
     final current = state.value;
     if (current == null || current.isLoadingMonth) return false;
 
     final normalizedMonth = DateTime(month.year, month.month);
-    final isLoaded = current.groupedDays.any(
-      (group) =>
-          group.date.year == normalizedMonth.year &&
-          group.date.month == normalizedMonth.month,
-    );
-    if (isLoaded) return true;
-
     state = AsyncData(
       current.copyWith(isLoadingMonth: true, clearLoadMonthError: true),
     );
@@ -161,31 +254,48 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
     try {
       final repo = ref.read(transactionRepositoryProvider);
       final categories = await ref.read(categoryLookupsProvider.future);
-      final monthTransactions = await repo.getTransactionsForMonth(
+      final monthsToLoad = <DateTime>{
         normalizedMonth,
+        if (olderMonth != null) DateTime(olderMonth.year, olderMonth.month),
+        if (newerMonth != null) DateTime(newerMonth.year, newerMonth.month),
+      };
+      final monthPages = await Future.wait(
+        monthsToLoad.map(repo.getTransactionsForMonth),
       );
+      final oldestTransaction = await repo.getOldestTransaction();
+      final newestTransaction = await repo.getNewestTransaction();
       final transactions = _mergeTransactions(
-        current.rawTransactions,
-        monthTransactions,
+        const [],
+        monthPages.expand((page) => page.transactions).toList(),
       );
-      final grouped = const TransactionGrouper().groupByDay(
-        transactions,
-        categories,
-      );
+      final grouped = _groupTransactions(transactions, categories);
+      final hasReachedOldest =
+          transactions.isEmpty ||
+          oldestTransaction == null ||
+          transactions.any(
+            (transaction) => transaction.id == oldestTransaction.id,
+          );
+      final hasReachedNewest =
+          transactions.isEmpty ||
+          newestTransaction == null ||
+          transactions.any(
+            (transaction) => transaction.id == newestTransaction.id,
+          );
+      final newestPage = _findBoundaryPage(monthPages, newest: true);
+      final oldestPage = _findBoundaryPage(monthPages, newest: false);
 
       state = AsyncData(
-        current.copyWith(
+        PaginatedTransactionsState(
           rawTransactions: transactions,
           groupedDays: grouped,
+          newestSnapshot: newestPage?.newestSnapshot,
+          oldestSnapshot: oldestPage?.oldestSnapshot,
+          hasReachedNewest: hasReachedNewest,
+          hasReachedOldest: hasReachedOldest,
           isLoadingMonth: false,
-          clearLoadMonthError: true,
         ),
       );
-      return grouped.any(
-        (group) =>
-            group.date.year == normalizedMonth.year &&
-            group.date.month == normalizedMonth.month,
-      );
+      return transactions.isNotEmpty;
     } catch (error) {
       state = AsyncData(
         current.copyWith(isLoadingMonth: false, loadMonthError: error),
@@ -205,6 +315,32 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
       transactionsById[transaction.id] = transaction;
     }
     return transactionsById.values.toList();
+  }
+
+  List<DailyTransactions> _groupTransactions(
+    List<AppTransaction> transactions,
+    List<CategoryLookup> categories,
+  ) => const TransactionGrouper().groupByDay(transactions, categories);
+
+  TransactionMonthPage? _findBoundaryPage(
+    List<TransactionMonthPage> pages, {
+    required bool newest,
+  }) {
+    final populatedPages = pages.where((page) => page.transactions.isNotEmpty);
+    if (populatedPages.isEmpty) return null;
+
+    return populatedPages.reduce((current, candidate) {
+      final currentDate = newest
+          ? current.transactions.first.dateTime
+          : current.transactions.last.dateTime;
+      final candidateDate = newest
+          ? candidate.transactions.first.dateTime
+          : candidate.transactions.last.dateTime;
+      final isCandidateBoundary = newest
+          ? candidateDate.isAfter(currentDate)
+          : candidateDate.isBefore(currentDate);
+      return isCandidateBoundary ? candidate : current;
+    });
   }
 }
 

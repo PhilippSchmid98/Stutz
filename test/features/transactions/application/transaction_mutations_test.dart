@@ -111,9 +111,13 @@ class _FakeTransactionRepository implements TransactionRepository {
   getPagedTransactions({
     required int limit,
     QueryDocumentSnapshot<Object?>? startAfter,
+    bool descending = true,
   }) async => [];
 
   @override
-  Future<List<AppTransaction>> getTransactionsForMonth(DateTime month) async =>
-      [];
+  Future<AppTransaction?> getNewestTransaction() async => null;
+
+  @override
+  Future<TransactionMonthPage> getTransactionsForMonth(DateTime month) async =>
+      const TransactionMonthPage(transactions: []);
 }

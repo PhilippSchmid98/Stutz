@@ -9,6 +9,18 @@ import 'transaction_month_summary_mapper.dart';
 
 part 'transaction_repository.g.dart';
 
+class TransactionMonthPage {
+  final List<AppTransaction> transactions;
+  final QueryDocumentSnapshot? newestSnapshot;
+  final QueryDocumentSnapshot? oldestSnapshot;
+
+  const TransactionMonthPage({
+    required this.transactions,
+    this.newestSnapshot,
+    this.oldestSnapshot,
+  });
+}
+
 class TransactionRepository {
   final String userId;
   final FirebaseFirestore _firestore;
@@ -64,8 +76,11 @@ class TransactionRepository {
   getPagedTransactions({
     required int limit,
     QueryDocumentSnapshot? startAfter,
+    bool descending = true,
   }) async {
-    var query = _collection.orderBy('dateTime', descending: true).limit(limit);
+    var query = _collection
+        .orderBy('dateTime', descending: descending)
+        .limit(limit);
 
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
@@ -77,7 +92,7 @@ class TransactionRepository {
 
   /// Loads a calendar month directly so month navigation does not need to
   /// page through every newer transaction first.
-  Future<List<AppTransaction>> getTransactionsForMonth(DateTime month) async {
+  Future<TransactionMonthPage> getTransactionsForMonth(DateTime month) async {
     final start = TransactionMonth.startOfMonth(month);
     final end = TransactionMonth.startOfMonth(
       DateTime(month.year, month.month + 1),
@@ -87,7 +102,21 @@ class TransactionRepository {
         .where('dateTime', isLessThan: end)
         .orderBy('dateTime', descending: true)
         .get();
-    return snapshot.docs.map(TransactionMapper.fromDocument).toList();
+    return TransactionMonthPage(
+      transactions: snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+      newestSnapshot: snapshot.docs.isEmpty ? null : snapshot.docs.first,
+      oldestSnapshot: snapshot.docs.isEmpty ? null : snapshot.docs.last,
+    );
+  }
+
+  Future<AppTransaction?> getNewestTransaction() async {
+    final snapshot = await _collection
+        .orderBy('dateTime', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return TransactionMapper.fromDocument(snapshot.docs.first);
   }
 
   /// Holt die absolut älteste Transaktion, um das Startdatum für die Monatsliste zu kennen.

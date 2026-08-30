@@ -357,12 +357,16 @@ class _FakePaginatedTransactionList extends PaginatedTransactionList {
   }
 
   @override
-  Future<void> loadNextPage() async {
+  Future<void> loadOlderPage() async {
     _loadNextPageCalls++;
   }
 
   @override
-  Future<bool> ensureMonthLoaded(DateTime month) async => false;
+  Future<bool> ensureMonthWindowLoaded(
+    DateTime month, {
+    DateTime? olderMonth,
+    DateTime? newerMonth,
+  }) async => false;
 }
 
 PaginatedTransactionsState _emptyTransactionState() {
