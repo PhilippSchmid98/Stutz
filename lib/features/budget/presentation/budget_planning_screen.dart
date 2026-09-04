@@ -10,6 +10,7 @@ import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dia
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_section_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/income_section_card.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
@@ -51,6 +52,7 @@ class BudgetPlanningScreen extends ConsumerWidget {
     return AppBar(
       title: const Text('Budget Planung'),
       actions: [
+        const PendingTransactionDraftsIndicator(),
         const CloudStatusIcon(),
         IconButton(
           icon: const Icon(Icons.logout),

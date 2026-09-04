@@ -19,6 +19,9 @@ import 'package:stutz/features/transactions/presentation/widgets/daily_transacti
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
 import 'package:stutz/features/transactions/presentation/widgets/transaction_item.dart';
 import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
+import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 void main() {
@@ -255,6 +258,71 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Keine Ausgaben.'), findsOneWidget);
+  });
+
+  testWidgets('pending draft indicator displays zero and expands for counts', (
+    tester,
+  ) async {
+    Future<void> pumpWithDrafts(int count) {
+      return tester.pumpWidget(
+        ProviderScope(
+          key: ValueKey(count),
+          overrides: [
+            pendingTransactionDraftsProvider.overrideWith(
+              (ref) => Stream.value(
+                List.generate(
+                  count,
+                  (index) => TransactionDraft(
+                    id: '$index',
+                    sourcePackage: 'test.package',
+                    sourceDedupeKey: '$index',
+                    capturedAt: DateTime(2025, 1, 1),
+                    merchant: 'Store',
+                    normalizedMerchant: 'store',
+                    amountMinor: 100,
+                    occurredAt: DateTime(2025, 1, 1),
+                    currencyCode: 'CHF',
+                    parserVersion: 1,
+                    status: TransactionDraftStatus.pending,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: AppBar(
+                actions: const [PendingTransactionDraftsIndicator()],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await pumpWithDrafts(0);
+    await tester.pumpAndSettle();
+    expect(find.text('0'), findsOneWidget);
+    final zeroWidth = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .width;
+    final zeroHeight = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .height;
+    expect(zeroWidth, zeroHeight);
+
+    await pumpWithDrafts(10);
+    await tester.pumpAndSettle();
+    expect(find.text('10'), findsOneWidget);
+    final tenWidth = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .width;
+    final tenHeight = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .height;
+
+    expect(tenWidth, greaterThan(tenHeight));
+    expect(tenHeight, zeroHeight);
   });
 
   testWidgets(

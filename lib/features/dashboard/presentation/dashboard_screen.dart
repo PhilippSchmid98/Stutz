@@ -6,6 +6,7 @@ import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/application/dashboard_providers.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
 import 'package:stutz/features/dashboard/presentation/dashboard_category_detail_screen.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
@@ -35,7 +36,7 @@ class DashboardScreen extends HookConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Übersicht'),
-        actions: const [CloudStatusIcon()],
+        actions: const [PendingTransactionDraftsIndicator(), CloudStatusIcon()],
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,

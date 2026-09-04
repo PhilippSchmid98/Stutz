@@ -7,9 +7,8 @@ import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
-import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
 import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
-import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
@@ -424,7 +423,7 @@ class _TransactionAppBar extends StatelessWidget
       elevation: 0,
       actions: const [
         _NotificationCaptureAccessAction(),
-        _PendingDraftsAction(),
+        PendingTransactionDraftsIndicator(),
         CloudStatusIcon(),
       ],
       bottom: PreferredSize(
@@ -433,26 +432,6 @@ class _TransactionAppBar extends StatelessWidget
           color: Theme.of(context).colorScheme.outlineVariant,
           height: 1,
         ),
-      ),
-    );
-  }
-}
-
-class _PendingDraftsAction extends ConsumerWidget {
-  const _PendingDraftsAction();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final draftsAsync = ref.watch(pendingTransactionDraftsProvider);
-    final drafts = draftsAsync.asData?.value;
-    if (drafts == null || drafts.isEmpty) return const SizedBox.shrink();
-
-    return Badge(
-      label: Text('${drafts.length}'),
-      child: IconButton(
-        tooltip: 'Erfasste Ausgaben prüfen',
-        onPressed: () => showTransactionDraftReviewSession(context, drafts),
-        icon: const Icon(Icons.playlist_add_check_outlined),
       ),
     );
   }
