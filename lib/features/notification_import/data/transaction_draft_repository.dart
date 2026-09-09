@@ -40,7 +40,9 @@ class TransactionDraftRepository implements TransactionDraftStore {
   List<TransactionDraft> _pendingDraftsFromSnapshot(
     QuerySnapshot<Map<String, dynamic>> snapshot,
   ) {
-    final drafts = snapshot.docs.map(TransactionDraftMapper.fromDocument).toList();
+    final drafts = snapshot.docs
+        .map(TransactionDraftMapper.fromDocument)
+        .toList();
     drafts.sort((left, right) => left.occurredAt.compareTo(right.occurredAt));
     return drafts;
   }

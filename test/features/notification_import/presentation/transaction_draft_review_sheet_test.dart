@@ -113,7 +113,9 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            appBar: AppBar(actions: const [PendingTransactionDraftsIndicator()]),
+            appBar: AppBar(
+              actions: const [PendingTransactionDraftsIndicator()],
+            ),
           ),
         ),
       ),

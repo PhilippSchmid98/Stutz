@@ -131,7 +131,9 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
       );
     }
     if (!_hasCompletedStartupSync) {
-      return const AppLoadingScreen(message: 'Erfasste Ausgaben werden geladen');
+      return const AppLoadingScreen(
+        message: 'Erfasste Ausgaben werden geladen',
+      );
     }
     return const HomeScreen();
   }
@@ -189,10 +191,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
       if (!mounted || _isReviewOpen) return;
 
       _isReviewOpen = true;
-      final result = await showTransactionDraftReviewSession(
-        context,
-        drafts,
-      );
+      final result = await showTransactionDraftReviewSession(context, drafts);
       if (!mounted) return;
 
       _handledDraftIds.addAll(result.handledDraftIds);

@@ -6,7 +6,9 @@ import 'package:stutz/features/notification_import/domain/entities/transaction_d
 class MethodChannelNotificationCaptureGateway
     implements NotificationCaptureGateway {
   static const _channel = MethodChannel('ch.stutz.app/notification_capture');
-  static const _events = EventChannel('ch.stutz.app/notification_capture_events');
+  static const _events = EventChannel(
+    'ch.stutz.app/notification_capture_events',
+  );
 
   const MethodChannelNotificationCaptureGateway();
 
@@ -14,11 +16,12 @@ class MethodChannelNotificationCaptureGateway
   bool get isSupported => true;
 
   @override
-  Stream<void> get draftCapturedEvents => _events
-      .receiveBroadcastStream()
-      .map((event) {
+  Stream<void> get draftCapturedEvents =>
+      _events.receiveBroadcastStream().map((event) {
         if (event != 'captured') {
-          throw const FormatException('Notification capture returned an invalid event');
+          throw const FormatException(
+            'Notification capture returned an invalid event',
+          );
         }
       });
 
