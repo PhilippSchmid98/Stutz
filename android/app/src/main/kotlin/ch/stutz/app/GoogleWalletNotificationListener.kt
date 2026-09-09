@@ -48,7 +48,9 @@ class GoogleWalletNotificationListener : NotificationListenerService() {
             notificationKey = notification.key,
             postedAtMillis = notification.postTime,
         ) ?: return
-        queue.enqueue(draft)
+        if (queue.enqueue(draft)) {
+            onDraftCaptured?.invoke()
+        }
     }
 
     private fun logDebugNotification(notification: StatusBarNotification) {
@@ -72,11 +74,17 @@ class GoogleWalletNotificationListener : NotificationListenerService() {
 
     companion object {
         private var activeInstance: GoogleWalletNotificationListener? = null
+        @Volatile
+        private var onDraftCaptured: (() -> Unit)? = null
 
         private const val DIAGNOSTIC_TAG = "StutzWalletDiagnostic"
 
         fun captureActiveNotifications() {
             activeInstance?.captureActiveNotificationsInternal()
+        }
+
+        fun setOnDraftCapturedListener(listener: (() -> Unit)?) {
+            onDraftCaptured = listener
         }
     }
 }

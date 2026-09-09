@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stutz/features/notification_import/application/draft_sync_service.dart';
 import 'package:stutz/features/notification_import/application/notification_capture_gateway.dart';
+import 'package:stutz/features/notification_import/application/notification_draft_sync.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
 import 'package:stutz/features/notification_import/domain/repositories/transaction_draft_store.dart';
 
@@ -37,6 +40,26 @@ void main() {
     expect(store.upsertedDraftIds, ['first']);
     expect(gateway.acknowledgedDraftIds, isEmpty);
   });
+
+  test('coalesces a capture event received during synchronization', () async {
+    final gateway = _BlockingCaptureGateway();
+    var synchronizedCount = 0;
+    final synchronizer = NotificationDraftSynchronizer(
+      captureGateway: gateway,
+      draftStore: _FakeDraftStore(),
+      onSynchronized: () => synchronizedCount += 1,
+    );
+
+    final initialSync = synchronizer.synchronize('user-1');
+    await gateway.firstCaptureStarted.future;
+    final captureEventSync = synchronizer.synchronize('user-1');
+    gateway.continueFirstCapture.complete();
+
+    await Future.wait([initialSync, captureEventSync]);
+
+    expect(gateway.captureCallCount, 2);
+    expect(synchronizedCount, 2);
+  });
 }
 
 TransactionDraft _draft(String id) {
@@ -63,6 +86,9 @@ class _FakeCaptureGateway implements NotificationCaptureGateway {
 
   @override
   bool get isSupported => true;
+
+  @override
+  Stream<void> get draftCapturedEvents => const Stream<void>.empty();
 
   @override
   Future<void> acknowledgeSyncedDrafts(List<String> draftIds) async {
@@ -102,5 +128,22 @@ class _FakeDraftStore implements TransactionDraftStore {
   Future<void> upsertCapturedDraft(TransactionDraft draft) async {
     if (draft.id == failForId) throw StateError('Firestore unavailable');
     upsertedDraftIds.add(draft.id);
+  }
+}
+
+class _BlockingCaptureGateway extends _FakeCaptureGateway {
+  final firstCaptureStarted = Completer<void>();
+  final continueFirstCapture = Completer<void>();
+  var captureCallCount = 0;
+
+  _BlockingCaptureGateway() : super(const []);
+
+  @override
+  Future<void> captureActiveNotifications() async {
+    captureCallCount += 1;
+    if (captureCallCount == 1) {
+      firstCaptureStarted.complete();
+      await continueFirstCapture.future;
+    }
   }
 }

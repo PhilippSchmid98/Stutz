@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/app/app_loading_screen.dart';
@@ -6,7 +8,9 @@ import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/auth/presentation/login_screen.dart';
 import 'package:stutz/features/auth/presentation/welcome_screen.dart';
 import 'package:stutz/features/notification_import/application/notification_draft_sync.dart';
+import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
 import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/data/transaction_draft_repository.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
 import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
 
@@ -21,7 +25,6 @@ class AppRouter extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authStateProvider);
-    ref.watch(synchronizeNotificationDraftsProvider);
 
     // Detect involuntary logouts (e.g. account disabled in Firebase Console).
     // If the transition from signed-in → signed-out was NOT voluntary, show a
@@ -63,18 +66,37 @@ class _AuthenticatedHome extends ConsumerStatefulWidget {
   ConsumerState<_AuthenticatedHome> createState() => _AuthenticatedHomeState();
 }
 
-class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome> {
+class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
+    with WidgetsBindingObserver {
   final Set<String> _handledDraftIds = {};
   final Set<String> _deferredDraftIds = {};
   List<TransactionDraft> _latestPendingDrafts = const [];
+  late final NotificationDraftSynchronizer _synchronizer;
   bool _isReviewOpen = false;
   bool _reviewIsScheduled = false;
+  bool _hasCompletedStartupSync = false;
+  bool _hasStartedStartupReview = false;
+  Object? _startupSyncError;
+  late final StreamSubscription<void> _captureEventsSubscription;
   late final ProviderSubscription<AsyncValue<List<TransactionDraft>>>
   _pendingDraftsSubscription;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final gateway = ref.read(notificationCaptureGatewayProvider);
+    _synchronizer = NotificationDraftSynchronizer(
+      captureGateway: gateway,
+      draftStore: ref.read(transactionDraftRepositoryProvider),
+      onSynchronized: () {
+        if (mounted) ref.invalidate(pendingTransactionDraftsProvider);
+      },
+    );
+    _captureEventsSubscription = gateway.draftCapturedEvents.listen(
+      (_) => _synchronizeInBackground(),
+      onError: (_, __) {},
+    );
     _pendingDraftsSubscription = ref
         .listenManual<AsyncValue<List<TransactionDraft>>>(
           pendingTransactionDraftsProvider,
@@ -82,41 +104,94 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome> {
             final drafts = next.asData?.value;
             if (drafts == null) return;
             _latestPendingDrafts = drafts;
-            _startReviewIfNeeded();
+            _deferredDraftIds.removeWhere(
+              (id) => !drafts.any((draft) => draft.id == id),
+            );
+            if (mounted) setState(() {});
           },
           fireImmediately: true,
         );
+    _synchronizeOnStartup();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _captureEventsSubscription.cancel();
     _pendingDraftsSubscription.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_startupSyncError != null) {
+      return _RouterErrorScreen(
+        message: 'Erfasste Ausgaben konnten nicht geladen werden.',
+        onRetry: _synchronizeOnStartup,
+      );
+    }
+    if (!_hasCompletedStartupSync) {
+      return const AppLoadingScreen(message: 'Erfasste Ausgaben werden geladen');
+    }
     return const HomeScreen();
   }
 
-  void _startReviewIfNeeded() {
-    if (_isReviewOpen || _reviewIsScheduled) return;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _hasCompletedStartupSync) {
+      _synchronizeInBackground();
+    }
+  }
 
-    final drafts = _eligibleDrafts;
-    if (drafts.isEmpty) return;
+  Future<void> _synchronizeOnStartup() async {
+    setState(() {
+      _startupSyncError = null;
+      _hasCompletedStartupSync = false;
+    });
+    try {
+      await _synchronizer.synchronize(ref.read(currentUserIdProvider)!);
+      final drafts = await ref
+          .read(transactionDraftRepositoryProvider)
+          .getPendingDrafts();
+      if (!mounted) return;
+      setState(() {
+        _latestPendingDrafts = drafts;
+        _hasCompletedStartupSync = true;
+      });
+      _startStartupReviewIfNeeded();
+    } catch (error) {
+      if (mounted) setState(() => _startupSyncError = error);
+    }
+  }
+
+  void _synchronizeInBackground() {
+    final userId = ref.read(currentUserIdProvider);
+    if (userId == null) return;
+    _synchronizer.synchronize(userId).catchError((_) {});
+  }
+
+  void _startStartupReviewIfNeeded() {
+    if (!_hasCompletedStartupSync || _hasStartedStartupReview) {
+      return;
+    }
+    final startupDrafts = _eligibleDrafts;
+    if (startupDrafts.isEmpty) return;
+    _hasStartedStartupReview = true;
+    _startReview(startupDrafts);
+  }
+
+  void _startReview(List<TransactionDraft> drafts) {
+    if (_isReviewOpen || _reviewIsScheduled) return;
 
     _reviewIsScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       _reviewIsScheduled = false;
       if (!mounted || _isReviewOpen) return;
 
-      final sessionDrafts = _eligibleDrafts;
-      if (sessionDrafts.isEmpty) return;
-
       _isReviewOpen = true;
       final result = await showTransactionDraftReviewSession(
         context,
-        sessionDrafts,
+        drafts,
       );
       if (!mounted) return;
 
@@ -129,7 +204,6 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome> {
         );
       }
       _isReviewOpen = false;
-      _startReviewIfNeeded();
     });
   }
 

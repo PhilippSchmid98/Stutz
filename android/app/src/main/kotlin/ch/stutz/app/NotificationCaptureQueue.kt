@@ -33,8 +33,8 @@ class NotificationCaptureQueue(context: Context) {
         preferences.edit().remove(ACTIVE_OWNER_KEY).apply()
     }
 
-    fun enqueue(draft: CapturedTransactionDraft) {
-        val ownerId = preferences.getString(ACTIVE_OWNER_KEY, null) ?: return
+    fun enqueue(draft: CapturedTransactionDraft): Boolean {
+        val ownerId = preferences.getString(ACTIVE_OWNER_KEY, null) ?: return false
         val values = ContentValues().apply {
             put("draft_id", draft.id)
             put("owner_id", ownerId)
@@ -48,12 +48,12 @@ class NotificationCaptureQueue(context: Context) {
             put("currency_code", draft.currencyCode)
             put("parser_version", draft.parserVersion)
         }
-        database.writableDatabase.insertWithOnConflict(
+        return database.writableDatabase.insertWithOnConflict(
             TABLE_DRAFTS,
             null,
             values,
             SQLiteDatabase.CONFLICT_IGNORE,
-        )
+        ) != -1L
     }
 
     fun listUnsyncedDrafts(): List<CapturedTransactionDraft> {

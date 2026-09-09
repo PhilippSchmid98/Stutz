@@ -27,15 +27,22 @@ class TransactionDraftRepository implements TransactionDraftStore {
     return _collection
         .where('status', isEqualTo: TransactionDraftStatus.pending.name)
         .snapshots()
-        .map((snapshot) {
-          final drafts = snapshot.docs
-              .map(TransactionDraftMapper.fromDocument)
-              .toList();
-          drafts.sort(
-            (left, right) => left.occurredAt.compareTo(right.occurredAt),
-          );
-          return drafts;
-        });
+        .map(_pendingDraftsFromSnapshot);
+  }
+
+  Future<List<TransactionDraft>> getPendingDrafts() async {
+    final snapshot = await _collection
+        .where('status', isEqualTo: TransactionDraftStatus.pending.name)
+        .get();
+    return _pendingDraftsFromSnapshot(snapshot);
+  }
+
+  List<TransactionDraft> _pendingDraftsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final drafts = snapshot.docs.map(TransactionDraftMapper.fromDocument).toList();
+    drafts.sort((left, right) => left.occurredAt.compareTo(right.occurredAt));
+    return drafts;
   }
 
   Future<String?> getSuggestedExpenseNodeId(String normalizedMerchant) async {

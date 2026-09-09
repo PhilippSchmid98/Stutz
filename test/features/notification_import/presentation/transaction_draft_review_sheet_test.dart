@@ -8,6 +8,7 @@ import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft_confirmation.dart';
 import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/features/notification_import/presentation/transaction_draft_review_sheet.dart';
 
 void main() {
@@ -94,6 +95,37 @@ void main() {
     expect(mutations.confirmedDraftIds, ['first']);
     expect(find.text('2 von 2'), findsOneWidget);
     expect(find.text('Migros'), findsNWidgets(2));
+  });
+
+  testWidgets('opens draft review only after tapping the indicator', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pendingTransactionDraftsProvider.overrideWith(
+            (ref) => Stream.value([_draft('first', 'Coop Pronto')]),
+          ),
+          selectableCategoriesProvider.overrideWith((ref) async => []),
+          merchantCategorySuggestionProvider(
+            'coop pronto',
+          ).overrideWith((ref) async => null),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            appBar: AppBar(actions: const [PendingTransactionDraftsIndicator()]),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Erfasste Ausgabe prüfen'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('pending-drafts-indicator')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Erfasste Ausgabe prüfen'), findsOneWidget);
   });
 }
 
