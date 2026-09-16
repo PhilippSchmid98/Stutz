@@ -113,7 +113,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'73577612a7c4b4ddd8b5d6e5c018a527c54ebf66';
+String _$authControllerHash() => r'c04a1b14429d4b2da8e37b12da7dea6f14f08b4f';
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.

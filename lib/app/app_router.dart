@@ -33,6 +33,15 @@ class AppRouter extends ConsumerWidget {
       final wasSignedIn = previous?.asData?.value != null;
       final isSignedOut = next is AsyncData && next.value == null;
 
+      if (isSignedOut) {
+        unawaited(
+          ref
+              .read(notificationCaptureGatewayProvider)
+              .clearActiveOwner()
+              .catchError((_) {}),
+        );
+      }
+
       if (wasSignedIn && isSignedOut) {
         final isVoluntary = ref.read(voluntarySignOutProvider);
         if (!isVoluntary) {
@@ -72,6 +81,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
   final Set<String> _deferredDraftIds = {};
   List<TransactionDraft> _latestPendingDrafts = const [];
   late final NotificationDraftSynchronizer _synchronizer;
+  late final String _userId;
   bool _isReviewOpen = false;
   bool _reviewIsScheduled = false;
   bool _hasCompletedStartupSync = false;
@@ -85,6 +95,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _userId = ref.read(currentUserIdProvider)!;
     final gateway = ref.read(notificationCaptureGatewayProvider);
     _synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
@@ -117,6 +128,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _synchronizer.cancel();
     _captureEventsSubscription.cancel();
     _pendingDraftsSubscription.close();
     super.dispose();
@@ -151,7 +163,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
       _hasCompletedStartupSync = false;
     });
     try {
-      await _synchronizer.synchronize(ref.read(currentUserIdProvider)!);
+      await _synchronizer.synchronize(_userId);
       final drafts = await ref
           .read(transactionDraftRepositoryProvider)
           .getPendingDrafts();
@@ -167,9 +179,7 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
   }
 
   void _synchronizeInBackground() {
-    final userId = ref.read(currentUserIdProvider);
-    if (userId == null) return;
-    _synchronizer.synchronize(userId).catchError((_) {});
+    _synchronizer.synchronize(_userId).catchError((_) {});
   }
 
   void _startStartupReviewIfNeeded() {
@@ -215,11 +225,27 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
       .toList();
 }
 
-class _SignedOutRouter extends ConsumerWidget {
+class _SignedOutRouter extends ConsumerStatefulWidget {
   const _SignedOutRouter();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SignedOutRouter> createState() => _SignedOutRouterState();
+}
+
+class _SignedOutRouterState extends ConsumerState<_SignedOutRouter> {
+  @override
+  void initState() {
+    super.initState();
+    unawaited(
+      ref
+          .read(notificationCaptureGatewayProvider)
+          .clearActiveOwner()
+          .catchError((_) {}),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final onboardingAsync = ref.watch(seenOnboardingProvider);
 
     return onboardingAsync.when(

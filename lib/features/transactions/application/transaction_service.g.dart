@@ -38,7 +38,7 @@ final class PaginatedTransactionListProvider
 }
 
 String _$paginatedTransactionListHash() =>
-    r'14fbfbf6ed0174ffde433c91f4bb0e0b1469882a';
+    r'f7c6ff169229d6618155114137b67fe450d6eaad';
 
 abstract class _$PaginatedTransactionList
     extends $AsyncNotifier<PaginatedTransactionsState> {

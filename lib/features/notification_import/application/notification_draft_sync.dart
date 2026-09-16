@@ -1,18 +1,13 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/notification_import/application/draft_sync_service.dart';
 import 'package:stutz/features/notification_import/application/notification_capture_gateway.dart';
-import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
-import 'package:stutz/features/notification_import/data/transaction_draft_repository.dart';
 import 'package:stutz/features/notification_import/domain/repositories/transaction_draft_store.dart';
-
-part 'notification_draft_sync.g.dart';
 
 class NotificationDraftSynchronizer {
   final DraftSyncService _service;
   final void Function() _onSynchronized;
   Future<void>? _activeSynchronization;
   bool _synchronizationRequested = false;
+  bool _isCancelled = false;
 
   NotificationDraftSynchronizer({
     required NotificationCaptureGateway captureGateway,
@@ -25,6 +20,8 @@ class NotificationDraftSynchronizer {
        _onSynchronized = onSynchronized;
 
   Future<void> synchronize(String userId) {
+    if (_isCancelled) return Future.value();
+
     final activeSynchronization = _activeSynchronization;
     if (activeSynchronization != null) {
       _synchronizationRequested = true;
@@ -46,29 +43,17 @@ class NotificationDraftSynchronizer {
     }
   }
 
+  void cancel() {
+    _isCancelled = true;
+    _synchronizationRequested = false;
+  }
+
   Future<void> _drain(String userId) async {
     do {
       _synchronizationRequested = false;
-      await _service.synchronize(userId);
+      await _service.synchronize(userId, isCurrent: () => !_isCancelled);
+      if (_isCancelled) return;
       _onSynchronized();
-    } while (_synchronizationRequested);
+    } while (_synchronizationRequested && !_isCancelled);
   }
-}
-
-@riverpod
-Future<void> synchronizeNotificationDrafts(Ref ref) async {
-  final gateway = ref.watch(notificationCaptureGatewayProvider);
-  final authState = ref.watch(authStateProvider);
-  final user = authState.asData?.value;
-
-  if (user == null) {
-    if (authState.hasValue) await gateway.clearActiveOwner();
-    return;
-  }
-
-  final service = DraftSyncService(
-    captureGateway: gateway,
-    draftStore: ref.watch(transactionDraftRepositoryProvider),
-  );
-  await service.synchronize(user.uid);
 }

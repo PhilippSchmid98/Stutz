@@ -1,0 +1,233 @@
+### docs/application-audit-2026-09-10.de.md
+2044: ### Prioritõt 1: Konto³bergangs- und Notification-Privacy-Risiko eindõmmen
+2045: 
+2046: Das ist die kleinste ─nderung mit hoher Wirkung und sollte sofort erfolgen.
+2047: 
+2048: Deliverables:
+2049: 
+2050: 1. Native Ownership vor dem Sign-out l÷schen und immer dann, wenn die
+2051:    Authentifizierung zu null aufgel÷st wird.
+2052: 2. Verhindern, dass eine alte Sync einen veralteten Owner wiederherstellt.
+2053: 3. Rohes Notification-Logging entfernen.
+2054: 4. Queue-Daten und Active-Owner-Preferences vom Android-Backup ausschlie▀en.
+2055: 5. Die redundante globale Deduplizierungsbeschrõnkung entfernen.
+2056: 6. Tests f³r Owner-Wechsel und Capture im abgemeldeten Zustand ergõnzen.
+2057: 
+2058: Definition von "erledigt":
+2059: 
+2060: - keine Notification-Queues im abgemeldeten Zustand;
+2061: - kein Draft des Owners A kann unter Owner B gelesen oder hochgeladen werden;
+2062: - die Backup-Inspektion enthõlt keine Queue-/Owner-Daten;
+2063: - Debug-Logs enthalten keine Zahlungsinhalte.
+2064: 
+2065: ### Prioritõt 2: Das ganzzahlige Money-Schema definieren und migrieren
+2066: 
+2067: Deliverables:
+2068: 
+2069: 1. CHF-Minor-Unit- und Jahresumlage-Regeln dokumentieren.
+2070: 2. Alle persistierten/Quell-/Aggregat-Finanzfelder auf Ganzzahlen umstellen.
+2071: 3. Striktes Direkt-zu-Minor-Unit-Eingabeparsing ergõnzen.
+2072: 4. Eine Dry-Run-Migration mit Validierung und Abweichungsbericht bauen.
+2073: 5. Summen aus Quelltransaktionen neu aufbauen.
+2074: 6. Prõ-/Post-Summen jedes Benutzers aus einem verifizierten Backup abgleichen.
+2075: 
+2076: Definition von "erledigt":
+2077: 
+2078: - persistiertes Geld enthõlt keine Double-Werte;
+2079: - jede Monatssumme entspricht exakt ihrer Quellreduktion;
+2080: - die Migration ist wiederholbar und erzeugt einen abgenommenen
+2081:   Reconciliation-Report.
+2082: 
+2083: ### Prioritõt 3: Eine vertrauensw³rdige Transaktions-Write-Boundary etablieren
+2084: 
+2085: Deliverables:
+2086: 
+2087: 1. Vertrauensw³rdige Backend-Summen oder ausschlie▀lich quellenbasierte
+2088:    Client-Writes wõhlen.
+2089: 2. Das manuelle Anlegen idempotent machen.
+2090: 3. ID-Kollisionen und unzulõssige Ersetzungen ablehnen.
+2091: 4. Collection-spezifische Regeln deployen.
+2092: 5. Kategorien archivieren statt race-anfõllig endg³ltig zu l÷schen.
+2093: 6. Emulator-Tests f³r jede Mutation und jeden Ablehnungsfall ergõnzen.
+2094: 
+2095: Definition von "erledigt":
+2096: 
+2097: - Replays k÷nnen Summen nicht zweimal õndern;
+2098: - Clients k÷nnen keine beliebigen Summen schreiben;
+2099: - fehlerhafte oder unautorisierte Ledger-Writes werden abgelehnt;
+2100: - alle Quell-/Summenmutationen sind reproduzierbar getestet.
+2101: 
+2102: ### Prioritõt 4: Anonyme Konten sch³tzen und den Sign-out korrigieren
+2103: 
+2104: Deliverables:
+2105: 
+2106: 1. Anonyme Benutzer vor der Abmeldung erkennen.
+2107: 2. Google-Credential-Verkn³pfung implementieren, die die UID bewahrt.
+2108: 3. Explizite Warnung vor dauerhaftem Verlust sowie Export-/
+2109:    Wiederherstellungsrichtlinie bereitstellen.
+2110: 4. Den Firebase-Sign-out garantieren, auch wenn die Google-Bereinigung
+2111:    fehlschlõgt.
+2112: 5. Tests f³r Kontokollision und Fehlerpfade ergõnzen.
+2113: 
+2114: Definition von "erledigt":
+2115: 
+2116: - ein Benutzer kann nicht versehentlich ein anonymes Ledger aufgeben;
+2117: - der Sign-out schlie▀t die Firebase-Session immer, wenn Firebase verf³gbar
+2118:   ist;
+2119: - die native Owner-Bereinigung ist Teil desselben f³r den Benutzer sichtbaren
+2120:   Vorgangs.
+2121: 
+2122: ### Prioritõt 5: Tests f³r kritische Pfade und Release-Gates verbindlich machen
+2123: 
+2124: Deliverables:
+2125: 
+2126: 1. Konkrete Firestore-Repository-Emulator-Tests ergõnzen.
+2127: 2. SQLite-Queue- und MethodChannel-Tests ergõnzen.
+2128: 3. Kotlin-, Backup-, Migrations-, Rule-, Flutter- und Generierungschecks
+2129:    in CI gaten.
+2130: 4. Risikogewichtete Coverage-Schwellen ergõnzen.
+2131: 5. Flutter pinnen und Flutter-/Gradle-Caches aktivieren.
+2132: 6. Beide signierten Artefakte verlangen, bevor ein Tag ver÷ffentlicht wird.
+2133: 
+2134: Definition von "erledigt":
+2135: 
+2136: - ein Mangel bei Transaktions-Reconciliation, Backup, Migration,
+2137:   Wallet-Parsing oder Regeln lõsst CI fehlschlagen;
+2138: - kritische Mutationsdateien haben eine sinnvolle Branch Coverage;
+2139: - getaggte Releases werden als eine kohõrente APK-/AAB-Einheit bef÷rdert.
+2140: 
+2141: ## 11. Sekundõres Verbesserungs-Backlog
+2142: 
+2143: Nachdem die f³nf produktionsblockierenden Punkte in Arbeit sind, diese in
+2144: dieser Reihenfolge angehen:
+2145: 
+2146: 1. Kategoriedetail-Transaktionen paginieren.
+2147: 2. Das Dismissen von Sheets wõhrend finanzieller Mutationen verhindern.
+2148: 3. Interface-bezogene Konnektivitõt durch den Firestore-Sync-State ersetzen.
+2149: 4. Das Touch Target f³r Pending Drafts vergr÷▀ern und die
+2150:    TalkBack-Semantik vervollstõndigen.
+2151: 5. Fonts b³ndeln und sichtbares Material-Interaktions-Feedback
+2152:    wiederherstellen.
+2153: 6. Verlaufsseiten inkrementell gruppieren oder auf Monatsfenster-Caching
+2154:    umstellen.
+2155: 7. Belastbares Reporting und Reparaturwerkzeuge f³r fehlerhafte
+2156:    Datensõtze ergõnzen.
+2157: 8. Synchronisierte Notification-Zeilen bereinigen und die verbleibende
+2158:    Queue verschl³sseln.
+2159: 9. Veralteten Sync- und JSON-Generierungscode entfernen.
+2160: 10. Gro▀e Kategoriebõume profilieren, bevor eine Sliver-Neufassung
+2161:     umgesetzt wird.
+2162: 
+2163: ## 12. Checkliste f³r Finance-Grade
+2164: 
+2165: Stutz sollte erst dann als Finance-Grade gelten, wenn alle folgenden Punkte
+2166: zutreffen:
+2167: 
+2168: - [ ] Alles persistierte Geld verwendet ganzzahlige Minor Units mit
+2169:       dokumentierter Rundung.
+2170: - [ ] Jeder Transaktionsbefehl ist idempotent.
+2171: - [ ] Abgeleitete Aggregate werden vom Backend verwaltet oder automatisiert
+2172:   gegen die Source Data abgeglichen.
+2173: - [ ] Firestore-Regeln validieren jedes Collection-Schema und jeden
+2174:       ▄bergang.
+2175: - [ ] Anonyme Benutzer haben einen getesteten Verkn³pfungs-/Export-/
+2176:       Wiederherstellungspfad.
+2177: - [ ] Der Sign-out l÷scht Firebase und native Ownership auch unter
+2178:       Fehlerbedingungen.
+2179: - [ ] Notification-Daten sind vom Backup ausgeschlossen, verschl³sselt,
+2180:       geschwõrzt und laufen ab.
+2181: - [ ] Fehlerhafte Datensõtze erzeugen eine sichtbare Reconciliation-Warnung
+2182:       statt eines leeren oder fehlgeschlagenen Ledgers.
+2183: - [ ] Kritische Repositories und native Grenzen haben Integrationstests.
+2184: - [ ] CI f³hrt jede finanzielle, Firebase-, native, Backup- und
+2185:       Migrations-Suite aus.
+2186: - [ ] Release-Artefakte werden mit gepinntem Tooling gebaut und gemeinsam
+2187:   ver÷ffentlicht.
+2188: - [ ] Accessibility-Tests decken Touch Targets, TalkBack und gro▀e Schrift
+2189:       ab.
+2190: 
+2191: ## 13. Abschlie▀ende Einschõtzung
+2192: 
+2193: Die App hat eine gute Grundlage und braucht keine architektonische
+2194: Neufassung. Die richtige Strategie besteht darin, ihre Feature-Grenzen und
+2195: reinen Domain-Services zu bewahren, wõhrend die finanziellen und
+2196: plattformbezogenen Grenzen gestõrkt werden.
+2197: 
+2198: Die wichtigste Verschiebung ist konzeptioneller Natur: Transaktionsdokumente
+2199: m³ssen als auditierbare Source of Truth behandelt werden, und jede Summe,
+2200: jeder Replay, jeder Konto³bergang und jeder lokale Notification-Datensatz
+2201: braucht einen expliziten Integritõtslebenszyklus. Sobald ganzzahliges Geld,
+2202: idempotente vertrauensw³rdige Writes, strikte Regeln, gesch³tzte
+2203: Konto³bergõnge und risikofokussierte Tests vorhanden sind, ist die
+2204: verbleibende Performance- und UX-Arbeit inkrementell statt strukturell.
+### docs/application-audit-improvement-checklist.de.md
+235: - [ ] CI-Negativtest: Fehlgeschlagene Code-Generierung blockiert den Workflow.
+236: - [ ] Coverage-Report zeigt sinnvolle Branch Coverage fuer kritische
+237:   Mutationsdateien.
+238: - [ ] Release-Probe erstellt signierte APK und AAB mit gepinntem Tooling.
+239: - [ ] Release-Probe bestaetigt die gemeinsame Veroeffentlichung beider
+240:   Artefakte.
+241: 
+242: ### Abnahme
+243: 
+244: - [ ] Fehler bei Reconciliation, Backup, Migration, Wallet-Parsing oder
+245:   Regeln lassen CI fehlschlagen.
+246: - [ ] Kritische Mutationsdateien erreichen die definierte Branch Coverage.
+247: - [ ] Getaggte Releases werden als kohaerente APK-/AAB-Einheit befoerdert.
+248: - [ ] Workflow-Links, Logs, Coverage-Report und Release-Probe sind verlinkt.
+249: 
+250: **Evidenz / Entscheidung / Rest-Risiko:**
+251: 
+252: ---
+253: 
+254: ## Sekundaeres Verbesserungs-Backlog
+255: 
+256: Diese Punkte erst einplanen, nachdem die fuenf priorisierten Arbeitsstroeme
+257: mindestens `In Arbeit` sind und ihre akuten Risiken einen verantwortlichen
+258: Owner haben.
+259: 
+260: | Reihenfolge | Massnahme | Status | Verantwortlich | Nachweis / PR |
+261: |---|---|---|---|---|
+262: | 1 | Kategoriedetail-Transaktionen paginieren. | Nicht begonnen |  |  |
+263: | 2 | Dismissen von Sheets waehrend finanzieller Mutationen verhindern. | Nicht begonnen |  |  |
+264: | 3 | Interface-Konnektivitaet durch Firestore-Sync-State ersetzen. | Nicht begonnen |  |  |
+265: | 4 | Pending-Drafts-Touch-Target vergroessern und TalkBack-Semantik ergaenzen. | Nicht begonnen |  |  |
+266: | 5 | Fonts buendeln und sichtbares Material-Interaktions-Feedback wiederherstellen. | Nicht begonnen |  |  |
+267: | 6 | Verlaufsseiten inkrementell gruppieren oder Monatsfenster cachen. | Nicht begonnen |  |  |
+268: | 7 | Reporting und Reparaturwerkzeuge fuer fehlerhafte Datensaetze ergaenzen. | Nicht begonnen |  |  |
+269: | 8 | Synchronisierte Notification-Zeilen bereinigen, Rest-Queue verschluesseln. | Nicht begonnen |  |  |
+270: | 9 | Veralteten Sync- und JSON-Generierungscode entfernen. | Nicht begonnen |  |  |
+271: | 10 | Grosse Kategoriebõume profilieren, dann ueber Sliver-Neufassung entscheiden. | Nicht begonnen |  |  |
+272: 
+273: ---
+274: 
+275: ## Finance-Grade Release-Gate
+276: 
+277: Diese Liste ist die finale Freigabepruefung. Sie wird erst als bestanden
+278: markiert, wenn alle Nachweise aus den priorisierten Arbeitsstroemen in einem
+279: Release-Review vorliegen.
+280: 
+281: - [ ] Alles persistierte Geld verwendet ganzzahlige Minor Units mit
+282:   dokumentierter Rundung.
+283: - [ ] Jeder Transaktionsbefehl ist idempotent.
+284: - [ ] Abgeleitete Aggregate werden vom Backend verwaltet oder automatisiert
+285:   gegen die Source Data abgeglichen.
+286: - [ ] Firestore-Regeln validieren jedes Collection-Schema und jeden Uebergang.
+287: - [ ] Anonyme Benutzer haben einen getesteten Verknuepfungs-, Export- und
+288:   Wiederherstellungspfad.
+289: - [ ] Der Sign-out loescht Firebase und native Ownership auch unter
+290:   Fehlerbedingungen.
+291: - [ ] Notification-Daten sind vom Backup ausgeschlossen, verschluesselt,
+292:   geschwaerzt und laufen ab.
+293: - [ ] Fehlerhafte Datensaetze erzeugen eine sichtbare Reconciliation-Warnung
+294:   statt eines leeren oder fehlgeschlagenen Ledgers.
+295: - [ ] Kritische Repositories und native Grenzen haben Integrationstests.
+296: - [ ] CI fuehrt jede finanzielle, Firebase-, native, Backup- und
+297:   Migrations-Suite aus.
+298: - [ ] Release-Artefakte werden mit gepinntem Tooling gebaut und gemeinsam
+299:   veroeffentlicht.
+300: - [ ] Accessibility-Tests decken Touch Targets, TalkBack und grosse Schrift ab.
+301: 
+302: | Release | Review-Datum | Freigegeben von | Evidenz | Ergebnis |
+303: |---|---|---|---|---|
+304: |  |  |  |  | Offen |

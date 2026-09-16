@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/features/auth/data/auth_service.dart';
+import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
 
 part 'auth_providers.g.dart';
 
@@ -60,6 +61,11 @@ class AuthController extends _$AuthController {
 
     state = const AsyncLoading();
     try {
+      try {
+        await ref.read(notificationCaptureGatewayProvider).clearActiveOwner();
+      } catch (_) {
+        // The auth-state listener retries cleanup after Firebase signs out.
+      }
       await ref.read(authServiceProvider).signOut();
       state = const AsyncData(null);
     } catch (e, st) {

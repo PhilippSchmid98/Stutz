@@ -30,6 +30,14 @@ class NotificationCaptureQueue(context: Context) {
     }
 
     fun clearActiveOwner() {
+        val ownerId = preferences.getString(ACTIVE_OWNER_KEY, null)
+        if (ownerId != null) {
+            database.writableDatabase.delete(
+                TABLE_DRAFTS,
+                "owner_id = ?",
+                arrayOf(ownerId),
+            )
+        }
         preferences.edit().remove(ACTIVE_OWNER_KEY).apply()
     }
 
@@ -111,7 +119,7 @@ class NotificationCaptureQueue(context: Context) {
                     draft_id TEXT NOT NULL,
                     owner_id TEXT NOT NULL,
                     source_package TEXT NOT NULL,
-                    source_dedupe_key TEXT NOT NULL UNIQUE,
+                    source_dedupe_key TEXT NOT NULL,
                     captured_at INTEGER NOT NULL,
                     occurred_at INTEGER NOT NULL,
                     merchant TEXT NOT NULL,
@@ -128,7 +136,7 @@ class NotificationCaptureQueue(context: Context) {
         }
 
         override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            if (oldVersion < 2) {
+            if (oldVersion < DATABASE_VERSION) {
                 db.execSQL("ALTER TABLE $TABLE_DRAFTS RENAME TO ${TABLE_DRAFTS}_old")
                 onCreate(db)
                 db.execSQL(
@@ -152,7 +160,7 @@ class NotificationCaptureQueue(context: Context) {
     private companion object {
         const val ACTIVE_OWNER_KEY = "active_owner_id"
         const val DATABASE_NAME = "notification_capture.db"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
         const val PREFERENCES_NAME = "notification_capture"
         const val TABLE_DRAFTS = "captured_transaction_drafts"
     }

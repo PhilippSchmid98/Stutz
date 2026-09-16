@@ -12,16 +12,21 @@ class DraftSyncService {
   }) : _captureGateway = captureGateway,
        _draftStore = draftStore;
 
-  Future<void> synchronize(String userId) async {
+  Future<void> synchronize(String userId, {bool Function()? isCurrent}) async {
+    final shouldContinue = isCurrent ?? () => true;
+    if (!shouldContinue()) return;
     await _captureGateway.setActiveOwner(userId);
+    if (!shouldContinue()) return;
     await _captureGateway.captureActiveNotifications();
+    if (!shouldContinue()) return;
     final drafts = await _captureGateway.listUnsyncedDrafts();
 
     for (final draft in drafts) {
+      if (!shouldContinue()) return;
       await _draftStore.upsertCapturedDraft(draft);
     }
 
-    if (drafts.isNotEmpty) {
+    if (drafts.isNotEmpty && shouldContinue()) {
       await _captureGateway.acknowledgeSyncedDrafts(
         drafts.map((draft) => draft.id).toList(),
       );

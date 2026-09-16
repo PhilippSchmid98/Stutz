@@ -27,7 +27,7 @@ final class NotificationCaptureGatewayProvider
         argument: null,
         retry: null,
         name: r'notificationCaptureGatewayProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -56,7 +56,7 @@ final class NotificationCaptureGatewayProvider
 }
 
 String _$notificationCaptureGatewayHash() =>
-    r'670a768b76c5531034a3584c902e1377c3dd9070';
+    r'1430c510442eff13998fcac79346efea31da8348';
 
 @ProviderFor(notificationCaptureAccessGranted)
 const notificationCaptureAccessGrantedProvider =

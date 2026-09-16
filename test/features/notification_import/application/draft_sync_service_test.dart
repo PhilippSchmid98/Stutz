@@ -60,6 +60,33 @@ void main() {
     expect(gateway.captureCallCount, 2);
     expect(synchronizedCount, 2);
   });
+
+  test(
+    'canceled sync cannot restore an old owner after an account switch',
+    () async {
+      final gateway = _BlockingCaptureGateway();
+      final oldSynchronizer = NotificationDraftSynchronizer(
+        captureGateway: gateway,
+        draftStore: _FakeDraftStore(),
+        onSynchronized: () {},
+      );
+      final newSynchronizer = NotificationDraftSynchronizer(
+        captureGateway: gateway,
+        draftStore: _FakeDraftStore(),
+        onSynchronized: () {},
+      );
+
+      final oldSync = oldSynchronizer.synchronize('owner-a');
+      await gateway.firstCaptureStarted.future;
+      oldSynchronizer.cancel();
+      await newSynchronizer.synchronize('owner-b');
+      gateway.continueFirstCapture.complete();
+      await oldSync;
+
+      expect(gateway.activeOwner, 'owner-b');
+      expect(gateway.listCallCount, 1);
+    },
+  );
 }
 
 TransactionDraft _draft(String id) {
@@ -135,6 +162,7 @@ class _BlockingCaptureGateway extends _FakeCaptureGateway {
   final firstCaptureStarted = Completer<void>();
   final continueFirstCapture = Completer<void>();
   var captureCallCount = 0;
+  var listCallCount = 0;
 
   _BlockingCaptureGateway() : super(const []);
 
@@ -145,5 +173,11 @@ class _BlockingCaptureGateway extends _FakeCaptureGateway {
       firstCaptureStarted.complete();
       await continueFirstCapture.future;
     }
+  }
+
+  @override
+  Future<List<TransactionDraft>> listUnsyncedDrafts() async {
+    listCallCount += 1;
+    return super.listUnsyncedDrafts();
   }
 }
