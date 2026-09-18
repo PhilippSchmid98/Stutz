@@ -44,18 +44,6 @@ Stream<List<IncomeSource>> incomeList(Ref ref) {
 }
 
 @riverpod
-Future<double> totalMonthlyIncome(Ref ref) async {
-  final sources = await ref.watch(incomeListProvider.future);
-  return const BudgetCalculator().totalMonthlyIncome(sources);
-}
-
-@riverpod
-Future<double> totalMonthlyExpenses(Ref ref) async {
-  final roots = await ref.watch(expenseTreeProvider.future);
-  return const BudgetCalculator().totalMonthlyExpenses(roots);
-}
-
-@riverpod
 Future<BudgetSummary> budgetSummary(Ref ref) async {
   // Alle ref.watch()-Aufrufe synchron VOR dem ersten await.
   final sourcesFuture = ref.watch(incomeListProvider.future);

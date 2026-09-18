@@ -1,40 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
+import 'package:stutz/features/budget/data/expense_node_mapper.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/services/tree_builder.dart';
-import 'package:stutz/features/budget/data/expense_node_mapper.dart';
 
 part 'expense_node_repository.g.dart';
 
 class ExpenseNodeRepository {
   final String userId;
   final FirebaseFirestore _firestore;
-  final TreeBuilder _treeBuilder;
 
-  ExpenseNodeRepository(
-    this.userId,
-    this._firestore, {
-    TreeBuilder treeBuilder = const TreeBuilder(),
-  }) : _treeBuilder = treeBuilder;
+  ExpenseNodeRepository(this.userId, this._firestore);
 
   CollectionReference<Map<String, dynamic>> get _collection =>
       _firestore.collection('users').doc(userId).collection('expense_nodes');
-
-  Future<List<ExpenseNode>> getAllExpenseNodes() async {
-    final snapshot = await _collection.get();
-    final flatNodes = snapshot.docs
-        .map(ExpenseNodeMapper.fromDocument)
-        .toList();
-    return _treeBuilder.buildTree(flatNodes);
-  }
 
   Stream<List<ExpenseNode>> watchAllExpenseNodes() {
     return _collection.snapshots().map((snapshot) {
       final flatNodes = snapshot.docs
           .map(ExpenseNodeMapper.fromDocument)
           .toList();
-      return _treeBuilder.buildTree(flatNodes);
+      return const TreeBuilder().buildTree(flatNodes);
     });
   }
 
@@ -80,7 +67,6 @@ class ExpenseNodeRepository {
   }
 }
 
-/// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 @riverpod
 ExpenseNodeRepository expenseNodeRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
+
 import '../domain/entities/app_transaction.dart';
 import '../domain/entities/transaction_month_summary.dart';
 import 'transaction_mapper.dart';
@@ -284,8 +285,6 @@ class TransactionRepository {
   }
 }
 
-// Der Provider lebt direkt beim Repository!
-// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 @riverpod
 TransactionRepository transactionRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);

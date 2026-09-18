@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/data/expense_node_repository.dart';
 import 'package:stutz/features/budget/data/income_source_repository.dart';
@@ -78,9 +78,6 @@ class _FakeIncomeSourceRepository implements IncomeSourceRepository {
   Future<void> deleteIncomeSource(String id) async {}
 
   @override
-  Future<List<IncomeSource>> getAllIncomeSources() async => [];
-
-  @override
   Stream<List<IncomeSource>> watchAllIncomeSources() => const Stream.empty();
 }
 
@@ -100,9 +97,6 @@ class _FakeExpenseNodeRepository implements ExpenseNodeRepository {
 
   @override
   Future<void> deleteExpenseNode(String id) async {}
-
-  @override
-  Future<List<ExpenseNode>> getAllExpenseNodes() async => [];
 
   @override
   Stream<List<ExpenseNode>> watchAllExpenseNodes() => const Stream.empty();

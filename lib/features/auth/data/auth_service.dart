@@ -3,9 +3,11 @@ import 'dart:developer' as dev;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:stutz/features/auth/data/firebase_config.dart';
 
 part 'auth_service.g.dart';
+
+const _googleSignInWebClientId =
+    '78877647203-vc4uh88pqqb317ied0apm4tckkpk0bbi.apps.googleusercontent.com';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -29,9 +31,7 @@ class AuthService {
     // Initialize GoogleSignIn lazily — re-calling initialize() on the singleton
     // can reset state mid-flight and cause spurious cancellation errors.
     if (!_googleInitialized) {
-      await _googleSignIn.initialize(
-        serverClientId: FirebaseConfig.googleSignInWebClientId,
-      );
+      await _googleSignIn.initialize(serverClientId: _googleSignInWebClientId);
       _googleInitialized = true;
     }
 
