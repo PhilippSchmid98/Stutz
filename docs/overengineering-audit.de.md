@@ -54,6 +54,22 @@ vier veraltete Architekturkommentare. Riverpod-Code wurde nach den betroffenen
 | Auth-Routing-Test | 9 bestanden. |
 | `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
 
+## Umsetzungsstand: Phase 1
+
+Phase 1 wurde am 18. September 2026 vollständig umgesetzt. Entfernt wurden
+die ungenutzten Widgets `LegendRow` und `StyledDropdown` samt isoliertem Test,
+der ungenutzte In-Memory-Händlerregel-Zweig und die direkten Abhängigkeiten
+`json_annotation` sowie `json_serializable`. Der produktive Firestore-Pfad für
+Händlerregel-IDs bleibt erhalten.
+
+| Check | Ergebnis |
+| --- | --- |
+| Shared-Widget-Test | 5 bestanden. |
+| Händlerregel-ID-Test | 1 bestanden. |
+| Codegenerierung | Bestanden. |
+| `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
+| `flutter test` | 132 bestanden, 0 fehlgeschlagen. |
+
 ## Unnötige Abstraktionen
 
 ### 1. Notification-Sync: drei Typen für einen linearen Ablauf
@@ -148,13 +164,14 @@ kleine Tests ohne Flutter-Engine. Dieses Interface sollte bestehen bleiben.
 
 ### 1. Nachweislich toter Produktionscode
 
-Die folgenden Dateien beziehungsweise Typen haben keinen Produktionsnutzer:
+Die folgenden nicht referenzierten Dateien beziehungsweise Typen wurden in
+Phase 1 entfernt:
 
-- [`lib/features/budget/presentation/widgets/legend_row.dart`](../lib/features/budget/presentation/widgets/legend_row.dart): `LegendRow` wird nirgends importiert.
-- [`lib/shared/widgets/styled_dropdown.dart`](../lib/shared/widgets/styled_dropdown.dart): `StyledDropdown` wird nur in seinem Shared-Widget-Test gebaut.
-- [`lib/features/notification_import/domain/entities/merchant_category_rule.dart`](../lib/features/notification_import/domain/entities/merchant_category_rule.dart): nur vom ebenfalls ungenutzten Suggester verwendet.
-- [`lib/features/notification_import/domain/services/merchant_normalizer.dart`](../lib/features/notification_import/domain/services/merchant_normalizer.dart): nur vom ungenutzten Suggester und dessen Test verwendet.
-- [`lib/features/notification_import/domain/services/merchant_category_suggester.dart`](../lib/features/notification_import/domain/services/merchant_category_suggester.dart): keine Produktionsverwendung.
+- `lib/features/budget/presentation/widgets/legend_row.dart` (`LegendRow`);
+- `lib/shared/widgets/styled_dropdown.dart` (`StyledDropdown`) samt isoliertem
+  Shared-Widget-Test;
+- der In-Memory-Regelzweig mit `MerchantCategoryRule`, `MerchantNormalizer`
+  und `MerchantCategorySuggester` samt dessen Test.
 
 Der echte Vorschlagspfad läuft über `merchantCategorySuggestionProvider` und
 `TransactionDraftRepository.getSuggestedExpenseNodeId()`. Er fragt die bereits
@@ -162,10 +179,9 @@ normalisierte Händler-ID direkt in Firestore ab. Das in-memory Regelmodell ist
 ein übrig gebliebener alternativer Entwurf und testet nicht den produktiven
 Pfad.
 
-**Pragmatische Vereinfachung:** Die fünf toten Produktionsdateien löschen, den
-reinen `StyledDropdown`-Test entfernen und aus
-`merchant_category_suggester_test.dart` nur den weiterhin relevanten Test für
-`merchantCategoryRuleId()` in eine passend benannte Testdatei übernehmen.
+Der unabhängige Test für `merchantCategoryRuleId()` liegt nun in
+`merchant_category_rule_id_test.dart`. Der produktive Vorschlagspfad blieb
+unverändert.
 
 ### 2. Zwei ungenutzte Budget-Provider entfernt
 
@@ -269,15 +285,14 @@ Namen umstellen, intern `oldestSnapshot` verwenden und anschließend alle
 Aliase sowie Fallback-Parameter entfernen. Der eigentliche Pagination-
 Algorithmus bleibt unverändert.
 
-### 6. Ungenutzte JSON-Generator-Abhängigkeiten
+### 6. Ungenutzte JSON-Generator-Abhängigkeiten entfernt
 
-[`pubspec.yaml`](../pubspec.yaml) deklariert `json_annotation` und
-`json_serializable`. Im gesamten Produktions- und Testcode gibt es weder
+Im gesamten Produktions- und Testcode gibt es weder
 `@JsonSerializable` noch generierte JSON-Mapper. Die vorhandenen `.g.dart`-
 Dateien stammen von Riverpod; die Persistenz nutzt explizite Firestore-Mapper.
 
-**Pragmatische Vereinfachung:** Beide Packages entfernen und `flutter pub get`
-ausführen. `build_runner`, `riverpod_generator`, `freezed` und
+Die direkten Einträge `json_annotation` und `json_serializable` wurden in
+Phase 1 entfernt. `build_runner`, `riverpod_generator`, `freezed` und
 `freezed_annotation` bleiben erforderlich.
 
 ### 7. Firestore-Mapper sind keine unnötige DTO-Schicht

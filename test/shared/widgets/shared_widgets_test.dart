@@ -5,7 +5,6 @@ import 'package:stutz/core/theme/app_theme.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/dialog_helpers.dart';
-import 'package:stutz/shared/widgets/styled_dropdown.dart';
 import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 import 'package:stutz/shared/widgets/styled_text_field.dart';
 
@@ -64,27 +63,6 @@ void main() {
 
     final focusedBorder = decoration.focusedBorder! as OutlineInputBorder;
     expect(focusedBorder.borderSide.color, AppTheme.primary);
-  });
-
-  testWidgets('styled dropdown uses the shared field decoration', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: StyledDropdown<String>(
-            value: 'monthly',
-            items: const {'monthly': 'Monatlich'},
-            label: 'Intervall',
-            icon: Icons.calendar_today,
-            onChanged: (_) {},
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Intervall'), findsOneWidget);
-    expect(find.text('Monatlich'), findsOneWidget);
   });
 
   testWidgets('shared action buttons preserve their fixed height defaults', (

@@ -28,7 +28,6 @@ dependencies:
   google_sign_in: ^7.2.0
   shared_preferences: ^2.5.4
   google_fonts: ^8.0.2
-  json_annotation: ^4.9.0
   timezone: ^0.11.1
 
 dev_dependencies:
@@ -39,7 +38,6 @@ dev_dependencies:
   freezed: ^3.2.3
   riverpod_generator: ^3.0.3
   flutter_launcher_icons: ^0.14.4
-  json_serializable: ^6.8.0
 
 
 flutter_launcher_icons:

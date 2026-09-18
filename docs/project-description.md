@@ -379,8 +379,7 @@ The major widgets are:
 - [income_section_card.dart](../lib/features/budget/presentation/widgets/income_section_card.dart): separates main and additional incomes;
 - [income_item_row.dart](../lib/features/budget/presentation/widgets/income_item_row.dart): displays and opens one income for editing;
 - [expense_section_card.dart](../lib/features/budget/presentation/widgets/expense_section_card.dart): displays one root category and its actions;
-- [expense_item_row.dart](../lib/features/budget/presentation/widgets/expense_item_row.dart): recursively displays, expands, edits, and adds nested expense nodes;
-- [legend_row.dart](../lib/features/budget/presentation/widgets/legend_row.dart): shared legend presentation within budget views.
+- [expense_item_row.dart](../lib/features/budget/presentation/widgets/expense_item_row.dart): recursively displays, expands, edits, and adds nested expense nodes.
 
 ## 8. Transaction feature
 
@@ -698,7 +697,7 @@ It:
 - records the selected category as a merchant rule;
 - treats repeated confirmation of an already-saved draft as idempotent.
 
-Merchant rule IDs are derived by [merchant_category_rule_id.dart](../lib/features/notification_import/domain/services/merchant_category_rule_id.dart). [merchant_normalizer.dart](../lib/features/notification_import/domain/services/merchant_normalizer.dart) lowercases and normalizes whitespace. [merchant_category_suggester.dart](../lib/features/notification_import/domain/services/merchant_category_suggester.dart) performs exact normalized-merchant matching.
+Merchant rule IDs are derived by [merchant_category_rule_id.dart](../lib/features/notification_import/domain/services/merchant_category_rule_id.dart) and used as deterministic Firestore document IDs for exact normalized-merchant matching.
 
 ### 10.8 Draft providers and review UI
 
@@ -728,7 +727,6 @@ Reusable widgets are under [lib/shared/widgets](../lib/shared/widgets).
 | `choice_group.dart` | Segmented selection for enum/binary form values |
 | `styled_field_decoration.dart` | Budget and transaction input-decoration variants |
 | `styled_text_field.dart` | Shared text form field wrapper and validation behavior |
-| `styled_dropdown.dart` | Dropdown using the shared field decoration |
 | `dialog_helpers.dart` | Confirmation dialogs and error SnackBars |
 | `section_card.dart` | Expandable/actionable section with monthly/yearly totals |
 | `add_button.dart` | Shared add-entry affordance |

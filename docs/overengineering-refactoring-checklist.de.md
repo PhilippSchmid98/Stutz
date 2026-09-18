@@ -27,14 +27,15 @@ Stand: 17. September 2026
 
 ## Phase 1: Toten Code und ungenutztes Tooling entfernen
 
-- [ ] **1.1 Ungenutztes `LegendRow`-Widget löschen.**
+- [x] **1.1 Ungenutztes `LegendRow`-Widget löschen.**
   - Löschen:
     `lib/features/budget/presentation/widgets/legend_row.dart`.
   - Vorher und nachher sicherstellen, dass `LegendRow` und `legend_row.dart`
     keine weiteren Treffer haben.
   - Validieren: `flutter analyze`.
+  - 18.09.2026: Keine weiteren Treffer; Analyse ohne Diagnosen.
 
-- [ ] **1.2 Ungenutztes `StyledDropdown` samt isoliertem Selbsttest löschen.**
+- [x] **1.2 Ungenutztes `StyledDropdown` samt isoliertem Selbsttest löschen.**
   - Löschen: `lib/shared/widgets/styled_dropdown.dart`.
   - Den `StyledDropdown`-Test und dessen Import aus
     `test/shared/widgets/shared_widgets_test.dart` entfernen.
@@ -43,8 +44,10 @@ Stand: 17. September 2026
   - Validieren:
     `flutter test test/shared/widgets/shared_widgets_test.dart` und
     `flutter analyze`.
+  - 18.09.2026: Shared-Widget-Test bestanden (5 Tests); Analyse ohne
+    Diagnosen.
 
-- [ ] **1.3 Den toten in-memory Händlerregel-Zweig entfernen.**
+- [x] **1.3 Den toten in-memory Händlerregel-Zweig entfernen.**
   - Löschen:
     `lib/features/notification_import/domain/entities/merchant_category_rule.dart`.
   - Löschen:
@@ -57,14 +60,17 @@ Stand: 17. September 2026
     verschieben; den alten Suggester-Test löschen.
   - Den produktiven Firestore-Vorschlagspfad nicht verändern.
   - Validieren: den neuen Rule-ID-Test und `flutter analyze` ausführen.
+  - 18.09.2026: Rule-ID-Test bestanden (1 Test); Analyse ohne Diagnosen.
 
-- [ ] **1.4 Ungenutzte JSON-Codegen-Packages entfernen.**
+- [x] **1.4 Ungenutzte JSON-Codegen-Packages entfernen.**
   - `json_annotation` und `json_serializable` aus `pubspec.yaml` entfernen.
   - `flutter pub get` ausführen und die Lockfile-Änderung prüfen.
   - `build_runner`, `riverpod_generator`, `freezed` und
     `freezed_annotation` behalten.
   - Validieren: `dart run build_runner build --delete-conflicting-outputs`,
     `flutter analyze` und `flutter test`.
+  - 18.09.2026: `flutter pub get` und Codegenerierung bestanden; Analyse ohne
+    Diagnosen; vollständige Flutter-Suite bestanden (132 Tests).
 
 ## Phase 2: Tote APIs und theoretische Injection entfernen
 
