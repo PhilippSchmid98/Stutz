@@ -1,6 +1,6 @@
 # Stutz Overengineering-Audit
 
-Stand: 17. September 2026
+Stand: 18. September 2026
 
 ## Kurzurteil
 
@@ -115,6 +115,31 @@ Flags explizit zurücksetzen.
 | Pagination-Test | 6 bestanden. |
 | Transaktions-Widget-Test | 13 bestanden. |
 | `flutter analyze` | Nach beiden Teilschritten bestanden, keine Diagnosen. |
+
+## Abschlussstand: Phase 6
+
+Die automatisierten Abschluss-Gates liefen am 18. September 2026 erfolgreich:
+Formatierung, wiederholbare Codegenerierung, statische Analyse, Flutter-Suite
+sowie die Node-/Firestore-Suiten bestehen. Die zweite Codegenerierung erzeugte
+keine zusätzlichen Änderungen. Der Android-Unit-Test konnte wegen der lokalen
+Cross-Drive-Gradle-Konfiguration nicht starten.
+
+| Check | Ergebnis |
+| --- | --- |
+| `dart format lib test` | 127 Dateien geprüft, 1 formatiert. |
+| Zweite Codegenerierung | 0 Outputs, kein zusätzlicher Diff. |
+| `flutter analyze` | Bestanden, keine Diagnosen. |
+| `flutter test` | 132 bestanden, 0 fehlgeschlagen. |
+| `npm run test:rules` | Bestanden. |
+| `npm run test:backup` | Bestanden. |
+| `npm run test:migration` | Bestanden. |
+| Android-Unit-Test | Lokal durch Cross-Drive-Gradle-Konfiguration blockiert. |
+
+Die Abschluss-Suche fand keine gelöschten Symbole, Provider oder Legacy-Aliase
+im Quell- und Testcode. Neue Repository-Basen oder Architekturhüllen wurden
+nicht eingeführt. Funktionale Smoke-Tests mit Anmeldung, Firestore und der
+native Notification-Warteschlange stehen noch aus, weil kein Flutter-Gerät in
+der lokalen Tooling-Umgebung verfügbar war.
 
 ## Unnötige Abstraktionen
 

@@ -2,7 +2,7 @@
 
 Grundlage: [Overengineering-Audit](overengineering-audit.de.md)
 
-Stand: 17. September 2026
+Stand: 18. September 2026
 
 ## Arbeitsregeln
 
@@ -246,19 +246,24 @@ Stand: 17. September 2026
 
 ## Phase 6: Abschluss-Gate
 
-- [ ] **6.1 Generierung und statische Prüfung vollständig ausführen.**
+- [x] **6.1 Generierung und statische Prüfung vollständig ausführen.**
   - `dart format lib test`.
   - `dart run build_runner build --delete-conflicting-outputs`.
   - Prüfen, dass eine zweite Generierung keinen weiteren Diff erzeugt.
   - `flutter analyze`.
+  - 18.09.2026: 127 Dart-Dateien geprüft, 1 formatiert; erste Generierung
+    schrieb 4 Outputs, die zweite 0; Analyse ohne Diagnosen.
 
-- [ ] **6.2 Gesamte Regression-Suite ausführen.**
+- [x] **6.2 Gesamte Regression-Suite ausführen.**
   - `flutter test`.
   - `npm run test:rules`.
   - `npm run test:backup`.
   - `npm run test:migration`.
   - Android: `android\gradlew.bat testDebugUnitTest`, sofern die lokale
     Cross-Drive-Gradle-Konfiguration den Lauf zulässt.
+  - 18.09.2026: Flutter-Suite bestanden (132 Tests); Rules-, Backup- und
+    Migrationssuite bestanden. Android-Unit-Test durch die lokale
+    Cross-Drive-Gradle-Konfiguration blockiert.
 
 - [ ] **6.3 Funktionale Smoke-Tests ohne UI-Änderung durchführen.**
   - Anmelden und zwischen den drei Haupttabs wechseln.
@@ -268,9 +273,14 @@ Stand: 17. September 2026
   - Notification-Draft synchronisieren, bestätigen und verwerfen.
   - Prüfen, dass Layout, Texte, Navigation und Interaktionsabläufe unverändert
     sind.
+  - 18.09.2026: Offen. Keine Flutter-Geräte in der lokalen Tooling-Umgebung
+    verfügbar.
 
-- [ ] **6.4 Abschluss-Suche durchführen.**
+- [x] **6.4 Abschluss-Suche durchführen.**
   - Keine Treffer mehr für gelöschte Typen, Provider und Legacy-Aliase.
   - Keine neuen Interfaces, Base-Klassen oder generischen Repository-Wrapper.
   - Dokumentation nur dort aktualisieren, wo sie gelöschte Dateien oder
     Provider noch als aktuellen Bestandteil beschreibt.
+  - 18.09.2026: Quell- und Testcode ohne Treffer für gelöschte Symbole und
+    Legacy-Aliase; nur `NotificationCaptureGateway` bleibt als notwendiger
+    Plattformvertrag neben generatorbedingten abstrakten Klassen bestehen.

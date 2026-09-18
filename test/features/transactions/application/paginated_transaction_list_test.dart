@@ -21,7 +21,7 @@ void main() {
     final state = await container.read(paginatedTransactionListProvider.future);
     await container
         .read(paginatedTransactionListProvider.notifier)
-      .loadOlderPage();
+        .loadOlderPage();
 
     expect(state.rawTransactions, isEmpty);
     expect(state.groupedDays, isEmpty);
@@ -94,7 +94,7 @@ void main() {
     await container.read(paginatedTransactionListProvider.future);
     final loaded = await container
         .read(paginatedTransactionListProvider.notifier)
-      .ensureMonthWindowLoaded(DateTime(2024, 1));
+        .ensureMonthWindowLoaded(DateTime(2024, 1));
 
     final state = container.read(paginatedTransactionListProvider).value!;
     expect(loaded, isTrue);
@@ -139,7 +139,7 @@ void main() {
     await container.read(paginatedTransactionListProvider.future);
     await container
         .read(paginatedTransactionListProvider.notifier)
-      .ensureMonthWindowLoaded(DateTime(2026, 4));
+        .ensureMonthWindowLoaded(DateTime(2026, 4));
 
     var state = container.read(paginatedTransactionListProvider).value!;
     expect(state.hasReachedNewest, isFalse);

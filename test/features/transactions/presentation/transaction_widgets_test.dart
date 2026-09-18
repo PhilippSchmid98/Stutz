@@ -8,6 +8,9 @@ import 'package:stutz/core/connectivity/connectivity_provider.dart';
 import 'package:stutz/features/budget/application/selectable_categories_provider.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
+import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
@@ -15,13 +18,10 @@ import 'package:stutz/features/transactions/domain/view_models/daily_transaction
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/features/transactions/presentation/transaction_screen.dart';
+import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
 import 'package:stutz/features/transactions/presentation/widgets/transaction_item.dart';
-import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
-import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
-import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
-import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 void main() {
