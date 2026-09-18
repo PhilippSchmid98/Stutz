@@ -109,52 +109,6 @@ final class FlatExpenseNodesProvider
 
 String _$flatExpenseNodesHash() => r'09aa5b807836dcf3151d0462d655aa00d4163041';
 
-/// Read-only category contract for features that enrich transactions.
-
-@ProviderFor(categoryLookups)
-const categoryLookupsProvider = CategoryLookupsProvider._();
-
-/// Read-only category contract for features that enrich transactions.
-
-final class CategoryLookupsProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<CategoryLookup>>,
-          List<CategoryLookup>,
-          FutureOr<List<CategoryLookup>>
-        >
-    with
-        $FutureModifier<List<CategoryLookup>>,
-        $FutureProvider<List<CategoryLookup>> {
-  /// Read-only category contract for features that enrich transactions.
-  const CategoryLookupsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'categoryLookupsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$categoryLookupsHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<CategoryLookup>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<CategoryLookup>> create(Ref ref) {
-    return categoryLookups(ref);
-  }
-}
-
-String _$categoryLookupsHash() => r'f83a907d48cf997f0703afd28ea7e7cf92007a21';
-
 /// Streams income sources directly from Firestore — auto-updates on any change
 /// without requiring manual [ref.invalidate] calls after mutations.
 

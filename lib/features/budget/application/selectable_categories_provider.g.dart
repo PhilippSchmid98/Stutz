@@ -49,4 +49,4 @@ final class SelectableCategoriesProvider
 }
 
 String _$selectableCategoriesHash() =>
-    r'f2e1ee9fe8d00d4c1f0e8c6ed2d09a04e0e204bf';
+    r'8ada8e2a2df146e3e9dbe6025254d3311511972d';

@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/data/transaction_repository.dart';
@@ -13,7 +13,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         transactionRepositoryProvider.overrideWith((ref) => repository),
-        categoryLookupsProvider.overrideWith((ref) async => const []),
+        flatExpenseNodesProvider.overrideWith((ref) async => const []),
       ],
     );
     addTearDown(container.dispose);
@@ -35,7 +35,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         transactionRepositoryProvider.overrideWith((ref) => repository),
-        categoryLookupsProvider.overrideWith((ref) async => const []),
+        flatExpenseNodesProvider.overrideWith((ref) async => const []),
       ],
     );
     addTearDown(container.dispose);
@@ -58,7 +58,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           transactionRepositoryProvider.overrideWith((ref) => repository),
-          categoryLookupsProvider.overrideWith((ref) async => const []),
+          flatExpenseNodesProvider.overrideWith((ref) async => const []),
         ],
       );
       addTearDown(container.dispose);
@@ -86,7 +86,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         transactionRepositoryProvider.overrideWith((ref) => repository),
-        categoryLookupsProvider.overrideWith((ref) async => const []),
+        flatExpenseNodesProvider.overrideWith((ref) async => const []),
       ],
     );
     addTearDown(container.dispose);
@@ -131,7 +131,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         transactionRepositoryProvider.overrideWith((ref) => repository),
-        categoryLookupsProvider.overrideWith((ref) async => const []),
+        flatExpenseNodesProvider.overrideWith((ref) async => const []),
       ],
     );
     addTearDown(container.dispose);
@@ -170,7 +170,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         transactionRepositoryProvider.overrideWith((ref) => repository),
-        categoryLookupsProvider.overrideWith((ref) async => const []),
+        flatExpenseNodesProvider.overrideWith((ref) async => const []),
       ],
     );
     addTearDown(container.dispose);

@@ -8,17 +8,6 @@ part 'selectable_categories_provider.g.dart';
 
 @riverpod
 Future<List<ExpenseNode>> selectableCategories(Ref ref) async {
-  final roots = await ref.watch(expenseTreeProvider.future);
-  return _flattenTreeVariableOnly(roots);
-}
-
-List<ExpenseNode> _flattenTreeVariableOnly(List<ExpenseNode> nodes) {
-  final List<ExpenseNode> flat = [];
-  for (var node in nodes) {
-    if (node.type == ExpenseType.variable) flat.add(node);
-    if (node.children.isNotEmpty) {
-      flat.addAll(_flattenTreeVariableOnly(node.children));
-    }
-  }
-  return flat;
+  final nodes = await ref.watch(flatExpenseNodesProvider.future);
+  return nodes.where((node) => node.type == ExpenseType.variable).toList();
 }

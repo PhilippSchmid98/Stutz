@@ -288,7 +288,7 @@ Firestore stores nodes as a flat collection. `children` is reconstructed after r
 
 [budget_summary.dart](../lib/features/budget/domain/view_models/budget_summary.dart) is the presentation-ready aggregate containing monthly/yearly fixed and variable amounts. Derived getters calculate yearly income, monthly-equivalent expenses, balance, and deficit state.
 
-[category_lookup.dart](../lib/features/budget/domain/view_models/category_lookup.dart) is a deliberately small cross-feature contract containing only category ID, name, and parent ID. Transaction code uses it without depending on the budget repository.
+Transaction code uses the shared flat `ExpenseNode` view for category enrichment. This keeps the ID, name, and parent ID in their existing domain entity without an additional field-copying contract.
 
 ### 7.2 Pure domain services
 
@@ -323,7 +323,7 @@ Children and roots are sorted by `sortOrder`, then by name. The service can also
 users/{userId}/expense_nodes/{nodeId}
 ```
 
-It provides one-shot and streaming tree reads, add/update/delete operations, and batched sort-order updates. Deletion checks that the category has no direct children and is not referenced by a transaction.
+It provides streaming tree reads, add/update/delete operations, and batched sort-order updates. Deletion checks that the category has no direct children and is not referenced by a transaction.
 
 [income_source_repository.dart](../lib/features/budget/data/income_source_repository.dart) operates on:
 
@@ -331,7 +331,7 @@ It provides one-shot and streaming tree reads, add/update/delete operations, and
 users/{userId}/incomes/{incomeId}
 ```
 
-It provides one-shot and streaming reads plus add, update, and delete operations.
+It provides streaming reads plus add, update, and delete operations.
 
 Both repository providers watch `currentUserIdProvider`. A changed user therefore creates repositories scoped to the new UID.
 
@@ -346,14 +346,14 @@ flowchart TD
     ER --> TREE[expenseTreeProvider]
     IR --> INCOME[incomeListProvider]
     TREE --> FLAT[flatExpenseNodesProvider]
-    FLAT --> LOOKUP[categoryLookupsProvider]
+    FLAT --> SELECTABLE[selectableCategoriesProvider]
     TREE --> SUMMARY[budgetSummaryProvider]
     INCOME --> SUMMARY
 ```
 
-Additional providers calculate total monthly income and expenses. Generated providers are auto-disposed unless explicitly kept alive.
+Generated providers are auto-disposed unless explicitly kept alive.
 
-[selectable_categories_provider.dart](../lib/features/budget/application/selectable_categories_provider.dart) flattens the expense tree and exposes only variable expense leaves/groups suitable for assigning transactions.
+[selectable_categories_provider.dart](../lib/features/budget/application/selectable_categories_provider.dart) filters the shared flat expense-tree view to variable expense leaves/groups suitable for assigning transactions. The transaction paginator uses that same flat view directly for category enrichment.
 
 [budget_mutations.dart](../lib/features/budget/application/budget_mutations.dart) is the write entry point used by presentation code. It exposes add/update/delete methods for categories and incomes and represents progress or failure through `AsyncValue<void>`.
 

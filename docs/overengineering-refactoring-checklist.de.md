@@ -166,7 +166,7 @@ Stand: 17. September 2026
 
 ## Phase 4: Kategorie-Datenfluss vereinfachen
 
-- [ ] **4.1 `selectableCategoriesProvider` auf die bestehende flache Sicht umstellen.**
+- [x] **4.1 `selectableCategoriesProvider` auf die bestehende flache Sicht umstellen.**
   - `flatExpenseNodesProvider.future` lesen und nach
     `ExpenseType.variable` filtern.
   - `_flattenTreeVariableOnly()` entfernen.
@@ -175,8 +175,10 @@ Stand: 17. September 2026
     `flutter test test/features/transactions/presentation/transaction_widgets_test.dart`,
     `flutter test test/features/notification_import/presentation/transaction_draft_review_sheet_test.dart`
     und `flutter analyze`.
+  - 18.09.2026: Transaktions-Widget-Tests (13) und Draft-Review-Tests (3)
+    bestanden; Analyse ohne Diagnosen.
 
-- [ ] **4.2 Transaction-Gruppierung direkt mit `ExpenseNode` betreiben.**
+- [x] **4.2 Transaction-Gruppierung direkt mit `ExpenseNode` betreiben.**
   - `TransactionGrouper.groupByDay()` von `List<CategoryLookup>` auf
     `List<ExpenseNode>` umstellen.
   - `PaginatedTransactionList` auf `flatExpenseNodesProvider.future`
@@ -188,13 +190,17 @@ Stand: 17. September 2026
     `flutter test test/features/transactions/domain/services/transaction_grouper_test.dart`,
     `flutter test test/features/transactions/application/paginated_transaction_list_test.dart`
     und `flutter analyze`.
+  - 18.09.2026: Grouper-Tests (5) und Pagination-Tests (6) bestanden;
+    Analyse ohne Diagnosen.
 
-- [ ] **4.3 Den nun ungenutzten Lookup-Adapter entfernen.**
+- [x] **4.3 Den nun ungenutzten Lookup-Adapter entfernen.**
   - `categoryLookups()` aus `budget_providers.dart` entfernen.
   - `lib/features/budget/domain/view_models/category_lookup.dart` löschen.
   - Riverpod-Code neu generieren und nach verbliebenen Treffern für
     `CategoryLookup` sowie `categoryLookupsProvider` suchen.
   - Validieren: die vollständige Flutter-Test-Suite und `flutter analyze`.
+  - 18.09.2026: Riverpod neu generiert; keine Treffer im Quell- oder Testcode;
+    vollständige Flutter-Suite bestanden (132 Tests); Analyse ohne Diagnosen.
 
 ## Phase 5: Pagination-Vokabular bereinigen
 

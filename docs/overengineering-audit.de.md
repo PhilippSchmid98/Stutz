@@ -83,6 +83,23 @@ Firebase oder das Repository zu koppeln.
 | Synchronisationstest | Je Teilschritt 4 bestanden. |
 | `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
 
+## Umsetzungsstand: Phase 4
+
+Phase 4 wurde am 18. September 2026 vollständig umgesetzt.
+`selectableCategoriesProvider` und `PaginatedTransactionList` verwenden die
+bestehende flache `ExpenseNode`-Sicht direkt. Der feldkopierende Adapter
+`CategoryLookup` samt `categoryLookupsProvider` wurde entfernt.
+
+| Check | Ergebnis |
+| --- | --- |
+| Transaktions-Widget-Test | 13 bestanden. |
+| Draft-Review-Widget-Test | 3 bestanden. |
+| TransactionGrouper-Test | 5 bestanden. |
+| Pagination-Test | 6 bestanden. |
+| Codegenerierung | Bestanden. |
+| `flutter test` | 132 bestanden, 0 fehlgeschlagen. |
+| `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
+
 ## Unnötige Abstraktionen
 
 ### 1. Notification-Sync: Service und Einmethoden-Port entfernt
@@ -220,45 +237,21 @@ Firestore-Streams.
 Methoden und Test-Stubs wurden in Phase 2 gelöscht. Die Firestore-Streams
 bleiben unverändert; es wurde keine Repository-Basisklasse eingeführt.
 
-### 4. Dupliziertes Kategorie-Lookup-Modell und Provider-Stufe
+### 4. Dupliziertes Kategorie-Lookup-Modell und Provider-Stufe entfernt
 
-Aktuell besteht in
-[`lib/features/budget/application/budget_providers.dart`](../lib/features/budget/application/budget_providers.dart)
-diese Kette:
+Der Kategorienfluss besteht nun aus einer gemeinsamen flachen Sicht:
 
 ```text
 expenseTreeProvider
   -> flatExpenseNodesProvider
-       -> categoryLookupsProvider
-            -> PaginatedTransactionList
+       -> selectableCategoriesProvider
+       -> PaginatedTransactionList
 ```
 
-`flatExpenseNodesProvider` wird im handgeschriebenen Produktionscode nur von
-`categoryLookupsProvider` gelesen. `CategoryLookup` aus
-[`lib/features/budget/domain/view_models/category_lookup.dart`](../lib/features/budget/domain/view_models/category_lookup.dart)
-kopiert wiederum nur `id`, `name` und `parentId` aus `ExpenseNode`. Die
-Transaktions-Domain hängt damit bereits vom Budget-Feature ab, nur über einen
-kleineren Typ. Es gibt keine zweite Quelle oder Implementierung, die diesen
-Adaptervertrag benötigt.
-
-**Pragmatische Vereinfachung:** `flatExpenseNodesProvider` als einzige
-wiederverwendete Baumtransformation behalten. `TransactionGrouper` und
-`PaginatedTransactionList` verwenden direkt `List<ExpenseNode>`;
-`selectableCategoriesProvider` filtert dieselbe flache Liste. Danach
-`CategoryLookup` und `categoryLookupsProvider` löschen.
-
-```dart
-@riverpod
-Future<List<ExpenseNode>> flatExpenseNodes(Ref ref) async {
-  final roots = await ref.watch(expenseTreeProvider.future);
-  return const TreeBuilder().flattenTree(roots);
-}
-```
-
-Der Trade-off ist eine breitere Typabhängigkeit auf `ExpenseNode`. In dieser
-Codebase ist sie pragmatisch: Das Transaction-Feature importiert bereits das
-Budget-Domain-Paket, und der dreifeldrige Adapter besitzt keine unabhängige
-Semantik.
+`TransactionGrouper` und `PaginatedTransactionList` verwenden direkt
+`List<ExpenseNode>`; `selectableCategoriesProvider` filtert dieselbe Liste nach
+`ExpenseType.variable`. Damit bleiben Reihenfolge und Quelle einheitlich, ohne
+einen eigenen Typ oder Provider-Lifecycle für eine dreifeldrige Kopie.
 
 **Bewertung:** guter Quick Win, kleines bis mittleres Risiko.
 
@@ -385,7 +378,6 @@ Komplex:
 ```dart
 final roots = await ref.watch(expenseTreeProvider.future);
 final flat = await ref.watch(flatExpenseNodesProvider.future);
-final lookups = await ref.watch(categoryLookupsProvider.future);
 ```
 
 Direkt:

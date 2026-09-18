@@ -1,12 +1,11 @@
 import 'package:collection/collection.dart';
-import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
+import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/features/transactions/domain/view_models/daily_transactions.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 
 /// Pure domain service for enriching and grouping transactions.
 ///
-/// Consumes only the Budget feature's read-only category lookup contract.
 class TransactionGrouper {
   const TransactionGrouper();
 
@@ -17,9 +16,9 @@ class TransactionGrouper {
   /// also ordered newest-first.
   List<DailyTransactions> groupByDay(
     List<AppTransaction> transactions,
-    List<CategoryLookup> categories,
+    List<ExpenseNode> categories,
   ) {
-    final categoriesById = <String, CategoryLookup>{
+    final categoriesById = <String, ExpenseNode>{
       for (final category in categories) category.id: category,
     };
     final sorted = [...transactions]

@@ -1,13 +1,14 @@
-import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
-import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
+import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
+
+import '../data/transaction_mapper.dart';
+import '../data/transaction_repository.dart';
 import '../domain/entities/app_transaction.dart';
 import '../domain/services/transaction_grouper.dart';
 import '../domain/view_models/daily_transactions.dart';
-import '../data/transaction_repository.dart';
-import '../data/transaction_mapper.dart';
 
 part 'transaction_service.g.dart';
 
@@ -102,7 +103,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
   @override
   FutureOr<PaginatedTransactionsState> build() async {
     final repo = ref.watch(transactionRepositoryProvider);
-    final categories = await ref.watch(categoryLookupsProvider.future);
+    final categories = await ref.watch(flatExpenseNodesProvider.future);
 
     return _fetchPage(
       repo: repo,
@@ -114,7 +115,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
   Future<PaginatedTransactionsState> _fetchPage({
     required TransactionRepository repo,
-    required List<CategoryLookup> categories,
+    required List<ExpenseNode> categories,
     required QueryDocumentSnapshot? startAfter,
     required List<AppTransaction> currentTransactions,
   }) async {
@@ -161,7 +162,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
-      final categories = await ref.read(categoryLookupsProvider.future);
+      final categories = await ref.read(flatExpenseNodesProvider.future);
       final docs = await repo.getPagedTransactions(
         limit: _pageSize,
         startAfter: current.lastSnapshot,
@@ -206,7 +207,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
-      final categories = await ref.read(categoryLookupsProvider.future);
+      final categories = await ref.read(flatExpenseNodesProvider.future);
       final docs = await repo.getPagedTransactions(
         limit: _pageSize,
         startAfter: current.newestSnapshot,
@@ -253,7 +254,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
     try {
       final repo = ref.read(transactionRepositoryProvider);
-      final categories = await ref.read(categoryLookupsProvider.future);
+      final categories = await ref.read(flatExpenseNodesProvider.future);
       final monthsToLoad = <DateTime>{
         normalizedMonth,
         if (olderMonth != null) DateTime(olderMonth.year, olderMonth.month),
@@ -319,7 +320,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
 
   List<DailyTransactions> _groupTransactions(
     List<AppTransaction> transactions,
-    List<CategoryLookup> categories,
+    List<ExpenseNode> categories,
   ) => const TransactionGrouper().groupByDay(transactions, categories);
 
   TransactionMonthPage? _findBoundaryPage(
