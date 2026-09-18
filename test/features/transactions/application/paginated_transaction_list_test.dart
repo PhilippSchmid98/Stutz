@@ -21,11 +21,11 @@ void main() {
     final state = await container.read(paginatedTransactionListProvider.future);
     await container
         .read(paginatedTransactionListProvider.notifier)
-        .loadNextPage();
+      .loadOlderPage();
 
     expect(state.rawTransactions, isEmpty);
     expect(state.groupedDays, isEmpty);
-    expect(state.hasReachedMax, isTrue);
+    expect(state.hasReachedOldest, isTrue);
     expect(repository.pageRequests, 1);
   });
 
@@ -52,7 +52,7 @@ void main() {
   });
 
   test(
-    'ensureMonthLoaded returns false when history has no more pages',
+    'ensureMonthWindowLoaded returns false when history has no more pages',
     () async {
       final repository = _FakeTransactionRepository();
       final container = ProviderContainer(
@@ -66,14 +66,14 @@ void main() {
       await container.read(paginatedTransactionListProvider.future);
       final loaded = await container
           .read(paginatedTransactionListProvider.notifier)
-          .ensureMonthLoaded(DateTime(2024, 1));
+          .ensureMonthWindowLoaded(DateTime(2024, 1));
 
       expect(loaded, isFalse);
       expect(repository.pageRequests, 1);
     },
   );
 
-  test('ensureMonthLoaded fetches an unloaded month directly', () async {
+  test('ensureMonthWindowLoaded fetches an unloaded month directly', () async {
     final repository = _FakeTransactionRepository()
       ..monthTransactions = [
         AppTransaction(
@@ -94,7 +94,7 @@ void main() {
     await container.read(paginatedTransactionListProvider.future);
     final loaded = await container
         .read(paginatedTransactionListProvider.notifier)
-        .ensureMonthLoaded(DateTime(2024, 1));
+      .ensureMonthWindowLoaded(DateTime(2024, 1));
 
     final state = container.read(paginatedTransactionListProvider).value!;
     expect(loaded, isTrue);
@@ -102,7 +102,7 @@ void main() {
     expect(repository.monthRequests, 1);
     expect(state.groupedDays.single.date, DateTime(2024, 1, 15));
     expect(state.rawTransactions.single.id, 'past-transaction');
-    expect(state.hasReachedMax, isTrue);
+    expect(state.hasReachedOldest, isTrue);
     expect(state.isLoadingMonth, isFalse);
   });
 
@@ -139,7 +139,7 @@ void main() {
     await container.read(paginatedTransactionListProvider.future);
     await container
         .read(paginatedTransactionListProvider.notifier)
-        .ensureMonthLoaded(DateTime(2026, 4));
+      .ensureMonthWindowLoaded(DateTime(2026, 4));
 
     var state = container.read(paginatedTransactionListProvider).value!;
     expect(state.hasReachedNewest, isFalse);

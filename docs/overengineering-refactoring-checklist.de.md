@@ -204,7 +204,7 @@ Stand: 17. September 2026
 
 ## Phase 5: Pagination-Vokabular bereinigen
 
-- [ ] **5.1 Produktionscode und Tests auf die aktuellen Older/Newer-Namen umstellen.**
+- [x] **5.1 Produktionscode und Tests auf die aktuellen Older/Newer-Namen umstellen.**
   - Intern `oldestSnapshot` statt `lastSnapshot` verwenden.
   - Tests von `hasReachedMax`, `isLoadingMore` und `loadMoreError` auf
     `hasReachedOldest`, `isLoadingOlder` und `loadOlderError` umstellen.
@@ -216,8 +216,10 @@ Stand: 17. September 2026
     `flutter test test/features/transactions/application/paginated_transaction_list_test.dart`
     und
     `flutter test test/features/transactions/presentation/transaction_widgets_test.dart`.
+  - 18.09.2026: State-, Pagination- und Transaktions-Widget-Tests (1, 6, 13)
+    bestanden; Analyse ohne Diagnosen.
 
-- [ ] **5.2 Alte Pagination-Aliase und Fallback-Parameter löschen.**
+- [x] **5.2 Alte Pagination-Aliase und Fallback-Parameter löschen.**
   - Getter `lastSnapshot`, `hasReachedMax`, `isLoadingMore` und
     `loadMoreError` entfernen.
   - Konstruktor-/`copyWith`-Parameter `hasReachedMax`, `isLoadingMore`,
@@ -225,8 +227,10 @@ Stand: 17. September 2026
   - Methoden `loadNextPage()` und `ensureMonthLoaded()` entfernen.
   - Den eigentlichen Older/Newer-/Monats-Ladealgorithmus nicht verändern.
   - Validieren: dieselben drei fokussierten Tests und `flutter analyze`.
+  - 18.09.2026: State-, Pagination- und Transaktions-Widget-Tests (1, 6, 13)
+    bestanden; Analyse ohne Diagnosen.
 
-- [ ] **5.3 Erst danach über Freezed für `PaginatedTransactionsState` entscheiden.**
+- [x] **5.3 Erst danach über Freezed für `PaginatedTransactionsState` entscheiden.**
   - Nur umstellen, wenn der verbleibende manuelle `copyWith` weiterhin
     nachweislich fehleranfällig oder schwer lesbar ist.
   - Bei Umstellung vorhandenes Freezed verwenden; keine neue Dependency und
@@ -236,6 +240,9 @@ Stand: 17. September 2026
     weiter ändern.
   - Validieren: alle Transaction-Application- und Presentation-Tests sowie
     `flutter analyze`.
+  - 18.09.2026: Keine Umstellung. Der verbleibende manuelle `copyWith` ist
+    klar und die expliziten `clearLoad...Error`-Flags setzen Nullable-Fehler
+    weiterhin gezielt auf `null`; die fokussierten Tests und Analyse bestehen.
 
 ## Phase 6: Abschluss-Gate
 

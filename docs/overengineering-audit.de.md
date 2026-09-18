@@ -100,6 +100,22 @@ bestehende flache `ExpenseNode`-Sicht direkt. Der feldkopierende Adapter
 | `flutter test` | 132 bestanden, 0 fehlgeschlagen. |
 | `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
 
+## Umsetzungsstand: Phase 5
+
+Phase 5 wurde am 18. September 2026 abgeschlossen. Der Pagination-State und
+alle Aufrufer verwenden nun ausschließlich die gerichteten Newer/Older-Namen.
+Die alten Alias-Getter, Fallback-Parameter und Alias-Methoden wurden entfernt.
+Eine Freezed-Umstellung ist nach YAGNI nicht nötig: Der manuelle `copyWith`
+bleibt klar und kann Nullable-Fehler mit den vorhandenen `clearLoad...Error`-
+Flags explizit zurücksetzen.
+
+| Check | Ergebnis |
+| --- | --- |
+| Pagination-State-Test | 1 bestanden. |
+| Pagination-Test | 6 bestanden. |
+| Transaktions-Widget-Test | 13 bestanden. |
+| `flutter analyze` | Nach beiden Teilschritten bestanden, keine Diagnosen. |
+
 ## Unnötige Abstraktionen
 
 ### 1. Notification-Sync: Service und Einmethoden-Port entfernt
@@ -255,28 +271,14 @@ einen eigenen Typ oder Provider-Lifecycle für eine dreifeldrige Kopie.
 
 **Bewertung:** guter Quick Win, kleines bis mittleres Risiko.
 
-### 5. Alte Pagination-Aliase verdoppeln das Vokabular
+### 5. Alte Pagination-Aliase entfernt
 
 [`lib/features/transactions/application/transaction_service.dart`](../lib/features/transactions/application/transaction_service.dart)
-modelliert inzwischen getrenntes Laden nach neuer und älter. Parallel dazu
-existieren alte Einrichtungs- und API-Namen:
-
-- `lastSnapshot` als Alias für `oldestSnapshot`;
-- `hasReachedMax` als Alias für `hasReachedOldest`;
-- `isLoadingMore` als Alias für `isLoadingOlder`;
-- `loadMoreError` als Alias für `loadOlderError`;
-- entsprechende Fallback-Parameter und `clearLoadMoreError` in `copyWith`;
-- `loadNextPage()` als Alias für `loadOlderPage()`;
-- `ensureMonthLoaded()` als Alias für `ensureMonthWindowLoaded()`.
-
-Produktionscode verwendet von den alten State-Namen nur noch `lastSnapshot`;
-die übrigen Nutzer sind Tests. Die beiden Method-Aliase werden in Produktion
-gar nicht aufgerufen.
-
-**Pragmatische Vereinfachung:** Zuerst Tests auf die aktuellen Older/Newer-
-Namen umstellen, intern `oldestSnapshot` verwenden und anschließend alle
-Aliase sowie Fallback-Parameter entfernen. Der eigentliche Pagination-
-Algorithmus bleibt unverändert.
+modelliert getrenntes Laden nach neuer und älter über `newestSnapshot`,
+`oldestSnapshot`, `hasReachedNewest`, `hasReachedOldest`, `isLoadingNewer`,
+`isLoadingOlder` und die korrespondierenden Fehlerfelder. Die vorherigen
+Legacy-Aliase und Fallback-Parameter wurden in Phase 5 entfernt; der
+Pagination- und Monats-Ladealgorithmus blieb unverändert.
 
 ### 6. Ungenutzte JSON-Generator-Abhängigkeiten entfernt
 

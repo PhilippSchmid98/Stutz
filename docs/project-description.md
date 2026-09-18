@@ -466,10 +466,10 @@ users/{userId}/transactionMonths/_meta
 
 - loads 20 Firestore documents per page;
 - retains raw transactions and grouped days;
-- tracks the last Firestore snapshot cursor;
-- distinguishes initial failure from load-more failure;
-- prevents duplicate page loads;
-- can continue loading until a requested month appears.
+- tracks newest and oldest Firestore snapshot cursors;
+- distinguishes initial, newer-page, older-page, and month-loading failures;
+- prevents duplicate directional page loads;
+- can load a requested month and its immediate neighbors.
 
 `TransactionMutations`:
 

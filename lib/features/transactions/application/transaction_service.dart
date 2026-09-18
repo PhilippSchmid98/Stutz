@@ -33,25 +33,16 @@ class PaginatedTransactionsState {
     this.oldestSnapshot,
     bool? hasReachedNewest,
     bool? hasReachedOldest,
-    bool? hasReachedMax,
     bool? isLoadingNewer,
     bool? isLoadingOlder,
-    bool? isLoadingMore,
     this.loadNewerError,
-    Object? loadOlderError,
-    Object? loadMoreError,
+    this.loadOlderError,
     this.isLoadingMonth = false,
     this.loadMonthError,
   }) : hasReachedNewest = hasReachedNewest ?? false,
-       hasReachedOldest = hasReachedOldest ?? hasReachedMax ?? false,
+       hasReachedOldest = hasReachedOldest ?? false,
        isLoadingNewer = isLoadingNewer ?? false,
-       isLoadingOlder = isLoadingOlder ?? isLoadingMore ?? false,
-       loadOlderError = loadOlderError ?? loadMoreError;
-
-  QueryDocumentSnapshot? get lastSnapshot => oldestSnapshot;
-  bool get hasReachedMax => hasReachedOldest;
-  bool get isLoadingMore => isLoadingOlder;
-  Object? get loadMoreError => loadOlderError;
+       isLoadingOlder = isLoadingOlder ?? false;
 
   PaginatedTransactionsState copyWith({
     List<DailyTransactions>? groupedDays,
@@ -62,13 +53,10 @@ class PaginatedTransactionsState {
     bool? hasReachedOldest,
     bool? isLoadingNewer,
     bool? isLoadingOlder,
-    bool? isLoadingMore,
     Object? loadNewerError,
     bool clearLoadNewerError = false,
     Object? loadOlderError,
-    Object? loadMoreError,
     bool clearLoadOlderError = false,
-    bool clearLoadMoreError = false,
     bool? isLoadingMonth,
     Object? loadMonthError,
     bool clearLoadMonthError = false,
@@ -81,13 +69,13 @@ class PaginatedTransactionsState {
       hasReachedNewest: hasReachedNewest ?? this.hasReachedNewest,
       hasReachedOldest: hasReachedOldest ?? this.hasReachedOldest,
       isLoadingNewer: isLoadingNewer ?? this.isLoadingNewer,
-      isLoadingOlder: isLoadingOlder ?? isLoadingMore ?? this.isLoadingOlder,
+      isLoadingOlder: isLoadingOlder ?? this.isLoadingOlder,
       loadNewerError: clearLoadNewerError
           ? null
           : loadNewerError ?? this.loadNewerError,
-      loadOlderError: clearLoadOlderError || clearLoadMoreError
+      loadOlderError: clearLoadOlderError
           ? null
-          : loadOlderError ?? loadMoreError ?? this.loadOlderError,
+          : loadOlderError ?? this.loadOlderError,
       isLoadingMonth: isLoadingMonth ?? this.isLoadingMonth,
       loadMonthError: clearLoadMonthError
           ? null
@@ -165,7 +153,7 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
       final categories = await ref.read(flatExpenseNodesProvider.future);
       final docs = await repo.getPagedTransactions(
         limit: _pageSize,
-        startAfter: current.lastSnapshot,
+        startAfter: current.oldestSnapshot,
       );
       final transactions = _mergeTransactions(
         current.rawTransactions,
@@ -188,8 +176,6 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
       );
     }
   }
-
-  Future<void> loadNextPage() => loadOlderPage();
 
   Future<void> loadNewerPage() async {
     final current = state.value;
@@ -233,10 +219,6 @@ class PaginatedTransactionList extends _$PaginatedTransactionList {
         current.copyWith(isLoadingNewer: false, loadNewerError: e),
       );
     }
-  }
-
-  Future<bool> ensureMonthLoaded(DateTime month) async {
-    return ensureMonthWindowLoaded(month);
   }
 
   Future<bool> ensureMonthWindowLoaded(

@@ -342,10 +342,10 @@ void main() {
   );
 
   testWidgets(
-    'transaction screen exposes a retry action for load-more errors',
+    'transaction screen exposes a retry action for older-page errors',
     (tester) async {
       final fake = _FakePaginatedTransactionList(
-        _TransactionScreenMode.loadMoreError,
+        _TransactionScreenMode.loadOlderError,
       );
 
       await _pumpTransactionScreen(tester, paginatedNotifier: fake);
@@ -357,11 +357,11 @@ void main() {
       );
       expect(find.text('Erneut versuchen'), findsOneWidget);
 
-      final callsBeforeRetry = fake._loadNextPageCalls;
+      final callsBeforeRetry = fake._loadOlderPageCalls;
       await tester.tap(find.text('Erneut versuchen'));
       await tester.pump();
 
-      expect(fake._loadNextPageCalls, callsBeforeRetry + 1);
+      expect(fake._loadOlderPageCalls, callsBeforeRetry + 1);
     },
   );
 }
@@ -392,7 +392,7 @@ Future<void> _pumpTransactionScreen(
   );
 }
 
-enum _TransactionScreenMode { loading, error, empty, loadMoreError }
+enum _TransactionScreenMode { loading, error, empty, loadOlderError }
 
 class _FakeCurrentVisibleMonth extends CurrentVisibleMonth {
   final DateTime initialMonth;
@@ -406,7 +406,7 @@ class _FakeCurrentVisibleMonth extends CurrentVisibleMonth {
 class _FakePaginatedTransactionList extends PaginatedTransactionList {
   final _TransactionScreenMode _mode;
   final Completer<PaginatedTransactionsState>? _pending;
-  int _loadNextPageCalls = 0;
+  int _loadOlderPageCalls = 0;
 
   _FakePaginatedTransactionList(this._mode, [this._pending]);
 
@@ -419,14 +419,14 @@ class _FakePaginatedTransactionList extends PaginatedTransactionList {
         throw StateError('private transaction detail');
       case _TransactionScreenMode.empty:
         return _emptyTransactionState();
-      case _TransactionScreenMode.loadMoreError:
-        return _loadMoreErrorState();
+      case _TransactionScreenMode.loadOlderError:
+        return _loadOlderErrorState();
     }
   }
 
   @override
   Future<void> loadOlderPage() async {
-    _loadNextPageCalls++;
+    _loadOlderPageCalls++;
   }
 
   @override
@@ -441,11 +441,11 @@ PaginatedTransactionsState _emptyTransactionState() {
   return PaginatedTransactionsState(
     groupedDays: const [],
     rawTransactions: const [],
-    hasReachedMax: true,
+    hasReachedOldest: true,
   );
 }
 
-PaginatedTransactionsState _loadMoreErrorState() {
+PaginatedTransactionsState _loadOlderErrorState() {
   return PaginatedTransactionsState(
     groupedDays: [
       DailyTransactions(
@@ -455,7 +455,7 @@ PaginatedTransactionsState _loadMoreErrorState() {
       ),
     ],
     rawTransactions: const [],
-    hasReachedMax: false,
-    loadMoreError: StateError('load more unavailable'),
+    hasReachedOldest: false,
+    loadOlderError: StateError('older page unavailable'),
   );
 }
