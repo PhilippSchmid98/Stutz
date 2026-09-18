@@ -2,7 +2,7 @@
 
 **Grundlage:** [Application Audit vom 10. September 2026](application-audit-2026-09-10.de.md)  
 **Zweck:** Fortschritt, Nachweise und Release-Freigabe für die im Audit priorisierten Verbesserungen nachvollziehbar dokumentieren.  
-**Letzte Aktualisierung:** 16. September 2026
+**Letzte Aktualisierung:** 18. September 2026
 
 ## Verwendung und Status
 
@@ -339,7 +339,7 @@ Owner haben.
 | 6 | Verlaufsseiten inkrementell gruppieren oder Monatsfenster cachen. | Nicht begonnen |  |  |
 | 7 | Reporting und Reparaturwerkzeuge fuer fehlerhafte Datensaetze ergaenzen. | Nicht begonnen |  |  |
 | 8 | Synchronisierte Notification-Zeilen bereinigen, Rest-Queue verschluesseln. | Nicht begonnen |  |  |
-| 9 | Veralteten Sync- und JSON-Generierungscode entfernen. | Nicht begonnen |  |  |
+| 9 | Veralteten Sync-Code und ungenutzte direkte JSON-Codegen-Dependencies entfernen. | Bereit zur Pruefung |  | Phasen 1, 3 und 6 der [Refactoring-Checkliste](overengineering-refactoring-checklist.de.md) lokal validiert. |
 | 10 | Grosse Kategoriebäume profilieren, dann ueber Sliver-Neufassung entscheiden. | Nicht begonnen |  |  |
 
 ---

@@ -2,7 +2,7 @@
 
 Zuletzt geprüft: 2026-09-10
 
-Implementierungsstatus aktualisiert: 2026-09-16
+Implementierungsstatus aktualisiert: 2026-09-18
 
 ## 1. Zweck und Umfang
 
@@ -109,6 +109,23 @@ Schlussfolgerungen sollten nicht mehr als aktuelle Mängel wiederholt werden:
 Der veraltete generierte Sync-Provider wurde am 16.09.2026 entfernt. Der Pfad
 zur manuellen Transaktionserstellung bleibt nicht idempotent.
 
+### 2.3 Refactoring-Update (18.09.2026)
+
+Der KISS/YAGNI-Refactoring-Plan wurde vollständig umgesetzt und automatisiert
+validiert. Entfernt wurden ungenutzte Widgets, Repository-Reads, Provider,
+einmalige Konfigurationshüllen, der In-Memory-Händlerregel-Zweig,
+`DraftSyncService`, `TransactionDraftStore`, `CategoryLookup` und alte
+Pagination-Aliase. Die verbleibende Plattformabstraktion
+`NotificationCaptureGateway`, Firestore-Mapper, Freezed-Modelle und die
+gerichtete Pagination bleiben erhalten, weil sie reale Grenzen oder fachliche
+Anforderungen abbilden.
+
+Die Abschlussprüfung bestand aus `flutter analyze`, 132 Flutter-Tests, Rules-,
+Backup- und Migrationssuite sowie wiederholbarer Codegenerierung. Manuelle
+Smoke-Tests waren mangels verfügbarer Flutter-Geräte nicht möglich;
+`android\gradlew.bat testDebugUnitTest` blieb durch die lokale
+Cross-Drive-Gradle-Konfiguration blockiert.
+
 ## 3. Validation Baseline
 
 Die folgenden Checks liefen gegen den geprüften Workspace:
@@ -165,9 +182,9 @@ presentation -> application providers/controllers -> repositories/services
                                               \-> domain value objects
 ```
 
-Die Feature-übergreifende Transaktionsanreicherung nutzt `CategoryLookup`,
-anstatt das Transaction-Feature direkt vom gesamten Budget-Repository abhängig
-zu machen. Das ist ein nützlicher, eng gefasster Contract.
+Die Feature-übergreifende Transaktionsanreicherung nutzt die gemeinsame flache
+`ExpenseNode`-Sicht. Das Transaction-Feature hängt damit vom Budget-Domain-
+Modell, nicht vom Budget-Repository oder dessen Firestore-Details ab.
 
 **Warum das gut ist**
 
@@ -235,53 +252,18 @@ auslöst, statt verloren zu gehen.
 **Empfehlung:** Dieses Serialisierungsverhalten beibehalten, wenn der in Phase 2
 beschriebene Owner-Lifecycle-Fix umgesetzt wird.
 
-### 4.4 ⚠️ Ein veralteter, schreibender Provider bleibt bestehen
+### 4.4 ✅ Veralteter Sync-Provider ist entfernt
 
-Der alte Provider existiert weiterhin unterhalb des expliziten Synchronizers:
+Der nicht verwendete schreibende Sync-Provider wurde entfernt.
+`_AuthenticatedHome` besitzt den `NotificationDraftSynchronizer`, der Start,
+Resume und native Capture-Events koordiniert. Der Synchronizer enthält den
+linearen Ablauf direkt und erhält ausschließlich den Callback
+`upsertCapturedDraft`; dadurch bestehen weder ein zweiter Provider-Owner noch
+eine direkte Firebase-Abhängigkeit in der Application-Schicht.
 
-```dart
-@riverpod
-Future<void> synchronizeNotificationDrafts(Ref ref) async {
-  // ...
-  await service.synchronize(user.uid);
-}
-```
-
-Quelle:
-[notification_draft_sync.dart](../lib/features/notification_import/application/notification_draft_sync.dart#L59-L75).
-
-Kein lebender Code beobachtet oder liest diesen generierten Provider. Das ist
-relevant, weil dadurch zwei scheinbare Owner für die Synchronisierung
-entstehen:
-
-- `_AuthenticatedHome` und `NotificationDraftSynchronizer`, die aktuell sind;
-- `synchronizeNotificationDraftsProvider`, der veraltet ist.
-
-Künftige Wartungsarbeiten könnten versehentlich Provider-Initialisierungs-Writes
-wieder einführen oder annehmen, dass der veraltete Provider den nativen Owner
-beim Sign-out löscht.
-
-**Mögliche Lösungen**
-
-1. Den Provider beibehalten und bewusst zum alleinigen Koordinator machen.
-2. Ihn entfernen und den expliziten Synchronizer beibehalten, der vom
-   Lifecycle der authentifizierten App-Ebene besessen wird.
-3. Beide durch einen Keep-alive-`AsyncNotifier` ersetzen, der einen expliziten
-   `sync()`-Befehl sowie einen Sync-Status bereitstellt.
-
-**Empfohlene Lösung**
-
-Option 3 nutzen, falls Sync-Status und Retries demnächst dazukommen;
-andernfalls jetzt Option 2 verwenden. Die veraltete Funktion entfernen, die
-Riverpod-Ausgabe neu generieren und einen klar dokumentierten Owner für alle
-Sync-Trigger beibehalten.
-
-**Abnahmekriterien**
-
-- Die Suche nach `synchronizeNotificationDraftsProvider` liefert kein Ergebnis.
-- Tests für Start, Resume, natives Event und expliziten Retry bestehen
-  weiterhin.
-- Eine Sync-Abstraktion besitzt Serialisierung und Error State.
+Die Synchronisationssuite deckt Upload-vor-Acknowledge, Upload-Fehler,
+Koaleszenz und den abgebrochenen Owner-Wechsel ab. Die separate offene Frage
+zur Sichtbarkeit von Hintergrund-Sync-Fehlern bleibt in Abschnitt 4.5 bestehen.
 
 ### 4.5 ⚠️ Hintergrund-Sync-Fehler werden absichtlich verschluckt
 
@@ -369,17 +351,12 @@ Listen in späteren Phasen kein relevantes Performance-Thema.
 **Empfehlung:** Kein flächendeckendes "const überall ergänzen"-Refactoring
 starten. Das würde Unruhe erzeugen, ohne einen gemessenen Engpass zu beheben.
 
-### 4.8 ⚠️ Die Dependency-Strategie ist nicht durchgehend konsistent
+### 4.8 ✅ Direkte JSON-Codegen-Dependencies entfernt
 
-`json_annotation` und `json_serializable` sind deklariert, aber die Persistenz
-läuft über explizite Firestore-Mapper, und Domain-Modelle bieten keine
-generierte JSON-API. Beide Strategien parallel zu pflegen erhöht die
-Upgrade-Angriffsfläche, ohne aktuell einen Mehrwert zu bringen.
-
-**Empfohlene Lösung:** Die expliziten Firestore-Mapper beibehalten, da sie
-`Timestamp`, Migrations-Defaults und storage-spezifische Validierung
-handhaben. Ungenutzte JSON-Dependencies entfernen, sobald bestätigt ist, dass
-generierte Quellen nicht darauf verweisen.
+Die Persistenz bleibt bei expliziten Firestore-Mappern, die `Timestamp`,
+Migrations-Defaults und storage-spezifische Validierung kapseln. Die ungenutzten
+direkten Dependencies `json_annotation` und `json_serializable` wurden nach
+erfolgreicher Codegenerierung entfernt.
 
 ---
 
@@ -2044,7 +2021,6 @@ Für die folgenden direkten Production-Dependencies sind Updates verfügbar:
 | `google_fonts` | 8.0.2 | 8.2.1 | 8.2.1 | Nein |
 | `hooks_riverpod` | 3.0.3 | 3.3.2 | 3.4.3 | Ja |
 | `intl` | 0.20.2 | 0.20.2 | 0.20.3 | Nein |
-| `json_annotation` | 4.9.0 | 4.12.0 | 4.12.0 | Nein |
 | `riverpod_annotation` | 3.0.3 | 4.0.3 | 4.0.7 | Ja |
 | `shared_preferences` | 2.5.4 | 2.5.5 | 2.5.5 | Nein |
 | `uuid` | 4.5.2 | 4.6.0 | 4.6.0 | Nein |
@@ -2178,8 +2154,7 @@ dieser Reihenfolge angehen:
    Datensätze ergänzen.
 8. Synchronisierte Notification-Zeilen bereinigen und die verbleibende
    Queue verschlüsseln.
-9. Veralteten Sync- und JSON-Generierungscode entfernen.
-10. Große Kategoriebäume profilieren, bevor eine Sliver-Neufassung
+9. Große Kategoriebäume profilieren, bevor eine Sliver-Neufassung
     umgesetzt wird.
 
 ## 12. Checkliste für Finance-Grade
