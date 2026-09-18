@@ -4,7 +4,6 @@ import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/notification_import/data/transaction_draft_mapper.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft_confirmation.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
-import 'package:stutz/features/notification_import/domain/repositories/transaction_draft_store.dart';
 import 'package:stutz/features/notification_import/domain/services/merchant_category_rule_id.dart';
 import 'package:stutz/features/transactions/data/transaction_mapper.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
@@ -12,7 +11,7 @@ import 'package:stutz/features/transactions/domain/entities/app_transaction.dart
 
 part 'transaction_draft_repository.g.dart';
 
-class TransactionDraftRepository implements TransactionDraftStore {
+class TransactionDraftRepository {
   final String userId;
   final FirebaseFirestore _firestore;
 
@@ -166,7 +165,6 @@ class TransactionDraftRepository implements TransactionDraftStore {
   }
 
   /// Writes a newly captured candidate once without changing a reviewed draft.
-  @override
   Future<void> upsertCapturedDraft(TransactionDraft draft) async {
     if (draft.status != TransactionDraftStatus.pending) {
       throw ArgumentError.value(

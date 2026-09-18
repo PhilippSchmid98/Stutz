@@ -70,54 +70,54 @@ Händlerregel-IDs bleibt erhalten.
 | `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
 | `flutter test` | 132 bestanden, 0 fehlgeschlagen. |
 
+## Umsetzungsstand: Phase 3
+
+Phase 3 wurde am 18. September 2026 vollständig umgesetzt.
+`NotificationDraftSynchronizer` enthält nun den bisherigen linearen Ablauf
+und erhält ausschließlich den Callback `upsertCapturedDraft`. `DraftSyncService`
+und `TransactionDraftStore` wurden entfernt, ohne den Synchronizer direkt an
+Firebase oder das Repository zu koppeln.
+
+| Check | Ergebnis |
+| --- | --- |
+| Synchronisationstest | Je Teilschritt 4 bestanden. |
+| `flutter analyze` | Nach jedem Teilschritt bestanden, keine Diagnosen. |
+
 ## Unnötige Abstraktionen
 
-### 1. Notification-Sync: drei Typen für einen linearen Ablauf
+### 1. Notification-Sync: Service und Einmethoden-Port entfernt
 
 Betroffene Dateien:
 
 - [`lib/features/notification_import/application/notification_draft_sync.dart`](../lib/features/notification_import/application/notification_draft_sync.dart)
-- [`lib/features/notification_import/application/draft_sync_service.dart`](../lib/features/notification_import/application/draft_sync_service.dart)
-- [`lib/features/notification_import/domain/repositories/transaction_draft_store.dart`](../lib/features/notification_import/domain/repositories/transaction_draft_store.dart)
 - [`lib/features/notification_import/data/transaction_draft_repository.dart`](../lib/features/notification_import/data/transaction_draft_repository.dart)
 
-`NotificationDraftSynchronizer` besitzt exklusiv einen `DraftSyncService`.
-Dieser Service delegiert genau einen Cloud-Schritt an das einmethodige
-`TransactionDraftStore`:
+`NotificationDraftSynchronizer` führt Set Owner, Capture, List, Upsert und
+Acknowledge direkt aus. Der Produktionsaufrufer übergibt ihm dazu ausschließlich
+die gebundene Methode `TransactionDraftRepository.upsertCapturedDraft`:
 
 ```text
 NotificationDraftSynchronizer
-  -> DraftSyncService
-       -> TransactionDraftStore.upsertCapturedDraft
-            -> TransactionDraftRepository
+  -> upsertCapturedDraft callback
+       -> TransactionDraftRepository
 ```
 
-`TransactionDraftStore` hat genau eine Produktionsimplementierung. Der schmale
-Port ist für Tests nützlich, rechtfertigt zusammen mit der zusätzlichen
-Service-Klasse aber keine eigene dreistufige Struktur. Die direkte Kopplung des
-Synchronizers an `TransactionDraftRepository` wäre ebenfalls keine gute
-Vereinfachung: Sie würde Firestore in die Application-Schicht ziehen und die
-Tests zu umfangreichen Repository-Fakes zwingen.
-
-**Pragmatische Vereinfachung:** `DraftSyncService` in
-`NotificationDraftSynchronizer` integrieren und nur die benötigte Operation als
-Callback injizieren:
+Die entfernte Service- und Interface-Stufe hatte jeweils nur einen Nutzer.
+Der Callback hält den Synchronizer Firebase-frei und ermöglicht Tests mit
+lokalen Async-Funktionen:
 
 ```dart
-typedef UpsertCapturedDraft = Future<void> Function(TransactionDraft draft);
-
 class NotificationDraftSynchronizer {
   NotificationDraftSynchronizer({
     required NotificationCaptureGateway captureGateway,
-    required UpsertCapturedDraft upsertCapturedDraft,
+    required Future<void> Function(TransactionDraft) upsertCapturedDraft,
     required void Function() onSynchronized,
   });
 }
 ```
 
-Damit entfallen ein Service, ein Interface und zwei Imports, während Tests eine
-kleine Funktion statt eines Fake-Stores übergeben können. Serialisierung,
-Cancellation, Upload-vor-Acknowledgement und UI-Verhalten bleiben unverändert.
+Serialisierung, Cancellation, Upload-vor-Acknowledgement und UI-Verhalten
+blieben unverändert.
 
 **Bewertung:** hoher Nutzen, kleines Risiko.
 

@@ -135,7 +135,7 @@ Stand: 17. September 2026
 
 ## Phase 3: Notification-Sync lokal zusammenziehen
 
-- [ ] **3.1 `DraftSyncService` in `NotificationDraftSynchronizer` integrieren.**
+- [x] **3.1 `DraftSyncService` in `NotificationDraftSynchronizer` integrieren.**
   - Den Ablauf Set Owner -> Capture -> List -> Upsert -> Acknowledge unverändert
     in `notification_draft_sync.dart` übernehmen.
   - Cancellation-Prüfungen vor jedem externen Schritt erhalten.
@@ -145,8 +145,10 @@ Stand: 17. September 2026
   - Validieren:
     `flutter test test/features/notification_import/application/draft_sync_service_test.dart`
     und `flutter analyze`.
+  - 18.09.2026: Synchronisationstest bestanden (4 Tests); Analyse ohne
+    Diagnosen.
 
-- [ ] **3.2 Einmethodiges `TransactionDraftStore` durch einen Callback ersetzen.**
+- [x] **3.2 Einmethodiges `TransactionDraftStore` durch einen Callback ersetzen.**
   - Dem Synchronizer
     `Future<void> Function(TransactionDraft) upsertCapturedDraft` übergeben.
   - In `app_router.dart` die gebundene Methode
@@ -159,6 +161,8 @@ Stand: 17. September 2026
   - Validieren:
     `flutter test test/features/notification_import/application/draft_sync_service_test.dart`
     und `flutter analyze`.
+  - 18.09.2026: Synchronisationstest bestanden (4 Tests); Analyse ohne
+    Diagnosen.
 
 ## Phase 4: Kategorie-Datenfluss vereinfachen
 

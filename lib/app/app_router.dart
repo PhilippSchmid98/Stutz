@@ -99,7 +99,9 @@ class _AuthenticatedHomeState extends ConsumerState<_AuthenticatedHome>
     final gateway = ref.read(notificationCaptureGatewayProvider);
     _synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
-      draftStore: ref.read(transactionDraftRepositoryProvider),
+      upsertCapturedDraft: ref
+          .read(transactionDraftRepositoryProvider)
+          .upsertCapturedDraft,
       onSynchronized: () {
         if (mounted) ref.invalidate(pendingTransactionDraftsProvider);
       },

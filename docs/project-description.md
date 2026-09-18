@@ -665,7 +665,8 @@ Supported calls are:
 
 ### 10.6 Synchronization
 
-[draft_sync_service.dart](../lib/features/notification_import/application/draft_sync_service.dart) performs ordered synchronization:
+[notification_draft_sync.dart](../lib/features/notification_import/application/notification_draft_sync.dart)
+performs ordered synchronization:
 
 1. set the active native owner;
 2. ask the listener to inspect active notifications;
@@ -673,9 +674,10 @@ Supported calls are:
 4. upload every draft;
 5. acknowledge local drafts only after all uploads succeed.
 
-The narrow [transaction_draft_store.dart](../lib/features/notification_import/domain/repositories/transaction_draft_store.dart) interface lets this process be tested without Firestore.
-
-[notification_draft_sync.dart](../lib/features/notification_import/application/notification_draft_sync.dart) connects synchronization to auth state. A resolved signed-out state clears the native active owner.
+It receives the repository's `upsertCapturedDraft` method as a callback, so
+the synchronization flow remains testable without a Firestore dependency. It
+also connects synchronization to auth state. A resolved signed-out state clears
+the native active owner.
 
 ### 10.7 Firestore draft repository
 

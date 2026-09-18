@@ -1,27 +1,29 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:stutz/features/notification_import/application/draft_sync_service.dart';
 import 'package:stutz/features/notification_import/application/notification_capture_gateway.dart';
 import 'package:stutz/features/notification_import/application/notification_draft_sync.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
-import 'package:stutz/features/notification_import/domain/repositories/transaction_draft_store.dart';
 
 void main() {
   test('uploads every draft before acknowledging the local queue', () async {
     final first = _draft('first');
     final second = _draft('second');
     final gateway = _FakeCaptureGateway([first, second]);
-    final store = _FakeDraftStore();
-    final service = DraftSyncService(
+    final upsertedDraftIds = <String>[];
+    Future<void> upsertCapturedDraft(TransactionDraft draft) async {
+      upsertedDraftIds.add(draft.id);
+    }
+    final synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
-      draftStore: store,
+      upsertCapturedDraft: upsertCapturedDraft,
+      onSynchronized: () {},
     );
 
-    await service.synchronize('user-1');
+    await synchronizer.synchronize('user-1');
 
     expect(gateway.activeOwner, 'user-1');
-    expect(store.upsertedDraftIds, ['first', 'second']);
+  expect(upsertedDraftIds, ['first', 'second']);
     expect(gateway.acknowledgedDraftIds, ['first', 'second']);
   });
 
@@ -29,15 +31,23 @@ void main() {
     final first = _draft('first');
     final second = _draft('second');
     final gateway = _FakeCaptureGateway([first, second]);
-    final store = _FakeDraftStore(failForId: 'second');
-    final service = DraftSyncService(
+    final upsertedDraftIds = <String>[];
+    Future<void> upsertCapturedDraft(TransactionDraft draft) async {
+      if (draft.id == 'second') throw StateError('Firestore unavailable');
+      upsertedDraftIds.add(draft.id);
+    }
+    final synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
-      draftStore: store,
+      upsertCapturedDraft: upsertCapturedDraft,
+      onSynchronized: () {},
     );
 
-    await expectLater(() => service.synchronize('user-1'), throwsStateError);
+    await expectLater(
+      () => synchronizer.synchronize('user-1'),
+      throwsStateError,
+    );
 
-    expect(store.upsertedDraftIds, ['first']);
+    expect(upsertedDraftIds, ['first']);
     expect(gateway.acknowledgedDraftIds, isEmpty);
   });
 
@@ -46,7 +56,7 @@ void main() {
     var synchronizedCount = 0;
     final synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
-      draftStore: _FakeDraftStore(),
+      upsertCapturedDraft: (_) async {},
       onSynchronized: () => synchronizedCount += 1,
     );
 
@@ -67,12 +77,12 @@ void main() {
       final gateway = _BlockingCaptureGateway();
       final oldSynchronizer = NotificationDraftSynchronizer(
         captureGateway: gateway,
-        draftStore: _FakeDraftStore(),
+        upsertCapturedDraft: (_) async {},
         onSynchronized: () {},
       );
       final newSynchronizer = NotificationDraftSynchronizer(
         captureGateway: gateway,
-        draftStore: _FakeDraftStore(),
+        upsertCapturedDraft: (_) async {},
         onSynchronized: () {},
       );
 
@@ -142,19 +152,6 @@ class _FakeCaptureGateway implements NotificationCaptureGateway {
   @override
   Future<void> setActiveOwner(String userId) async {
     activeOwner = userId;
-  }
-}
-
-class _FakeDraftStore implements TransactionDraftStore {
-  final String? failForId;
-  final List<String> upsertedDraftIds = [];
-
-  _FakeDraftStore({this.failForId});
-
-  @override
-  Future<void> upsertCapturedDraft(TransactionDraft draft) async {
-    if (draft.id == failForId) throw StateError('Firestore unavailable');
-    upsertedDraftIds.add(draft.id);
   }
 }
 
