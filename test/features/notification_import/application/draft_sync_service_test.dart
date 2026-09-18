@@ -14,6 +14,7 @@ void main() {
     Future<void> upsertCapturedDraft(TransactionDraft draft) async {
       upsertedDraftIds.add(draft.id);
     }
+
     final synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
       upsertCapturedDraft: upsertCapturedDraft,
@@ -23,7 +24,7 @@ void main() {
     await synchronizer.synchronize('user-1');
 
     expect(gateway.activeOwner, 'user-1');
-  expect(upsertedDraftIds, ['first', 'second']);
+    expect(upsertedDraftIds, ['first', 'second']);
     expect(gateway.acknowledgedDraftIds, ['first', 'second']);
   });
 
@@ -36,6 +37,7 @@ void main() {
       if (draft.id == 'second') throw StateError('Firestore unavailable');
       upsertedDraftIds.add(draft.id);
     }
+
     final synchronizer = NotificationDraftSynchronizer(
       captureGateway: gateway,
       upsertCapturedDraft: upsertCapturedDraft,
