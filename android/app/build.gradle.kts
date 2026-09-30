@@ -1,5 +1,6 @@
 import java.util.Properties
 import java.io.FileInputStream
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     id("com.android.application")
@@ -19,6 +20,10 @@ android {
     namespace = "ch.stutz.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -83,4 +88,8 @@ flutter {
 dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.12.2")
+}
+
+tasks.withType<Test>().configureEach {
+    systemProperty("stutz.androidAppDir", projectDir.absolutePath)
 }

@@ -2,7 +2,7 @@
 
 **Grundlage:** [Application Audit vom 10. September 2026](application-audit-2026-09-10.de.md)  
 **Zweck:** Fortschritt, Nachweise und Release-Freigabe für die im Audit priorisierten Verbesserungen nachvollziehbar dokumentieren.  
-**Letzte Aktualisierung:** 18. September 2026
+**Letzte Aktualisierung:** 30. September 2026
 
 ## Verwendung und Status
 
@@ -26,7 +26,7 @@ daten- oder sicherheitsrelevante Massnahme.
 
 | Arbeitsstrom | Fortschritt | Status | Letzte Aktualisierung | Verantwortlich | Zieldatum | Blocker |
 |---|---:|---|---|---|---|---|
-| Prioritaet 1: Konto und Notification Privacy | 100 % | Bereit zur Pruefung | 16.09.2026 |  |  | Android-Backup inspizieren, Debug-Log-Review und PR-Evidenz dokumentieren. |
+| Prioritaet 1: Konto und Notification Privacy | 100 % | Erledigt | 30.09.2026 |  |  |  |
 | Prioritaet 2: Ganzzahliges Money-Schema | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 | Prioritaet 3: Trusted Write-Boundary | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 | Prioritaet 4: Anonyme Konten und Sign-out | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
@@ -49,12 +49,12 @@ Owner-Wechsel und Backup weder weiterverarbeitet noch offengelegt werden.
 
 | ID | Arbeitspaket | Fortschritt | Status | Verantwortlich | Zieldatum | Letzte Aktualisierung | Naechster Schritt | Evidenz / PR / Blocker |
 |---|---|---:|---|---|---|---|---|---|
-| P1-01 | Native Ownership bei Sign-out und Auth-State `null` bereinigen. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Review und PR-Evidenz verlinken. | `flutter analyze`; `NotificationCaptureQueueTest` bestanden. |
-| P1-02 | Race verhindern, bei dem ein alter Sync einen veralteten Owner setzt. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Review und PR-Evidenz verlinken. | Dart-Test fuer abgebrochenen Owner-Sync bestanden. |
-| P1-03 | Zahlungsinhalte aus nativen Debug-Logs entfernen oder schwaerzen. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Debug-Log-Review dokumentieren. | Rohes Notification-Logging entfernt; `flutter analyze` bestanden. |
-| P1-04 | Queue und Owner-Preferences vom Android-Backup ausschliessen. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Android-Backup inspizieren und Nachweis verlinken. | `allowBackup=false`, Backup- und Data-Extraction-Regeln hinzugefuegt. |
-| P1-05 | Globale Deduplizierungsbeschraenkung entfernen und Owner-Isolation sichern. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Review und PR-Evidenz verlinken. | Schema v3 und Migrationstest fuer zwei Owner bestanden. |
-| P1-06 | Owner-Wechsel- und Capture-im-abgemeldeten-Zustand-Tests liefern. | 100 % | Bereit zur Pruefung |  |  | 16.09.2026 | Testergebnisse im PR verlinken. | Dart-Suite: 4 bestanden; `NotificationCaptureQueueTest` bestanden. |
+| P1-01 | Native Ownership bei Sign-out und Auth-State `null` bereinigen. | 100 % | Erledigt |  |  | 30.09.2026 |  | Commit `05ce662`; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P1-02 | Race verhindern, bei dem ein alter Sync einen veralteten Owner setzt. | 100 % | Erledigt |  |  | 30.09.2026 |  | Abbruchtest in der Dart-Synchronisationssuite; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P1-03 | Zahlungsinhalte aus nativen Debug-Logs entfernen oder schwaerzen. | 100 % | Erledigt |  |  | 30.09.2026 |  | Sentinel-Logtest und statischer Review; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P1-04 | Queue und Owner-Preferences vom Android-Backup ausschliessen. | 100 % | Erledigt |  |  | 30.09.2026 |  | Debug-/Release-Manifest und Backup-Regeln geprueft; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P1-05 | Globale Deduplizierungsbeschraenkung entfernen und Owner-Isolation sichern. | 100 % | Erledigt |  |  | 30.09.2026 |  | Schema-v3-Migration und Owner-Deduplizierung getestet; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P1-06 | Owner-Wechsel- und Capture-im-abgemeldeten-Zustand-Tests liefern. | 100 % | Erledigt |  |  | 30.09.2026 |  | 4 Dart- und 11 Android-Tests bestanden; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
 
 ### Umsetzung
 
@@ -78,24 +78,27 @@ Owner-Wechsel und Backup weder weiterverarbeitet noch offengelegt werden.
   lesen oder hochladen.
 - [x] Test: Ein verspätet endender Sync kann den alten Owner nicht
   wiederherstellen.
-- [ ] Android-Backup-Inspektion dokumentiert, dass Queue- und Owner-Daten
+- [x] Android-Backup-Inspektion dokumentiert, dass Queue- und Owner-Daten
   nicht enthalten sind.
-- [ ] Debug-Log-Review dokumentiert, dass keine Zahlungsinhalte ausgegeben
+- [x] Debug-Log-Review dokumentiert, dass keine Zahlungsinhalte ausgegeben
   werden.
 
 ### Abnahme
 
 - [x] Keine Notification-Queue existiert im abgemeldeten Zustand.
 - [x] Kein Draft von Owner A ist fuer Owner B lesbar oder hochladbar.
-- [ ] Backup und Logs erfuellen die Privacy-Anforderungen.
-- [ ] Pull Request, Testergebnisse und ggf. Backup-Nachweis sind verlinkt.
+- [x] Backup und Logs erfuellen die Privacy-Anforderungen.
+- [x] Implementierungscommit, Testergebnisse und Abnahmenachweis sind
+  verlinkt.
 
-**Evidenz / Entscheidung / Rest-Risiko:** `flutter analyze`, die fokussierte
-Dart-Synchronisationssuite (4 Tests) und
-`NotificationCaptureQueueTest` wurden am 16.09.2026 erfolgreich ausgefuehrt.
-Android-Backup-Inspektion, dokumentierter Debug-Log-Review und PR-Review stehen
-noch aus. Verschluesselung und Retention quittierter Queue-Zeilen sind nicht
-Bestandteil von Prioritaet 1 und verbleiben im sekundaeren Backlog.
+**Evidenz / Entscheidung / Rest-Risiko:** Prioritaet 1 wurde am 30.09.2026
+abgenommen. `flutter analyze`, die fokussierte Dart-Synchronisationssuite
+(4 Tests), die vollstaendige Android-JVM-Suite (11 Tests), der
+Sentinel-Logtest sowie die frisch erzeugten Debug- und Release-Manifeste
+bestanden. Details und die Grenze der geraetelosen Abnahme stehen im
+[P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md).
+Verschluesselung und Retention quittierter Queue-Zeilen sind nicht Bestandteil
+von Prioritaet 1 und verbleiben im sekundaeren Backlog.
 
 ---
 

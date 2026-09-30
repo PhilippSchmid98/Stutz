@@ -2,7 +2,7 @@
 
 Zuletzt geprüft: 2026-09-10
 
-Implementierungsstatus aktualisiert: 2026-09-18
+Implementierungsstatus aktualisiert: 2026-09-30
 
 ## 1. Zweck und Umfang
 
@@ -138,9 +138,9 @@ Die folgenden Checks liefen gegen den geprüften Workspace:
 | `npm run test:backup` | 7 bestanden, 0 fehlgeschlagen. |
 | `npm run test:migration` | 5 bestanden, 0 fehlgeschlagen. |
 | Flutter Line Coverage (gesamt) | 2.407 / 3.925 Zeilen, bzw. 61,32 %. |
-| Android `testDebugUnitTest` | Liess sich lokal nicht konfigurieren, weil die Plugin-Build-Ausgabe auf `E:` lag, während der Pub-Cache auf `C:` lag. Die Tests liefen nicht; das ist kein fehlgeschlagener Parser-Test. |
+| Android `testDebugUnitTest` | 11 bestanden, 0 fehlgeschlagen. Die Suite deckt Queue, Schema-v3-Migration, Wallet-Parser und Privacy-Konfiguration ab. |
 
-### Implementierungsupdate: Prioritaet 1 (16.09.2026)
+### Implementierungsupdate: Prioritaet 1 (30.09.2026)
 
 Die folgenden Auditbefunde wurden nach dem urspruenglichen Review umgesetzt
 und lokal validiert:
@@ -156,9 +156,13 @@ und lokal validiert:
   der Upgrade-Pfad von v2 ist getestet.
 
 `flutter analyze`, die fokussierte Dart-Synchronisationssuite (4 Tests) und
-`NotificationCaptureQueueTest` bestanden. Eine Android-Backup-Inspektion und
-ein dokumentierter Debug-Log-Review stehen noch aus. Verschluesselung sowie
-Retention quittierter Queue-Zeilen bleiben offene Folgearbeiten.
+die vollstaendige Android-JVM-Suite (11 Tests) bestanden. Die Abnahme prueft
+die effektiven Debug- und Release-Manifeste, beide Backup-Regeldateien und
+einen nativen Capture-Pfad mit Sentinel-Zahlungsdaten gegen den Android-Log.
+Der vollstaendige Nachweis steht unter
+[p1-notification-privacy-evidence-2026-09-30.de.md](p1-notification-privacy-evidence-2026-09-30.de.md).
+Verschluesselung sowie Retention quittierter Queue-Zeilen bleiben offene
+Folgearbeiten.
 
 Coverage wird in Phase 5 im Detail besprochen. Der generierte Coverage-Report
 wurde nach der Messung entfernt.
