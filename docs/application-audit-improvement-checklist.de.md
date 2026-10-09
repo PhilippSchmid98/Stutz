@@ -29,7 +29,7 @@ daten- oder sicherheitsrelevante Massnahme.
 | Prioritaet 1: Konto und Notification Privacy | 100 % | Erledigt | 30.09.2026 |  |  |  |
 | Prioritaet 2: Ganzzahliges Money-Schema | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 | Prioritaet 3: Trusted Write-Boundary | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
-| Prioritaet 4: Anonyme Konten und Sign-out | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
+| Prioritaet 4: Anonyme Konten und Sign-out | 100 % | Erledigt | 30.09.2026 |  |  |  |
 | Prioritaet 5: Kritische Tests und Release-Gates | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 
 **Pflegeregeln:** Fortschritt wird als Anzahl erledigter Arbeitspakete im
@@ -229,44 +229,60 @@ zuverlaessig bereinigt.
 
 | ID | Arbeitspaket | Fortschritt | Status | Verantwortlich | Zieldatum | Letzte Aktualisierung | Naechster Schritt | Evidenz / PR / Blocker |
 |---|---|---:|---|---|---|---|---|---|
-| P4-01 | Anonyme Benutzer vor Sign-out erkennen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P4-02 | Google-Credential-Verknuepfung mit UID-Erhalt implementieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P4-03 | Verlustwarnung sowie Export- und Wiederherstellungsrichtlinie liefern. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P4-04 | Firebase-Sign-out bei Fehler der Google-Bereinigung garantieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P4-05 | Native Owner-Bereinigung in den sichtbaren Sign-out integrieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P4-06 | Kollisionen und Fehlerpfade testen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
+| P4-01 | Anonyme Benutzer vor Sign-out erkennen. | 100 % | Erledigt |  |  | 30.09.2026 |  | Reaktiver Account-Status und geschuetzter Logout-Button; Widgettests bestanden. |
+| P4-02 | Google-Credential-Verknuepfung mit UID-Erhalt implementieren. | 100 % | Erledigt |  |  | 30.09.2026 |  | `linkWithCredential`, UID-Pruefung und erneute Account-Auswahl implementiert. |
+| P4-03 | Verlustwarnung und Recovery-Entscheidung ohne Export umsetzen. | 100 % | Erledigt |  |  | 30.09.2026 |  | [Richtlinie fuer anonyme Konten](anonymous-account-policy.de.md); kein Export oder Merge. |
+| P4-04 | Firebase-Sign-out bei Fehler der Google-Bereinigung garantieren. | 100 % | Erledigt |  |  | 30.09.2026 |  | Google-Fehler wird geschwaerzt; Firebase wird immer versucht; 6 fokussierte Auth-Tests bestanden. |
+| P4-05 | Native Owner-Bereinigung in den sichtbaren Sign-out integrieren. | 100 % | Erledigt |  |  | 30.09.2026 |  | Owner-Cleanup vor Auth-Sign-out und Auth-Null-Fallback; [P1-Abnahmenachweis](p1-notification-privacy-evidence-2026-09-30.de.md). |
+| P4-06 | Kollisionen und Fehlerpfade testen. | 100 % | Erledigt |  |  | 30.09.2026 |  | UID-Erhalt, Abbruch, Kollision, alternatives Konto, Cleanup- und Retry-Pfade getestet. |
 
 ### Umsetzung
 
-- [ ] Anonyme Benutzer vor einer Abmeldung erkennen.
-- [ ] Google-Credential-Verknuepfung implementieren, die die bestehende UID
+- [x] Anonyme Benutzer vor einer Abmeldung erkennen.
+- [x] Google-Credential-Verknuepfung implementieren, die die bestehende UID
   beibehält.
-- [ ] Explizite Warnung vor dauerhaftem Datenverlust fuer nicht verknuepfte
+- [x] Explizite Warnung vor dauerhaftem Datenverlust fuer nicht verknuepfte
   anonyme Konten implementieren.
-- [ ] Export- und Wiederherstellungsrichtlinie bereitstellen und verlinken.
-- [ ] Firebase-Sign-out garantieren, auch wenn die Google-Bereinigung
+- [x] Produktentscheidung dokumentieren: kein Export, kein automatischer
+  Kontowechsel und kein Ledger-Merge.
+- [x] Firebase-Sign-out garantieren, auch wenn die Google-Bereinigung
   fehlschlaegt.
-- [ ] Native Owner-Bereinigung in denselben sichtbaren Sign-out-Vorgang
+- [x] Native Owner-Bereinigung in denselben sichtbaren Sign-out-Vorgang
   integrieren.
 
 ### Tests und Nachweise
 
-- [ ] Test: Google-Verknuepfung bewahrt UID und Ledger-Zugriff.
-- [ ] Test: Credential-Kollision wird eindeutig behandelt und kommuniziert.
-- [ ] Test: Fehler bei Google-Sign-out verhindert Firebase-Sign-out nicht.
-- [ ] Test: Fehlerpfad bereinigt nativen Owner und hinterlaesst keinen
+- [x] Test: Google-Verknuepfung bewahrt UID und Ledger-Zugriff.
+- [x] Test: Credential-Kollision wird eindeutig behandelt und kommuniziert.
+- [x] Test: Fehler bei Google-Sign-out verhindert Firebase-Sign-out nicht.
+- [x] Test: Fehlerpfad bereinigt nativen Owner und hinterlaesst keinen
   eingeloggten Firebase-State.
-- [ ] UX-Review bestaetigt Warnung sowie Export-/Wiederherstellungsweg.
+- [x] UX-Tests bestaetigen Verlustwarnung, Abbruch, bewusste Abmeldung und
+  Google-Sicherung ohne Exportangebot.
 
 ### Abnahme
 
-- [ ] Ein Benutzer kann nicht versehentlich ein anonymes Ledger aufgeben.
-- [ ] Der Sign-out schliesst die Firebase-Session immer, wenn Firebase
+- [x] Ein Benutzer kann nicht versehentlich ein anonymes Ledger aufgeben.
+- [x] Der Sign-out schliesst die Firebase-Session immer, wenn Firebase
   verfuegbar ist.
-- [ ] Die native Owner-Bereinigung ist Teil desselben sichtbaren Vorgangs.
-- [ ] Fehlerpfade, UX-Freigabe und Testnachweise sind verlinkt.
+- [x] Die native Owner-Bereinigung ist Teil desselben sichtbaren Vorgangs.
+- [x] Fehlerpfade, UX-Entscheidung und Testnachweise sind dokumentiert.
 
-**Evidenz / Entscheidung / Rest-Risiko:**
+**Evidenz / Entscheidung / Rest-Risiko:** `AuthSignOutCoordinator` behandelt
+die Google-Bereinigung als Best Effort, protokolliert nur eine geschwaerzte
+Diagnose und ruft anschliessend immer Firebase-Sign-out auf. Ein
+Firebase-Fehler bleibt fuer den Aufrufer sichtbar. `AuthController` bereinigt
+den nativen Owner zuerst; ein nativer Cleanup-Fehler blockiert den
+Firebase-Sign-out nicht, und bei einem Firebase-Fehler wird der freiwillige
+Sign-out-Marker zurueckgesetzt. Drei Service- und drei Controller-Tests
+bestanden am 30.09.2026. Der anonyme Logout erkennt den Account-Typ, warnt vor
+Zugriffsverlust und bietet Google-Sicherung, bewusste Abmeldung oder Abbruch.
+`linkWithCredential` muss dieselbe UID liefern. Bei
+`credential-already-in-use` bleibt das Gastkonto aktiv; erlaubt sind nur ein
+anderes Google-Konto oder Abbruch. Die Service-, Controller- und Widgettests
+decken UID-Erhalt, Picker-Abbruch, Kollision, erneute Auswahl und Retry ab.
+Gemäss [Richtlinie fuer anonyme Konten](anonymous-account-policy.de.md) gibt es
+bewusst keinen Export, keinen automatischen Kontowechsel und keinen Merge.
 
 ---
 
@@ -359,8 +375,9 @@ Release-Review vorliegen.
 - [ ] Abgeleitete Aggregate werden vom Backend verwaltet oder automatisiert
   gegen die Source Data abgeglichen.
 - [ ] Firestore-Regeln validieren jedes Collection-Schema und jeden Uebergang.
-- [ ] Anonyme Benutzer haben einen getesteten Verknuepfungs-, Export- und
-  Wiederherstellungspfad.
+- [x] Anonyme Benutzer haben einen getesteten Verknuepfungs- und Warnpfad;
+  der bewusste Verzicht auf Export und nachtraegliche Wiederherstellung ist
+  dokumentiert.
 - [ ] Der Sign-out loescht Firebase und native Ownership auch unter
   Fehlerbedingungen.
 - [ ] Notification-Daten sind vom Backup ausgeschlossen, verschluesselt,

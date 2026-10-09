@@ -113,7 +113,7 @@ final class AuthControllerProvider
   AuthController create() => AuthController();
 }
 
-String _$authControllerHash() => r'c04a1b14429d4b2da8e37b12da7dea6f14f08b4f';
+String _$authControllerHash() => r'f00b421fc6ed54d15f2b8c17951d0ccdc111cc40';
 
 /// Handles auth mutations (sign-in, sign-out) as a single entry point for
 /// all screens. Screens must never import [AuthService] directly.
@@ -233,6 +233,48 @@ final class AuthStateProvider
 }
 
 String _$authStateHash() => r'717511aaf372cc1336681b0d5d9a60ee40e1fa23';
+
+@ProviderFor(currentUserIsAnonymous)
+const currentUserIsAnonymousProvider = CurrentUserIsAnonymousProvider._();
+
+final class CurrentUserIsAnonymousProvider
+    extends $FunctionalProvider<bool, bool, bool>
+    with $Provider<bool> {
+  const CurrentUserIsAnonymousProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'currentUserIsAnonymousProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$currentUserIsAnonymousHash();
+
+  @$internal
+  @override
+  $ProviderElement<bool> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  bool create(Ref ref) {
+    return currentUserIsAnonymous(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(bool value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<bool>(value),
+    );
+  }
+}
+
+String _$currentUserIsAnonymousHash() =>
+    r'6586e0051278a879ae7974e6581a08856a8bb941';
 
 /// Returns whether the user has completed the onboarding flow at least once.
 

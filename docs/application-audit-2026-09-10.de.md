@@ -68,11 +68,13 @@ Finance-Grade ist sie aber noch nicht. Die zentralen Blocker:
    State-Übergänge.
 3. Das manuelle Anlegen von Transaktionen ist nicht idempotent und kann bei
   einem Replay derselben Transaktions-ID die Monatssumme doppelt erhöhen.
-4. Anonyme Benutzer können sich abmelden und dabei dauerhaft den Zugriff auf ihr
-   Ledger verlieren.
-5. Bei erfassten Notification-Daten bestehen noch Klartext- und
+4. Bei erfassten Notification-Daten bestehen noch Klartext- und
   Retention-Risiken. Owner-Lifecycle, Debug-Logging und Android-Backup wurden
   am 16.09.2026 nachträglich adressiert.
+
+Der urspruengliche Blocker fuer anonyme Konten wurde am 30.09.2026 behoben:
+Gastkonten erhalten vor dem Logout eine Verlustwarnung und koennen ihre UID
+durch Google-Verknuepfung bewahren.
 
 Es wurde kein bestätigtes Firestore-Datenleck über Benutzergrenzen hinweg
 gefunden. Jede aktuelle Wildcard-Regel prüft weiterhin, dass die authentifizierte UID
@@ -133,7 +135,7 @@ Die folgenden Checks liefen gegen den geprüften Workspace:
 | Check | Ergebnis |
 | --- | --- |
 | `flutter analyze` | Bestanden, keine Diagnosen. |
-| Flutter-Tests | 140 bestanden, 0 fehlgeschlagen. |
+| Flutter-Tests | 159 bestanden, 0 fehlgeschlagen. |
 | `npm run test:rules` | Bestanden. |
 | `npm run test:backup` | 7 bestanden, 0 fehlgeschlagen. |
 | `npm run test:migration` | 5 bestanden, 0 fehlgeschlagen. |
@@ -1130,74 +1132,80 @@ während der Draft noch `pending` ist, kann die Bestätigung dieses Dokument
 überschreiben. Strikte Regeln und ein Kollisions-Read am
 Transaktionsdokument sollten davor schützen.
 
-### 6.5 🔥 Anonyme Benutzer können ihr Ledger dauerhaft verlieren
+### 6.5 ✅ Anonyme Konten sind vor versehentlichem Zugriffsverlust geschuetzt
 
-Das Sign-out-Symbol des Budget-Screens ruft die Abmeldung sofort auf:
+Der Logout verwendet jetzt einen account-sensitiven Auth-Button. Permanente
+Konten werden direkt abgemeldet; bei einem Gastkonto erscheint vor jeder
+Abmeldung eine Verlustwarnung.
 
-```dart
-IconButton(
-  icon: const Icon(Icons.logout),
-  onPressed: () async {
-    await ref.read(authControllerProvider.notifier).signOut();
-  },
-)
-```
+Der Benutzer kann:
+
+1. das bestehende Gastkonto mit Google verknuepfen und danach abmelden;
+2. sich nach expliziter Verlustwarnung trotzdem abmelden;
+3. abbrechen und angemeldet bleiben.
 
 Quelle:
-[budget_planning_screen.dart](../lib/features/budget/presentation/budget_planning_screen.dart#L54-L62).
+[account_sign_out_button.dart](../lib/features/auth/presentation/account_sign_out_button.dart).
 
-Anonyme Firebase-Konten haben kein dem Benutzer bekanntes Login. Sobald die
-lokale Auth-Session entfernt ist, kann der Benutzer diese UID oder sein
-verschachteltes Firestore-Ledger im Allgemeinen nicht wiederherstellen. Eine
-Neuinstallation hat dasselbe Wiederherstellungsproblem.
+Die Google-Verknuepfung verwendet `linkWithCredential` statt eines neuen
+Firebase-Sign-ins. Nach dem Link muss die zurueckgegebene UID exakt der
+anonymen Ausgangs-UID entsprechen; andernfalls wird der Ablauf abgebrochen.
 
-**Empfohlener Produktablauf**
+Bei `credential-already-in-use` findet weder ein Kontowechsel noch ein
+Ledger-Merge statt. Das Gastkonto bleibt aktiv und unveraendert. Der Dialog
+bietet ausschliesslich ein anderes Google-Konto oder Abbruch an. Vor der
+erneuten Auswahl wird die lokale Google-Session abgemeldet, damit der
+Account-Picker neu startet.
 
-Wenn `FirebaseAuth.currentUser.isAnonymous` wahr ist:
+Die Produktentscheidung sieht keinen Benutzerexport und keine nachtraegliche
+Wiederherstellung eines aufgegebenen Gastkontos vor. Die App weist deshalb
+ausdruecklich auf den moeglichen dauerhaften Zugriffsverlust hin. Details stehen
+in der [Richtlinie fuer anonyme Konten](anonymous-account-policy.de.md).
 
-1. Erklären, dass die aktuellen Daten zu einem temporären Konto gehören.
-2. "Google-Konto verknüpfen" als primäre Aktion anbieten.
-3. `linkWithCredential` verwenden, nicht `signInWithCredential`, damit die UID
-   und bestehende Firestore-Daten mit dem Konto verbunden bleiben.
-4. Einen getesteten Export vor jeder destruktiven Abmeldung anbieten, falls die
-   Kontoverknüpfung abgelehnt wird.
-5. Eine explizite Bestätigung verlangen, dass der Zugriff dauerhaft verloren
-   gehen kann.
+Unit- und Widgettests decken UID-Erhalt, Picker-Abbruch, Kollision, anderes
+Google-Konto, bewussten Logout, Abbruch sowie retrybare Link- und
+Sign-out-Fehler ab. In keinem Zustand wird ein Export angeboten.
 
-`credential-already-in-use` als bewusstes Konto-Merge-Problem behandeln;
-nicht stillschweigend die UID wechseln und dabei eines der beiden Ledgers
-verwaisen lassen.
+### 6.6 ✅ Google-Cleanup-Fehler blockieren den Firebase-Sign-out nicht mehr
 
-### 6.6 🔥 Ein Fehler beim Google-Sign-out verhindert den Firebase-Sign-out
-
-Die aktuelle Reihenfolge lautet:
+Die Google-Bereinigung und der entscheidende Firebase-Sign-out werden jetzt
+ueber eine explizite Orchestrierung ausgefuehrt:
 
 ```dart
 Future<void> signOut() async {
-  await _googleSignIn.signOut();
-  await _auth.signOut();
+  try {
+    await _googleSignOut();
+  } catch (_) {
+    dev.log('Google sign-out cleanup failed', name: 'AuthService');
+  }
+  await _firebaseSignOut();
 }
 ```
 
-Quelle: [auth_service.dart](../lib/features/auth/data/auth_service.dart#L65-L68).
+Quelle: [auth_service.dart](../lib/features/auth/data/auth_service.dart).
 
-Wirft die Google-Bereinigung einen Fehler, wird der Firebase-Sign-out nie
-versucht. Die UI meldet einen Fehler, aber der Benutzer bleibt in der App
-authentifiziert, deren Daten er eigentlich schließen wollte.
+Die Diagnose enthaelt weder den SDK-Fehler noch Account-Daten. Der
+Firebase-Schritt wird auch nach einem Google-Fehler ausgefuehrt; nur sein
+eigener Fehler wird an den Aufrufer weitergegeben.
 
-**Empfohlene Richtlinie**
+`AuthController.signOut()` bereinigt weiterhin zuerst den nativen Owner. Ein
+Fehler dieser lokalen Bereinigung blockiert den Auth-Sign-out nicht, weil der
+Auth-State-`null`-Listener den Cleanup defensiv wiederholt. Schlaegt Firebase
+selbst fehl, setzt der Controller den freiwilligen Sign-out-Marker zurueck und
+liefert einen `AsyncError`, waehrend die Firebase-Session aktiv bleibt.
 
-Der Firebase-Sign-out ist der entscheidende Schritt. Die Google-Bereinigung
-versuchen, jeden Fehler abfangen und schwärzen und danach immer den
-Firebase-Sign-out versuchen. Nur ein Fehler beim Firebase-Sign-out sollte
-bedeuten, dass die App-Session aktiv bleibt.
+Die fokussierte Testsuite deckt ab:
 
-Die native Owner-Löschung muss Teil desselben App-Befehls sein, wie in
-Phase 2 beschrieben.
+- Google-Cleanup schlaegt fehl, nativer Owner wird dennoch bereinigt und
+  Firebase-Sign-out wird aufgerufen;
+- nativer Cleanup schlaegt fehl, Firebase-Sign-out wird dennoch aufgerufen;
+- Firebase-Sign-out schlaegt fehl, der Fehler bleibt sichtbar und der
+  freiwillige Marker wird zurueckgesetzt;
+- bei gleichzeitigem Google- und Firebase-Fehler bleibt der Firebase-Fehler
+  massgeblich.
 
-**Erforderlicher Test:** Den Google-Sign-out so konfigurieren, dass er einen
-Fehler wirft, und prüfen, dass der Firebase-Sign-out und die native
-Owner-Bereinigung dennoch ausgeführt werden.
+Die anonyme Kontoverknuepfung und ihre Kollisionspfade sind in Abschnitt 6.5
+beschrieben und automatisiert getestet.
 
 ### 6.7 ⚠️ Die Runtime-Validierung stoppt an uneinheitlichen Grenzen
 
@@ -1724,7 +1732,7 @@ Die Suite wird nicht von trivialen Assertions dominiert. Sie deckt ab:
 - Backup-Kodierung, Manifeste, Prüfsummen und Migrationsberechnungen;
 - beobachtete Wallet-Notification-Parsing-Formate.
 
-Der aktuelle Flutter-Testlauf bestand 140 Tests. Backup- und Migrations-Unit-
+Der aktuelle Flutter-Testlauf bestand 159 Tests. Backup- und Migrations-Unit-
 Suiten bestanden ebenfalls.
 
 ### 8.2 🔥 Risikogewichtete Coverage ist unzureichend
@@ -1850,7 +1858,7 @@ Workstation-Konfiguration Regressionen nicht verbergen kann.
 | Normaler Sign-out | Nativer Owner gelöscht, Firebase abgemeldet, Google bereinigt. |
 | Google-Bereinigung schlägt fehl | Nativer Owner gelöscht und Firebase dennoch abgemeldet. |
 | Firebase-Sign-out schlägt fehl | UI bleibt authentifiziert und zeigt wiederholbaren Fehler. |
-| Sign-out-Anfrage eines anonymen Kontos | Verknüpfungs-/Export-Warnung wird vor destruktiver Aktion angezeigt. |
+| Sign-out-Anfrage eines anonymen Kontos | Verlustwarnung mit Google-Sicherung, bewusster Abmeldung oder Abbruch wird angezeigt; kein Export wird angeboten. |
 | Benutzerwechsel während der Sync | Alte Sync kann alten Owner nicht wiederherstellen. |
 
 #### UI und Accessibility
@@ -2107,8 +2115,8 @@ Deliverables:
 
 1. Anonyme Benutzer vor der Abmeldung erkennen.
 2. Google-Credential-Verknüpfung implementieren, die die UID bewahrt.
-3. Explizite Warnung vor dauerhaftem Verlust sowie Export-/
-   Wiederherstellungsrichtlinie bereitstellen.
+3. Explizite Warnung vor dauerhaftem Verlust und den bewussten Verzicht auf
+  Export und nachtraegliche Wiederherstellung dokumentieren.
 4. Den Firebase-Sign-out garantieren, auch wenn die Google-Bereinigung
    fehlschlägt.
 5. Tests für Kontokollision und Fehlerpfade ergänzen.
@@ -2173,8 +2181,9 @@ zutreffen:
   gegen die Source Data abgeglichen.
 - [ ] Firestore-Regeln validieren jedes Collection-Schema und jeden
       Übergang.
-- [ ] Anonyme Benutzer haben einen getesteten Verknüpfungs-/Export-/
-      Wiederherstellungspfad.
+- [x] Anonyme Benutzer haben einen getesteten Verknuepfungs- und Warnpfad;
+  der Verzicht auf Export und nachtraegliche Wiederherstellung ist
+  dokumentiert.
 - [ ] Der Sign-out löscht Firebase und native Ownership auch unter
       Fehlerbedingungen.
 - [ ] Notification-Daten sind vom Backup ausgeschlossen, verschlüsselt,
