@@ -6,9 +6,11 @@
         "backup:firestore": "node scripts/firestore-backup.js",
         "restore:firestore": "node scripts/firestore-restore.js",
         "migrate:transaction-months": "node scripts/migrate-transaction-months.js",
+        "migrate:money-minor-units": "node scripts/migrate-money-minor-units.js",
         "test:backup": "node --test test/firestore-backup.test.js",
         "test:backup:emulator": "npx --yes firebase-tools@14.11.2 emulators:exec --only firestore \"node test/firestore-backup-emulator.test.js\"",
-        "test:migration": "node --test test/migrate-transaction-months.test.js"
+        "test:migration": "node --test test/migrate-transaction-months.test.js test/money-minor-units.test.js test/migrate-money-minor-units.test.js",
+        "test:migration:emulator": "npx --yes firebase-tools@14.11.2 emulators:exec --only firestore \"node --test test/migrate-money-minor-units-emulator.test.js\""
     },
     "devDependencies": {
         "@firebase/rules-unit-testing": "^5.0.1",

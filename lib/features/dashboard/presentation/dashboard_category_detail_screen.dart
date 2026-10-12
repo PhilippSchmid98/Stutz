@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
@@ -124,14 +125,14 @@ class _CategorySummary extends StatelessWidget {
             Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 12),
             Text(
-              _amount(category.actual),
+              _amount(category.actualMinor),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: statusColor,
                 fontWeight: FontWeight.w900,
               ),
             ),
             Text(
-              'von ${_amount(category.planned)} geplant',
+              'von ${_amount(category.plannedMinor)} geplant',
               style: TextStyle(color: colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 14),
@@ -201,7 +202,7 @@ class _DashboardCategorySectionCardState
                         ),
                       ),
                       Text(
-                        _amount(category.actual),
+                        _amount(category.actualMinor),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.w800,
@@ -231,7 +232,7 @@ class _DashboardCategorySectionCardState
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '${_amount(category.planned)} geplant',
+                      '${_amount(category.plannedMinor)} geplant',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -362,7 +363,7 @@ class _DashboardCategoryProgressRowState
                         ),
                       ),
                       Text(
-                        _amount(category.actual),
+                        _amount(category.actualMinor),
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
@@ -393,7 +394,7 @@ class _DashboardCategoryProgressRowState
                   Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '${_amount(category.planned)} geplant',
+                      '${_amount(category.plannedMinor)} geplant',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
@@ -563,7 +564,7 @@ class _TransactionRow extends StatelessWidget {
         DateFormat('d. MMMM yyyy', 'de_CH').format(transaction.dateTime),
       ),
       trailing: Text(
-        _amount(transaction.amount),
+        _amount(transaction.amountMinor),
         style: Theme.of(
           context,
         ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
@@ -572,8 +573,4 @@ class _TransactionRow extends StatelessWidget {
   }
 }
 
-String _amount(double value) => NumberFormat.currency(
-  locale: 'de_CH',
-  symbol: 'CHF',
-  decimalDigits: 2,
-).format(value);
+String _amount(int valueMinor) => formatChfMinor(valueMinor);

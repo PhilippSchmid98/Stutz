@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 
 part 'expense_node.freezed.dart';
@@ -11,10 +12,10 @@ abstract class ExpenseNode with _$ExpenseNode {
     required String id,
     String? parentId,
     required String name,
-    double? plannedAmount,
+    int? plannedAmountMinor,
 
     /// Calculated field — not persisted in DB.
-    double? actualAmount,
+    int? actualAmountMinor,
     ExpenseType? type,
     PaymentInterval? interval,
     @Default([]) List<ExpenseNode> children,
@@ -25,17 +26,28 @@ abstract class ExpenseNode with _$ExpenseNode {
 
   bool get isGroup => children.isNotEmpty;
 
-  /// Recursively calculates the total monthly cost for this node, including all descendants.
-  double get totalMonthlyCalculated {
-    if (isGroup) {
-      return children.fold<double>(
-        0.0,
-        (total, child) => total + child.totalMonthlyCalculated,
-      );
+  ({int monthlyMinor, int yearlyMinor}) get intervalTotalsMinor {
+    if (children.isNotEmpty) {
+      var monthlyMinor = 0;
+      var yearlyMinor = 0;
+      for (final child in children) {
+        final totals = child.intervalTotalsMinor;
+        monthlyMinor += totals.monthlyMinor;
+        yearlyMinor += totals.yearlyMinor;
+      }
+      return (monthlyMinor: monthlyMinor, yearlyMinor: yearlyMinor);
     }
-    final amount = plannedAmount ?? 0.0;
-    if (interval == PaymentInterval.yearly) return amount / 12;
-    return amount;
+
+    final amountMinor = plannedAmountMinor ?? 0;
+    return interval == PaymentInterval.yearly
+        ? (monthlyMinor: 0, yearlyMinor: amountMinor)
+        : (monthlyMinor: amountMinor, yearlyMinor: 0);
+  }
+
+  int get totalMonthlyEstimateMinor {
+    final totals = intervalTotalsMinor;
+    return totals.monthlyMinor +
+        annualToMonthlyEstimateMinor(totals.yearlyMinor);
   }
 
   /// Validates the state before it is persisted. Empty groups are valid even
@@ -50,9 +62,9 @@ abstract class ExpenseNode with _$ExpenseNode {
 
     final isGroupNode =
         children.isNotEmpty ||
-        (plannedAmount == null && interval == null && type == null);
+        (plannedAmountMinor == null && interval == null && type == null);
     if (isGroupNode) {
-      if (plannedAmount != null || interval != null || type != null) {
+      if (plannedAmountMinor != null || interval != null || type != null) {
         throw const ExpenseNodeValidationException(
           'A group cannot have amount, interval, or type',
         );
@@ -60,8 +72,8 @@ abstract class ExpenseNode with _$ExpenseNode {
       return;
     }
 
-    final amount = plannedAmount;
-    if (amount == null || !amount.isFinite || amount <= 0) {
+    final amountMinor = plannedAmountMinor;
+    if (amountMinor == null || amountMinor <= 0) {
       throw const ExpenseNodeValidationException(
         'A leaf category needs a positive amount',
       );

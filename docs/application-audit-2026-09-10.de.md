@@ -2,7 +2,7 @@
 
 Zuletzt geprüft: 2026-09-10
 
-Implementierungsstatus aktualisiert: 2026-09-30
+Implementierungsstatus aktualisiert: 2026-10-09
 
 ## 1. Zweck und Umfang
 
@@ -63,7 +63,8 @@ God-Widgets oder Ad-hoc-Firebase-Aufrufen.
 
 Finance-Grade ist sie aber noch nicht. Die zentralen Blocker:
 
-1. Geld wird als IEEE-754-`double` persistiert und aggregiert.
+1. Die App und das Migrationswerkzeug verwenden ganzzahlige Minor Units; der
+  produktive Daten-Cutover und dessen Reconciliation stehen noch aus.
 2. Firestore-Regeln prüfen nur Ownership, nicht Ledger-Schemata oder zulässige
    State-Übergänge.
 3. Das manuelle Anlegen von Transaktionen ist nicht idempotent und kann bei
@@ -135,10 +136,11 @@ Die folgenden Checks liefen gegen den geprüften Workspace:
 | Check | Ergebnis |
 | --- | --- |
 | `flutter analyze` | Bestanden, keine Diagnosen. |
-| Flutter-Tests | 159 bestanden, 0 fehlgeschlagen. |
+| Flutter-Tests | 166 bestanden, 0 fehlgeschlagen. |
 | `npm run test:rules` | Bestanden. |
 | `npm run test:backup` | 7 bestanden, 0 fehlgeschlagen. |
-| `npm run test:migration` | 5 bestanden, 0 fehlgeschlagen. |
+| `npm run test:migration` | 13 bestanden, 0 fehlgeschlagen. |
+| `npm run test:migration:emulator` | 1 bestanden, 0 fehlgeschlagen. |
 | Flutter Line Coverage (gesamt) | 2.407 / 3.925 Zeilen, bzw. 61,32 %. |
 | Android `testDebugUnitTest` | 11 bestanden, 0 fehlgeschlagen. Die Suite deckt Queue, Schema-v3-Migration, Wallet-Parser und Privacy-Konfiguration ab. |
 
@@ -165,6 +167,33 @@ Der vollstaendige Nachweis steht unter
 [p1-notification-privacy-evidence-2026-09-30.de.md](p1-notification-privacy-evidence-2026-09-30.de.md).
 Verschluesselung sowie Retention quittierter Queue-Zeilen bleiben offene
 Folgearbeiten.
+
+### Implementierungsupdate: Prioritaet 2 (09.10.2026)
+
+Das App-Schema wurde vollstaendig auf ganzzahlige CHF-Rappen umgestellt:
+
+- Transaktionen, Einkommen, geplante Ausgaben und Monatssummen verwenden
+  `int`-Minor-Units;
+- Formulare parsen Text direkt in Rappen und lehnen mehr als zwei
+  Dezimalstellen ohne stille Rundung ab;
+- Jahreswerte bleiben exakt; monatliche Schaetzungen werden erst nach der
+  Aggregation deterministisch gerundet;
+- Mapper lesen waehrend des Cutovers Legacy-Felder, neue Writes enthalten nur
+  Integerfelder und entfernen alte Double-Felder;
+- `transactionMonths` werden aus normalisierten Quelltransaktionen neu
+  aufgebaut und nicht aus alten Summaries multipliziert.
+
+Die Richtlinie steht unter [money-schema.de.md](money-schema.de.md). Das neue
+Kommando `migrate:money-minor-units` bietet Dry-Run, Abweichungsreport,
+All-Scope-Backup-Pflicht fuer Apply, Reconciliation und einen automatischen
+leeren Folgeplan. `flutter analyze`, 166 Flutter-Tests, 13
+Migrations-Unit-Tests, 7 Backup-Tests und ein All-Scope-Emulator-End-to-End-Test
+bestanden.
+
+Die produktive Migration wurde nicht ausgefuehrt, weil im Workspace kein
+aktuelles `scope=all`-Produktionsbackup und keine freigegebenen
+Produktions-Credentials vorliegen. Bis Dry-Run-Report, Apply und
+Post-Reconciliation abgenommen sind, bleibt P2 fuer den Release blockiert.
 
 Coverage wird in Phase 5 im Detail besprochen. Der generierte Coverage-Report
 wurde nach der Messung entfernt.
@@ -738,7 +767,21 @@ scrcpy-Dev-Task setzen, oder mit explizitem Error Handling über
 
 ## 6. Phase 3: Firebase-Integration und Data Layer
 
-### 6.1 🔥 Persistiertes Geld verwendet binäre Gleitkommazahlen
+### 6.1 ⚠️ Integer-Money ist implementiert; produktiver Cutover steht aus
+
+**Implementierungsstatus 09.10.2026:** Der nachfolgende Ausgangsbefund trifft
+auf den aktuellen App-Code nicht mehr zu. Alle Money-Domainwerte,
+Firestore-Writes und Aggregate verwenden ganzzahlige Minor Units. `double`
+bleibt nur fuer dimensionslose UI-Verhaeltnisse. Dual-Read unterstuetzt den
+Cutover, waehrend Integer-only Writes Legacy-Felder entfernen.
+
+Dry-Run, Summary-Rebuild, Rundungsreport und Reconciliation sind implementiert
+und im Firestore-Emulator erfolgreich getestet. Offen ist ausschliesslich die
+kontrollierte Ausfuehrung gegen ein aktuelles, verifiziertes
+`scope=all`-Produktionsbackup. Der Finance-Grade-Abnahmepunkt bleibt bis dahin
+ungeprueft.
+
+#### Historischer Ausgangsbefund
 
 Finanzwerte werden im persistierten Modell als `double` dargestellt:
 
@@ -1732,7 +1775,7 @@ Die Suite wird nicht von trivialen Assertions dominiert. Sie deckt ab:
 - Backup-Kodierung, Manifeste, Prüfsummen und Migrationsberechnungen;
 - beobachtete Wallet-Notification-Parsing-Formate.
 
-Der aktuelle Flutter-Testlauf bestand 159 Tests. Backup- und Migrations-Unit-
+Der aktuelle Flutter-Testlauf bestand 166 Tests. Backup- und Migrations-Unit-
 Suiten bestanden ebenfalls.
 
 ### 8.2 🔥 Risikogewichtete Coverage ist unzureichend

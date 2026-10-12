@@ -70,8 +70,8 @@ class BudgetPlanningScreen extends ConsumerWidget {
         final totals = const BudgetCalculator().incomeIntervalTotals(incomes);
         return IncomeSectionCard(
           incomes: incomes,
-          monthlyTotal: totals.monthly,
-          yearlyTotal: totals.yearly,
+          monthlyTotalMinor: totals.monthlyMinor,
+          yearlyTotalMinor: totals.yearlyMinor,
         );
       },
     );
@@ -120,8 +120,8 @@ class BudgetPlanningScreen extends ConsumerWidget {
     );
     return ExpenseSectionCard(
       rootNode: rootNode,
-      monthlyTotal: totals.monthly,
-      yearlyTotal: totals.yearly,
+      monthlyTotalMinor: totals.monthlyMinor,
+      yearlyTotalMinor: totals.yearlyMinor,
     );
   }
 

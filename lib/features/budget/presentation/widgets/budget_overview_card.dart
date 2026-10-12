@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
 
 class BudgetOverviewCard extends StatelessWidget {
@@ -8,7 +9,7 @@ class BudgetOverviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isPositive = summary.balance >= 0;
+    final isPositive = summary.balanceMinor >= 0;
     final colorScheme = Theme.of(context).colorScheme;
     final balanceColor = isPositive ? colorScheme.primary : colorScheme.error;
 
@@ -38,7 +39,7 @@ class BudgetOverviewCard extends StatelessWidget {
                     Expanded(
                       child: _BudgetMetric(
                         label: 'Ø Einnahmen pro Monat',
-                        value: summary.averageMonthlyIncome,
+                        valueMinor: summary.averageMonthlyIncomeMinor,
                         valueStyle: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(
                               color: colorScheme.primary,
@@ -55,7 +56,7 @@ class BudgetOverviewCard extends StatelessWidget {
                     Expanded(
                       child: _BudgetMetric(
                         label: 'Geplante Ausgaben pro Monat',
-                        value: summary.monthlyExpenses,
+                        valueMinor: summary.monthlyExpensesMinor,
                         valueStyle: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.bold),
                         alignEnd: true,
@@ -76,16 +77,16 @@ class BudgetOverviewCard extends StatelessWidget {
                   metrics: [
                     _BudgetMetricData(
                       label: 'Jahreseinnahmen',
-                      value: summary.yearlyIncome,
+                      valueMinor: summary.totalYearlyIncomeMinor,
                       color: colorScheme.primary,
                     ),
                     _BudgetMetricData(
                       label: 'Jährliche Fixkosten',
-                      value: summary.fixedYearlyExpenses,
+                      valueMinor: summary.fixedYearlyExpensesMinor,
                     ),
                     _BudgetMetricData(
                       label: 'Jährliche variable Ausgaben',
-                      value: summary.variableYearlyExpenses,
+                      valueMinor: summary.variableYearlyExpensesMinor,
                     ),
                   ],
                 ),
@@ -95,9 +96,9 @@ class BudgetOverviewCard extends StatelessWidget {
                 _BudgetSummarySection(
                   title: 'Monatliche Ausgaben',
                   leftLabel: 'Fixkosten',
-                  leftValue: summary.fixedMonthlyExpenses,
+                  leftValueMinor: summary.fixedMonthlyExpensesMinor,
                   rightLabel: 'Variable Ausgaben',
-                  rightValue: summary.variableMonthlyExpenses,
+                  rightValueMinor: summary.variableMonthlyExpensesMinor,
                 ),
               ],
             ),
@@ -115,7 +116,7 @@ class BudgetOverviewCard extends StatelessWidget {
     return Column(
       children: [
         Text(
-          "${isPositive ? '+' : ''} ${summary.balance.toStringAsFixed(2)} CHF",
+          '${isPositive ? '+' : ''} ${formatChfMinor(summary.balanceMinor)}',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w900,
             color: balanceColor,
@@ -152,7 +153,7 @@ class _BudgetMetricList extends StatelessWidget {
         for (final metric in metrics)
           _BudgetMetricRow(
             label: metric.label,
-            value: metric.value,
+            valueMinor: metric.valueMinor,
             color: metric.color,
           ),
       ],
@@ -162,24 +163,24 @@ class _BudgetMetricList extends StatelessWidget {
 
 class _BudgetMetricData {
   final String label;
-  final double value;
+  final int valueMinor;
   final Color? color;
 
   const _BudgetMetricData({
     required this.label,
-    required this.value,
+    required this.valueMinor,
     this.color,
   });
 }
 
 class _BudgetMetricRow extends StatelessWidget {
   final String label;
-  final double value;
+  final int valueMinor;
   final Color? color;
 
   const _BudgetMetricRow({
     required this.label,
-    required this.value,
+    required this.valueMinor,
     this.color,
   });
 
@@ -198,7 +199,7 @@ class _BudgetMetricRow extends StatelessWidget {
             ),
           ),
           Text(
-            '${value.toStringAsFixed(2)} CHF',
+            formatChfMinor(valueMinor),
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.bold,
@@ -213,16 +214,16 @@ class _BudgetMetricRow extends StatelessWidget {
 class _BudgetSummarySection extends StatelessWidget {
   final String title;
   final String leftLabel;
-  final double leftValue;
+  final int leftValueMinor;
   final String rightLabel;
-  final double rightValue;
+  final int rightValueMinor;
 
   const _BudgetSummarySection({
     required this.title,
     required this.leftLabel,
-    required this.leftValue,
+    required this.leftValueMinor,
     required this.rightLabel,
-    required this.rightValue,
+    required this.rightValueMinor,
   });
 
   @override
@@ -242,7 +243,7 @@ class _BudgetSummarySection extends StatelessWidget {
             Expanded(
               child: _BudgetMetric(
                 label: leftLabel,
-                value: leftValue,
+                valueMinor: leftValueMinor,
                 valueStyle: valueStyle,
               ),
             ),
@@ -251,7 +252,7 @@ class _BudgetSummarySection extends StatelessWidget {
             Expanded(
               child: _BudgetMetric(
                 label: rightLabel,
-                value: rightValue,
+                valueMinor: rightValueMinor,
                 valueStyle: valueStyle,
                 alignEnd: true,
               ),
@@ -265,13 +266,13 @@ class _BudgetSummarySection extends StatelessWidget {
 
 class _BudgetMetric extends StatelessWidget {
   final String label;
-  final double value;
+  final int valueMinor;
   final TextStyle? valueStyle;
   final bool alignEnd;
 
   const _BudgetMetric({
     required this.label,
-    required this.value,
+    required this.valueMinor,
     required this.valueStyle,
     this.alignEnd = false,
   });
@@ -289,7 +290,7 @@ class _BudgetMetric extends StatelessWidget {
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        Text('${value.toStringAsFixed(2)} CHF', style: valueStyle),
+        Text(formatChfMinor(valueMinor), style: valueStyle),
       ],
     );
   }

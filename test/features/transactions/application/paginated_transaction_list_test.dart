@@ -79,7 +79,7 @@ void main() {
         AppTransaction(
           id: 'past-transaction',
           expenseNodeId: 'category',
-          amount: 12,
+          amountMinor: 12,
           dateTime: DateTime(2024, 1, 15),
         ),
       ];
@@ -112,20 +112,20 @@ void main() {
         AppTransaction(
           id: 'april-transaction',
           expenseNodeId: 'category',
-          amount: 12,
+          amountMinor: 12,
           dateTime: DateTime(2026, 4, 15),
         ),
       ]
       ..oldestTransaction = AppTransaction(
         id: 'march-transaction',
         expenseNodeId: 'category',
-        amount: 8,
+        amountMinor: 8,
         dateTime: DateTime(2026, 3, 31),
       )
       ..newestTransaction = AppTransaction(
         id: 'may-transaction',
         expenseNodeId: 'category',
-        amount: 10,
+        amountMinor: 10,
         dateTime: DateTime(2026, 5, 1),
       );
     final container = ProviderContainer(
@@ -198,7 +198,7 @@ void main() {
 AppTransaction _transaction(String id, DateTime dateTime) => AppTransaction(
   id: id,
   expenseNodeId: 'category',
-  amount: 1,
+  amountMinor: 1,
   dateTime: dateTime,
 );
 

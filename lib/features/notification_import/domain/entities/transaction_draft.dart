@@ -36,6 +36,4 @@ class TransactionDraft {
     this.savedTransactionId,
     this.reviewedAt,
   });
-
-  double get amount => amountMinor / 100;
 }

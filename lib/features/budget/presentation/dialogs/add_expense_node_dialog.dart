@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/core/utils/amount_parser.dart';
-import 'package:stutz/features/budget/domain/enums/enums.dart';
+import 'package:stutz/features/budget/application/budget_mutations.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 import 'package:stutz/shared/widgets/choice_group.dart';
@@ -24,10 +24,12 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
 
     // Derive initial values from existingNode once at widget creation.
     final initialIsGroup =
-        existingNode != null && existingNode!.plannedAmount == null;
+        existingNode != null && existingNode!.plannedAmountMinor == null;
     final nameCtrl = useTextEditingController(text: existingNode?.name ?? '');
     final amountCtrl = useTextEditingController(
-      text: existingNode?.plannedAmount?.toString() ?? '',
+      text: existingNode?.plannedAmountMinor == null
+          ? ''
+          : formatMinorUnits(existingNode!.plannedAmountMinor!),
     );
     final isGroup = useState(initialIsGroup);
     final interval = useState(
@@ -181,11 +183,11 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                           ? existingNode!.parentId
                           : parentId;
                       final id = isEdit ? existingNode!.id : const Uuid().v4();
-                      final amount = isGroup.value
+                      final amountMinor = isGroup.value
                           ? null
-                          : parsePositiveAmount(amountCtrl.text);
+                          : parsePositiveMinorUnits(amountCtrl.text);
 
-                      if (!isGroup.value && amount == null) {
+                      if (!isGroup.value && amountMinor == null) {
                         return;
                       }
 
@@ -193,7 +195,7 @@ class AddExpenseNodeDialog extends HookConsumerWidget {
                         id: id,
                         parentId: resolvedParentId,
                         name: nameCtrl.text.trim(),
-                        plannedAmount: amount,
+                        plannedAmountMinor: amountMinor,
                         interval: isGroup.value ? null : interval.value,
                         type: isGroup.value ? null : type.value,
                         children: isEdit ? existingNode!.children : [],

@@ -22,7 +22,9 @@ class AddIncomeDialog extends HookConsumerWidget {
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final nameCtrl = useTextEditingController(text: existingItem?.name ?? '');
     final amountCtrl = useTextEditingController(
-      text: existingItem?.amount.toString() ?? '',
+      text: existingItem == null
+          ? ''
+          : formatMinorUnits(existingItem!.amountMinor),
     );
     final interval = useState(
       existingItem?.interval ?? PaymentInterval.monthly,
@@ -122,8 +124,10 @@ class AddIncomeDialog extends HookConsumerWidget {
                 ? null
                 : () async {
                     if (formKey.currentState!.validate()) {
-                      final newAmount = parsePositiveAmount(amountCtrl.text);
-                      if (newAmount == null) {
+                      final newAmountMinor = parsePositiveMinorUnits(
+                        amountCtrl.text,
+                      );
+                      if (newAmountMinor == null) {
                         showErrorSnackBar(
                           context,
                           'Bitte einen gültigen Betrag eingeben',
@@ -138,7 +142,7 @@ class AddIncomeDialog extends HookConsumerWidget {
                         final updated = IncomeSource(
                           id: existingItem!.id,
                           name: nameCtrl.text.trim(),
-                          amount: newAmount,
+                          amountMinor: newAmountMinor,
                           interval: interval.value,
                           group: group.value,
                         );
@@ -157,7 +161,7 @@ class AddIncomeDialog extends HookConsumerWidget {
                         final src = IncomeSource(
                           id: const Uuid().v4(),
                           name: nameCtrl.text.trim(),
-                          amount: newAmount,
+                          amountMinor: newAmountMinor,
                           interval: interval.value,
                           group: group.value,
                         );

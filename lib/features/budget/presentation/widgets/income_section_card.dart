@@ -9,14 +9,14 @@ import 'package:stutz/shared/widgets/section_card.dart';
 
 class IncomeSectionCard extends StatelessWidget {
   final List<IncomeSource> incomes;
-  final double monthlyTotal;
-  final double yearlyTotal;
+  final int monthlyTotalMinor;
+  final int yearlyTotalMinor;
 
   const IncomeSectionCard({
     super.key,
     required this.incomes,
-    required this.monthlyTotal,
-    required this.yearlyTotal,
+    required this.monthlyTotalMinor,
+    required this.yearlyTotalMinor,
   });
 
   @override
@@ -31,8 +31,8 @@ class IncomeSectionCard extends StatelessWidget {
 
     return SectionCard(
       title: "Einnahmen",
-      totalMonthly: monthlyTotal,
-      totalYearly: yearlyTotal,
+      totalMonthlyMinor: monthlyTotalMinor,
+      totalYearlyMinor: yearlyTotalMinor,
       icon: Icons.trending_up,
       iconColor: colorScheme.primary,
       backgroundColor: colorScheme.surfaceContainerLowest,

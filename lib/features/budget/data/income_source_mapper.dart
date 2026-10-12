@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 
@@ -21,15 +22,18 @@ class IncomeSourceMapper {
       throw const FormatException('Income source has an empty ID');
     }
 
-    final amount = data['amount'];
-    if (amount is! num) {
+    final amountMinor = storedMinorUnits(
+      minorValue: data['amountMinor'],
+      legacyMajorValue: data['amount'],
+    );
+    if (amountMinor == null) {
       throw FormatException('Income source $id has an invalid amount');
     }
 
     return IncomeSource(
       id: id,
       name: data['name'] as String? ?? '',
-      amount: amount.toDouble(),
+      amountMinor: amountMinor,
       interval: _parseInterval(data['interval']),
       group: _parseGroup(data['group']),
     );
@@ -38,7 +42,7 @@ class IncomeSourceMapper {
   static Map<String, dynamic> toDocument(IncomeSource source) {
     return {
       'name': source.name,
-      'amount': source.amount,
+      'amountMinor': source.amountMinor,
       'interval': source.interval.name,
       'group': source.group.name,
     };

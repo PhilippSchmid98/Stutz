@@ -18,6 +18,14 @@ const {
 
 const DEFAULT_PROJECT_ID = 'stutz-7ed90';
 const DEFAULT_EMULATOR_HOST = '127.0.0.1:8080';
+const USER_COLLECTION_GROUPS = [
+    'expense_nodes',
+    'incomes',
+    'merchantCategoryRules',
+    'transactionDrafts',
+    'transactionMonths',
+    'transactions',
+];
 
 function parseArguments(argv) {
     const options = {
@@ -109,6 +117,13 @@ function isTransactionDocument(documentReference) {
         && segments[2] === 'transactions';
 }
 
+function isDirectUserCollectionDocument(documentReference, collectionId) {
+    const segments = documentReference.path.split('/');
+    return segments.length === 4
+        && segments[0] === 'users'
+        && segments[2] === collectionId;
+}
+
 async function* walkCollection(collectionReference, userId) {
     const query = collectionReference.orderBy(FieldPath.documentId());
     for await (const document of queryDocuments(query)) {
@@ -153,10 +168,33 @@ async function* enumerateDocuments(db, { scope, userId }) {
         return;
     }
 
+    const seenPaths = new Set();
     const collections = await db.listCollections();
     collections.sort((left, right) => left.id.localeCompare(right.id));
     for (const collection of collections) {
-        yield* walkCollection(collection, userId);
+        for await (const document of walkCollection(collection, userId)) {
+            if (seenPaths.has(document.ref.path)) continue;
+            seenPaths.add(document.ref.path);
+            yield document;
+        }
+    }
+
+    // Firestore permits subcollections below a missing parent document. The
+    // app writes directly below /users/{uid}, so a root walk alone can miss
+    // complete user ledgers. Query every known direct user collection group.
+    for (const collectionId of USER_COLLECTION_GROUPS) {
+        const query = db
+            .collectionGroup(collectionId)
+            .orderBy(FieldPath.documentId());
+        for await (const document of queryDocuments(query)) {
+            if (!isDirectUserCollectionDocument(document.ref, collectionId)
+                || !belongsToUser(document.ref, userId)
+                || seenPaths.has(document.ref.path)) {
+                continue;
+            }
+            seenPaths.add(document.ref.path);
+            yield document;
+        }
     }
 }
 
@@ -296,6 +334,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+    USER_COLLECTION_GROUPS,
     belongsToUser,
     closeStream,
     comparePaths,

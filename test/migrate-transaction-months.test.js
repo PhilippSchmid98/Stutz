@@ -47,19 +47,19 @@ test('summarizes category totals per Zurich month', () => {
         {
             dateTime: '2026-01-31T23:30:00.000Z',
             expenseNodeId: 'tech',
-            amount: 1000,
+            amountMinor: 100000,
         },
         {
             dateTime: '2026-02-01T00:30:00.000Z',
             expenseNodeId: 'groceries',
-            amount: 25.5,
+            amountMinor: 2550,
         },
     ]);
 
     assert.deepEqual([...summaries.entries()], [
         ['2026-02', {
             transactionCount: 2,
-            categoryTotals: { tech: 1000, groceries: 25.5 },
+            categoryTotalsMinor: { tech: 100000, groceries: 2550 },
         }],
     ]);
 });
@@ -75,11 +75,11 @@ test('builds deterministic month writes and puts completion last', () => {
         new Map([
             ['2026-01', {
                 transactionCount: 2,
-                categoryTotals: { groceries: 100 },
+                categoryTotalsMinor: { groceries: 10000 },
             }],
             ['2026-03', {
                 transactionCount: 1,
-                categoryTotals: { tech: 1000 },
+                categoryTotalsMinor: { tech: 100000 },
             }],
         ]),
         ['2026-01', '2025-12', '_meta'],
@@ -94,14 +94,17 @@ test('builds deterministic month writes and puts completion last', () => {
     assert.equal(operations[2].reference.id, '2025-12');
     assert.equal(operations[3].reference.id, '_meta');
     assert.equal(operations[3].data.status, 'complete');
-    assert.deepEqual(operations[0].data, {
+    const firstMonthData = { ...operations[0].data };
+    assert.ok(firstMonthData.categoryTotals);
+    delete firstMonthData.categoryTotals;
+    assert.deepEqual(firstMonthData, {
         monthKey: '2026-01',
         year: 2026,
         month: 1,
         transactionCount: 2,
-        categoryTotals: { groceries: 100 },
+        categoryTotalsMinor: { groceries: 10000 },
     });
-    assert.equal(operations[3].data.migrationVersion, 2);
+    assert.equal(operations[3].data.migrationVersion, 3);
 });
 
 test('requires and validates a transaction backup before migration writes', async () => {

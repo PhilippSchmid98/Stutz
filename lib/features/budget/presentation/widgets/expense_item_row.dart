@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_expense_node_dialog.dart';
@@ -23,7 +24,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
   Widget build(BuildContext context) {
     final node = widget.node;
     final hasChildren = node.children.isNotEmpty;
-    final isGroup = node.plannedAmount == null;
+    final isGroup = node.plannedAmountMinor == null;
     final isFixed = node.type == ExpenseType.fixed;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -79,7 +80,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
                       ),
                     ),
                   ),
-                  if (node.plannedAmount != null) _buildAmount(context),
+                  if (node.plannedAmountMinor != null) _buildAmount(context),
                 ],
               ),
             ),
@@ -94,7 +95,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-        if (hasChildren || node.plannedAmount == null)
+        if (hasChildren || node.plannedAmountMinor == null)
           IconButton(
             tooltip: 'Eintrag hinzufügen',
             icon: Icon(Icons.add_circle_outline, color: colorScheme.primary),
@@ -129,7 +130,7 @@ class _ExpenseItemRowState extends State<ExpenseItemRow> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          "${node.plannedAmount!.toStringAsFixed(2)} CHF",
+          formatChfMinor(node.plannedAmountMinor!),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: isFixed

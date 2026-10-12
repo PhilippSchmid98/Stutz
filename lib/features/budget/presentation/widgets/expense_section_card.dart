@@ -8,14 +8,14 @@ import 'package:stutz/shared/widgets/section_card.dart';
 
 class ExpenseSectionCard extends StatelessWidget {
   final ExpenseNode rootNode;
-  final double monthlyTotal;
-  final double yearlyTotal;
+  final int monthlyTotalMinor;
+  final int yearlyTotalMinor;
 
   const ExpenseSectionCard({
     super.key,
     required this.rootNode,
-    required this.monthlyTotal,
-    required this.yearlyTotal,
+    required this.monthlyTotalMinor,
+    required this.yearlyTotalMinor,
   });
 
   @override
@@ -24,8 +24,8 @@ class ExpenseSectionCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: SectionCard(
         title: rootNode.name,
-        totalMonthly: monthlyTotal,
-        totalYearly: yearlyTotal,
+        totalMonthlyMinor: monthlyTotalMinor,
+        totalYearlyMinor: yearlyTotalMinor,
         icon: Icons.folder_open,
         iconColor: Theme.of(context).colorScheme.primary,
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,

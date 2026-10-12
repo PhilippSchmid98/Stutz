@@ -2,7 +2,7 @@
 
 **Grundlage:** [Application Audit vom 10. September 2026](application-audit-2026-09-10.de.md)  
 **Zweck:** Fortschritt, Nachweise und Release-Freigabe für die im Audit priorisierten Verbesserungen nachvollziehbar dokumentieren.  
-**Letzte Aktualisierung:** 30. September 2026
+**Letzte Aktualisierung:** 9. Oktober 2026
 
 ## Verwendung und Status
 
@@ -27,7 +27,7 @@ daten- oder sicherheitsrelevante Massnahme.
 | Arbeitsstrom | Fortschritt | Status | Letzte Aktualisierung | Verantwortlich | Zieldatum | Blocker |
 |---|---:|---|---|---|---|---|
 | Prioritaet 1: Konto und Notification Privacy | 100 % | Erledigt | 30.09.2026 |  |  |  |
-| Prioritaet 2: Ganzzahliges Money-Schema | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
+| Prioritaet 2: Ganzzahliges Money-Schema | 67 % | Blockiert | 09.10.2026 |  |  | Produktives `scope=all`-Backup, Credentials, Maintenance Window und Freigabe fuer P2-02/P2-06 fehlen. |
 | Prioritaet 3: Trusted Write-Boundary | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 | Prioritaet 4: Anonyme Konten und Sign-out | 100 % | Erledigt | 30.09.2026 |  |  |  |
 | Prioritaet 5: Kritische Tests und Release-Gates | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
@@ -112,36 +112,36 @@ migriert.
 
 | ID | Arbeitspaket | Fortschritt | Status | Verantwortlich | Zieldatum | Letzte Aktualisierung | Naechster Schritt | Evidenz / PR / Blocker |
 |---|---|---:|---|---|---|---|---|---|
-| P2-01 | CHF-Minor-Unit- und Jahresumlage-Regeln dokumentieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P2-02 | Persistierte, Quell- und Aggregat-Finanzfelder auf Ganzzahlen migrieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P2-03 | Striktes Direkt-zu-Minor-Unit-Parsing implementieren. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P2-04 | Dry-Run-Migration mit Validierung und Abweichungsreport bereitstellen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P2-05 | Summen aus Quelltransaktionen neu aufbauen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P2-06 | Prae-/Post-Summen je Benutzer gegen verifiziertes Backup abgleichen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
+| P2-01 | CHF-Minor-Unit- und Jahresumlage-Regeln dokumentieren. | 100 % | Erledigt |  |  | 09.10.2026 |  | [Money-Schema](money-schema.de.md). |
+| P2-02 | Persistierte, Quell- und Aggregat-Finanzfelder auf Ganzzahlen migrieren. | 100 % | Bereit zur Pruefung |  |  | 09.10.2026 | Produktionsmigration nach Freigabe ausfuehren. | App und Migration schreiben nur Integerfelder; Emulator bestanden. |
+| P2-03 | Striktes Direkt-zu-Minor-Unit-Parsing implementieren. | 100 % | Erledigt |  |  | 09.10.2026 |  | Parser, Formatter, Formulare und Grenzwerttests umgestellt. |
+| P2-04 | Dry-Run-Migration mit Validierung und Abweichungsreport bereitstellen. | 100 % | Erledigt |  |  | 09.10.2026 |  | `migrate:money-minor-units`; 13 Unit- und 1 Emulator-Test bestanden. |
+| P2-05 | Summen aus Quelltransaktionen neu aufbauen. | 100 % | Erledigt |  |  | 09.10.2026 |  | Integer-Summary-Rebuild, Legacy-Cleanup und leere Wiederholung getestet. |
+| P2-06 | Prae-/Post-Summen je Benutzer gegen verifiziertes Backup abgleichen. | 0 % | Blockiert |  |  | 09.10.2026 | Produktives All-Scope-Backup erstellen, Dry-Run-Report abnehmen und Apply ausfuehren. | Emulator-Reconciliation ist gruen; produktive Evidenz fehlt. |
 
 ### Umsetzung
 
-- [ ] CHF-Minor-Unit-Regeln, erlaubte Praezision und Rundung dokumentieren.
-- [ ] Regeln fuer Jahresumlagen und deren Rundung dokumentieren.
-- [ ] Persistierte Finanzfelder auf Ganzzahlen umstellen.
-- [ ] Quellmodelle und Domain-Modelle auf Ganzzahlen umstellen.
-- [ ] Aggregat- und Summary-Felder auf Ganzzahlen umstellen.
-- [ ] Direkt-zu-Minor-Unit-Parsing fuer Eingaben implementieren.
-- [ ] Eingaben mit mehr als zwei Dezimalstellen, ungueltiger Syntax oder
+- [x] CHF-Minor-Unit-Regeln, erlaubte Praezision und Rundung dokumentieren.
+- [x] Regeln fuer Jahresumlagen und deren Rundung dokumentieren.
+- [x] Persistierte Finanzfelder auf Ganzzahlen umstellen.
+- [x] Quellmodelle und Domain-Modelle auf Ganzzahlen umstellen.
+- [x] Aggregat- und Summary-Felder auf Ganzzahlen umstellen.
+- [x] Direkt-zu-Minor-Unit-Parsing fuer Eingaben implementieren.
+- [x] Eingaben mit mehr als zwei Dezimalstellen, ungueltiger Syntax oder
   nicht positiven Betraegen ablehnen.
-- [ ] Dry-Run-Migration mit Validierung und Abweichungsbericht bauen.
-- [ ] Monatssummen aus den Quelltransaktionen neu aufbauen.
+- [x] Dry-Run-Migration mit Validierung und Abweichungsbericht bauen.
+- [x] Monatssummen aus den Quelltransaktionen neu aufbauen.
 - [ ] Prae-/Post-Summen je Benutzer aus einem verifizierten Backup abgleichen.
 
 ### Tests und Nachweise
 
-- [ ] Unit-Tests fuer Parsing, Rundung und Grenzwerte ergaenzen.
-- [ ] Migrations-Dry-Run gegen eine repräsentative Kopie ausfuehren.
-- [ ] Reconciliation-Report mit Anzahl, Summe und Abweichungen je Benutzer
+- [x] Unit-Tests fuer Parsing, Rundung und Grenzwerte ergaenzen.
+- [x] Migrations-Dry-Run gegen eine repraesentative Emulator-Kopie ausfuehren.
+- [x] Emulator-Reconciliation-Report mit Anzahl, Summe und Abweichungen je Benutzer
   abnehmen.
-- [ ] Wiederholung des Dry-Runs liefert dasselbe Ergebnis oder einen
+- [x] Wiederholung des Dry-Runs liefert dasselbe Ergebnis oder einen
   explizit leeren Delta-Report.
-- [ ] Firestore-Stichprobe bestaetigt, dass persistiertes Geld keine
+- [x] Firestore-Emulator-Stichprobe bestaetigt, dass persistiertes Geld keine
   `double`-Werte mehr enthaelt.
 
 ### Abnahme
@@ -153,7 +153,14 @@ migriert.
   abgenommen.
 - [ ] Migrationsplan, Backup-Referenz, Report und Freigabe sind verlinkt.
 
-**Evidenz / Entscheidung / Rest-Risiko:**
+**Evidenz / Entscheidung / Rest-Risiko:** App-Domain, Formulare, Mapper,
+Repositories und Aggregationen verwenden ganzzahlige Rappen. Legacy-Felder
+werden nur gelesen und bei jedem Write entfernt. Jahreswerte bleiben exakt;
+monatliche Schaetzungen werden nach Aggregation half-away-from-zero gerundet.
+Die Migrationssuite bestand mit 13 Unit-Tests und einem All-Scope-
+Emulator-End-to-End-Test inklusive Backup-Verifikation, Reconciliation und
+leerem Folgeplan. Die produktive Abnahme bleibt blockiert, bis ein aktuelles
+`scope=all`-Backup und die erforderlichen Credentials/Freigaben vorliegen.
 
 ---
 

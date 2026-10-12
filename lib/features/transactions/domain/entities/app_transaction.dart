@@ -8,7 +8,7 @@ abstract class AppTransaction with _$AppTransaction {
   const factory AppTransaction({
     required String id,
     required String expenseNodeId,
-    required double amount,
+    required int amountMinor,
     required DateTime dateTime,
     String? note,
   }) = _AppTransaction;

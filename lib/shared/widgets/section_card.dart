@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 
 class SectionCard extends StatelessWidget {
   final String title;
-  final double totalMonthly;
-  final double totalYearly;
+  final int totalMonthlyMinor;
+  final int totalYearlyMinor;
   final IconData icon;
   final Color iconColor;
   final Color backgroundColor;
@@ -17,8 +18,8 @@ class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
     required this.title,
-    required this.totalMonthly,
-    required this.totalYearly,
+    required this.totalMonthlyMinor,
+    required this.totalYearlyMinor,
     required this.icon,
     required this.iconColor,
     required this.backgroundColor,
@@ -34,8 +35,8 @@ class SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _SectionCardBody(
       title: title,
-      totalMonthly: totalMonthly,
-      totalYearly: totalYearly,
+      totalMonthlyMinor: totalMonthlyMinor,
+      totalYearlyMinor: totalYearlyMinor,
       icon: icon,
       iconColor: iconColor,
       backgroundColor: backgroundColor,
@@ -51,8 +52,8 @@ class SectionCard extends StatelessWidget {
 
 class _SectionCardBody extends StatefulWidget {
   final String title;
-  final double totalMonthly;
-  final double totalYearly;
+  final int totalMonthlyMinor;
+  final int totalYearlyMinor;
   final IconData icon;
   final Color iconColor;
   final Color backgroundColor;
@@ -65,8 +66,8 @@ class _SectionCardBody extends StatefulWidget {
 
   const _SectionCardBody({
     required this.title,
-    required this.totalMonthly,
-    required this.totalYearly,
+    required this.totalMonthlyMinor,
+    required this.totalYearlyMinor,
     required this.icon,
     required this.iconColor,
     required this.backgroundColor,
@@ -116,11 +117,11 @@ class _SectionCardBodyState extends State<_SectionCardBody> {
               ],
             ),
           ),
-          if (widget.totalYearly > 0)
+          if (widget.totalYearlyMinor > 0)
             Padding(
               padding: const EdgeInsets.only(left: 8),
               child: Text(
-                "Ø ${(widget.totalMonthly + widget.totalYearly / 12).toStringAsFixed(0)}",
+                'Ø ${formatMinorUnits(widget.totalMonthlyMinor + annualToMonthlyEstimateMinor(widget.totalYearlyMinor))}',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: widget.iconColor,
                   fontWeight: FontWeight.bold,
@@ -190,11 +191,11 @@ class _SectionCardBodyState extends State<_SectionCardBody> {
 
   Widget _buildTotals(BuildContext context) {
     final parts = <String>[];
-    if (widget.totalMonthly > 0) {
-      parts.add("${widget.totalMonthly.toStringAsFixed(2)} / Monat");
+    if (widget.totalMonthlyMinor > 0) {
+      parts.add('${formatMinorUnits(widget.totalMonthlyMinor)} / Monat');
     }
-    if (widget.totalYearly > 0) {
-      parts.add("${widget.totalYearly.toStringAsFixed(2)} / Jahr");
+    if (widget.totalYearlyMinor > 0) {
+      parts.add('${formatMinorUnits(widget.totalYearlyMinor)} / Jahr');
     }
     if (parts.isEmpty) return const SizedBox.shrink();
 

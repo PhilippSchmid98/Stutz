@@ -146,20 +146,22 @@ class TransactionRepository {
   }
 
   Future<void> addTransaction(AppTransaction t) async {
-    final transactionReference = _collection.doc(t.id);
-    final month = TransactionMonth.fromDateTime(t.dateTime);
-    final monthReference = _monthCollection.doc(TransactionMonth.key(month));
-    final batch = _firestore.batch();
+    await _firestore.runTransaction((transaction) async {
+      final transactionReference = _collection.doc(t.id);
+      final month = TransactionMonth.fromDateTime(t.dateTime);
+      final monthReference = _monthCollection.doc(TransactionMonth.key(month));
+      final monthSnapshot = await transaction.get(monthReference);
 
-    batch.set(transactionReference, TransactionMapper.toDocument(t));
-    batch.set(monthReference, {
-      'monthKey': monthReference.id,
-      'year': month.year,
-      'month': month.month,
-      'transactionCount': FieldValue.increment(1),
-      'categoryTotals': {t.expenseNodeId: FieldValue.increment(t.amount)},
-    }, SetOptions(merge: true));
-    await batch.commit();
+      transaction.set(transactionReference, TransactionMapper.toDocument(t));
+      _setMonthSummary(
+        transaction,
+        monthReference,
+        monthSnapshot,
+        month: month,
+        countDelta: 1,
+        categoryDeltas: {t.expenseNodeId: t.amountMinor},
+      );
+    });
   }
 
   Future<void> updateTransaction(AppTransaction t) async {
@@ -183,7 +185,7 @@ class TransactionRepository {
           ? oldMonthSnapshot
           : await transaction.get(newMonthReference);
 
-      transaction.update(transactionReference, TransactionMapper.toDocument(t));
+      transaction.set(transactionReference, TransactionMapper.toDocument(t));
 
       if (oldMonthKey == newMonthKey) {
         _setMonthSummary(
@@ -200,7 +202,7 @@ class TransactionRepository {
           oldMonthSnapshot,
           month: oldMonth,
           countDelta: -1,
-          categoryDeltas: {existing.expenseNodeId: -existing.amount},
+          categoryDeltas: {existing.expenseNodeId: -existing.amountMinor},
         );
         _setMonthSummary(
           transaction,
@@ -208,7 +210,7 @@ class TransactionRepository {
           newMonthSnapshot,
           month: newMonth,
           countDelta: 1,
-          categoryDeltas: {t.expenseNodeId: t.amount},
+          categoryDeltas: {t.expenseNodeId: t.amountMinor},
         );
       }
     });
@@ -232,7 +234,7 @@ class TransactionRepository {
         monthSnapshot,
         month: month,
         countDelta: -1,
-        categoryDeltas: {existing.expenseNodeId: -existing.amount},
+        categoryDeltas: {existing.expenseNodeId: -existing.amountMinor},
       );
     });
   }
@@ -243,17 +245,12 @@ class TransactionRepository {
     return value.toInt().clamp(0, 1 << 31);
   }
 
-  Map<String, double> _categoryTotals(
+  Map<String, int> _categoryTotalsMinor(
     DocumentSnapshot<Map<String, dynamic>>? snapshot,
   ) {
-    final rawTotals = snapshot?.data()?['categoryTotals'];
-    if (rawTotals is! Map) return {};
-
-    return {
-      for (final entry in rawTotals.entries)
-        if (entry.key is String && entry.value is num)
-          entry.key as String: (entry.value as num).toDouble(),
-    };
+    return TransactionMonthSummaryMapper.categoryTotalsMinorFromData(
+      snapshot?.data(),
+    );
   }
 
   void _setMonthSummary(
@@ -262,17 +259,17 @@ class TransactionRepository {
     DocumentSnapshot<Map<String, dynamic>>? snapshot, {
     required DateTime month,
     int countDelta = 0,
-    required Map<String, double> categoryDeltas,
+    required Map<String, int> categoryDeltas,
   }) {
-    final categoryTotals = _categoryTotals(snapshot);
+    final categoryTotalsMinor = _categoryTotalsMinor(snapshot);
     for (final entry in categoryDeltas.entries) {
-      categoryTotals.update(
+      categoryTotalsMinor.update(
         entry.key,
         (value) => value + entry.value,
         ifAbsent: () => entry.value,
       );
     }
-    categoryTotals.removeWhere((_, value) => value <= 0);
+    categoryTotalsMinor.removeWhere((_, value) => value <= 0);
 
     final count = (_monthCount(snapshot) + countDelta).clamp(0, 1 << 31);
     transaction.set(reference, {
@@ -280,7 +277,8 @@ class TransactionRepository {
       'year': month.year,
       'month': month.month,
       'transactionCount': count,
-      'categoryTotals': categoryTotals,
+      'categoryTotalsMinor': categoryTotalsMinor,
+      'categoryTotals': FieldValue.delete(),
     }, SetOptions(merge: true));
   }
 }

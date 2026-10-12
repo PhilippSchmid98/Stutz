@@ -28,7 +28,11 @@ void main() {
           isOfflineProvider.overrideWith((ref) => false),
           incomeListProvider.overrideWith(
             (ref) => Stream.value([
-              const IncomeSource(id: 'income', name: 'Lohn', amount: 5000),
+              const IncomeSource(
+                id: 'income',
+                name: 'Lohn',
+                amountMinor: 500000,
+              ),
             ]),
           ),
           expenseTreeProvider.overrideWith(
@@ -39,11 +43,12 @@ void main() {
           budgetSummaryProvider.overrideWith(
             (ref) => Future.value(
               const BudgetSummary(
-                averageMonthlyIncome: 5000,
-                fixedMonthlyExpenses: 1200,
-                fixedYearlyExpenses: 0,
-                variableMonthlyExpenses: 0,
-                variableYearlyExpenses: 0,
+                monthlyIncomeMinor: 500000,
+                yearlyIncomeMinor: 0,
+                fixedMonthlyExpensesMinor: 120000,
+                fixedYearlyExpensesMinor: 0,
+                variableMonthlyExpensesMinor: 0,
+                variableYearlyExpensesMinor: 0,
               ),
             ),
           ),
@@ -70,8 +75,8 @@ void main() {
         home: Scaffold(
           body: SectionCard(
             title: 'EINNAHMEN',
-            totalMonthly: 5000,
-            totalYearly: 0,
+            totalMonthlyMinor: 500000,
+            totalYearlyMinor: 0,
             icon: Icons.trending_up,
             iconColor: Colors.green,
             backgroundColor: Colors.green.shade50,
@@ -95,14 +100,14 @@ void main() {
       IncomeSource(
         id: 'main',
         name: 'Lohn',
-        amount: 5000,
+        amountMinor: 500000,
         interval: PaymentInterval.monthly,
         group: IncomeGroup.main,
       ),
       IncomeSource(
         id: 'extra',
         name: 'Nebenjob',
-        amount: 600,
+        amountMinor: 60000,
         interval: PaymentInterval.yearly,
         group: IncomeGroup.additional,
       ),
@@ -113,8 +118,8 @@ void main() {
         home: Scaffold(
           body: IncomeSectionCard(
             incomes: incomes,
-            monthlyTotal: 5050,
-            yearlyTotal: 600,
+            monthlyTotalMinor: 500000,
+            yearlyTotalMinor: 60000,
           ),
         ),
       ),
@@ -137,7 +142,7 @@ void main() {
           id: 'rent',
           parentId: 'housing',
           name: 'Miete',
-          plannedAmount: 1200,
+          plannedAmountMinor: 120000,
           interval: PaymentInterval.monthly,
           type: ExpenseType.fixed,
         ),
@@ -149,8 +154,8 @@ void main() {
         home: Scaffold(
           body: ExpenseSectionCard(
             rootNode: root,
-            monthlyTotal: 1200,
-            yearlyTotal: 0,
+            monthlyTotalMinor: 120000,
+            yearlyTotalMinor: 0,
           ),
         ),
       ),
@@ -174,8 +179,8 @@ void main() {
           home: Scaffold(
             body: ExpenseSectionCard(
               rootNode: root,
-              monthlyTotal: 0,
-              yearlyTotal: 0,
+              monthlyTotalMinor: 0,
+              yearlyTotalMinor: 0,
             ),
           ),
         ),
@@ -202,8 +207,8 @@ void main() {
         home: Scaffold(
           body: ExpenseSectionCard(
             rootNode: root,
-            monthlyTotal: 0,
-            yearlyTotal: 0,
+            monthlyTotalMinor: 0,
+            yearlyTotalMinor: 0,
           ),
         ),
       ),
@@ -225,7 +230,7 @@ void main() {
     const leaf = ExpenseNode(
       id: 'leaf',
       name: 'Versicherung',
-      plannedAmount: 120,
+      plannedAmountMinor: 12000,
       interval: PaymentInterval.yearly,
       type: ExpenseType.fixed,
     );
@@ -280,11 +285,12 @@ void main() {
     tester,
   ) async {
     const summary = BudgetSummary(
-      averageMonthlyIncome: 5000,
-      fixedMonthlyExpenses: 1800,
-      fixedYearlyExpenses: 2400,
-      variableMonthlyExpenses: 500,
-      variableYearlyExpenses: 2400,
+      monthlyIncomeMinor: 500000,
+      yearlyIncomeMinor: 0,
+      fixedMonthlyExpensesMinor: 180000,
+      fixedYearlyExpensesMinor: 240000,
+      variableMonthlyExpensesMinor: 50000,
+      variableYearlyExpensesMinor: 240000,
     );
 
     await tester.pumpWidget(
@@ -363,7 +369,7 @@ void main() {
                 existingItem: IncomeSource(
                   id: 'income',
                   name: 'Lohn',
-                  amount: 1,
+                  amountMinor: 1,
                 ),
               ),
             ),

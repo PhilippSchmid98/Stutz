@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$DailyTransactions {
 
- DateTime get date; double get totalAmount; List<TransactionWithCategory> get transactions;
+ DateTime get date; int get totalAmountMinor; List<TransactionWithCategory> get transactions;
 /// Create a copy of DailyTransactions
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $DailyTransactionsCopyWith<DailyTransactions> get copyWith => _$DailyTransaction
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyTransactions&&(identical(other.date, date) || other.date == date)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&const DeepCollectionEquality().equals(other.transactions, transactions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyTransactions&&(identical(other.date, date) || other.date == date)&&(identical(other.totalAmountMinor, totalAmountMinor) || other.totalAmountMinor == totalAmountMinor)&&const DeepCollectionEquality().equals(other.transactions, transactions));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,date,totalAmount,const DeepCollectionEquality().hash(transactions));
+int get hashCode => Object.hash(runtimeType,date,totalAmountMinor,const DeepCollectionEquality().hash(transactions));
 
 @override
 String toString() {
-  return 'DailyTransactions(date: $date, totalAmount: $totalAmount, transactions: $transactions)';
+  return 'DailyTransactions(date: $date, totalAmountMinor: $totalAmountMinor, transactions: $transactions)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $DailyTransactionsCopyWith<$Res>  {
   factory $DailyTransactionsCopyWith(DailyTransactions value, $Res Function(DailyTransactions) _then) = _$DailyTransactionsCopyWithImpl;
 @useResult
 $Res call({
- DateTime date, double totalAmount, List<TransactionWithCategory> transactions
+ DateTime date, int totalAmountMinor, List<TransactionWithCategory> transactions
 });
 
 
@@ -62,11 +62,11 @@ class _$DailyTransactionsCopyWithImpl<$Res>
 
 /// Create a copy of DailyTransactions
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? totalAmount = null,Object? transactions = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? totalAmountMinor = null,Object? transactions = null,}) {
   return _then(_self.copyWith(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
-as double,transactions: null == transactions ? _self.transactions : transactions // ignore: cast_nullable_to_non_nullable
+as DateTime,totalAmountMinor: null == totalAmountMinor ? _self.totalAmountMinor : totalAmountMinor // ignore: cast_nullable_to_non_nullable
+as int,transactions: null == transactions ? _self.transactions : transactions // ignore: cast_nullable_to_non_nullable
 as List<TransactionWithCategory>,
   ));
 }
@@ -152,10 +152,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date,  double totalAmount,  List<TransactionWithCategory> transactions)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( DateTime date,  int totalAmountMinor,  List<TransactionWithCategory> transactions)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DailyTransactions() when $default != null:
-return $default(_that.date,_that.totalAmount,_that.transactions);case _:
+return $default(_that.date,_that.totalAmountMinor,_that.transactions);case _:
   return orElse();
 
 }
@@ -173,10 +173,10 @@ return $default(_that.date,_that.totalAmount,_that.transactions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date,  double totalAmount,  List<TransactionWithCategory> transactions)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( DateTime date,  int totalAmountMinor,  List<TransactionWithCategory> transactions)  $default,) {final _that = this;
 switch (_that) {
 case _DailyTransactions():
-return $default(_that.date,_that.totalAmount,_that.transactions);case _:
+return $default(_that.date,_that.totalAmountMinor,_that.transactions);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -193,10 +193,10 @@ return $default(_that.date,_that.totalAmount,_that.transactions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date,  double totalAmount,  List<TransactionWithCategory> transactions)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( DateTime date,  int totalAmountMinor,  List<TransactionWithCategory> transactions)?  $default,) {final _that = this;
 switch (_that) {
 case _DailyTransactions() when $default != null:
-return $default(_that.date,_that.totalAmount,_that.transactions);case _:
+return $default(_that.date,_that.totalAmountMinor,_that.transactions);case _:
   return null;
 
 }
@@ -208,11 +208,11 @@ return $default(_that.date,_that.totalAmount,_that.transactions);case _:
 
 
 class _DailyTransactions implements DailyTransactions {
-  const _DailyTransactions({required this.date, required this.totalAmount, required final  List<TransactionWithCategory> transactions}): _transactions = transactions;
+  const _DailyTransactions({required this.date, required this.totalAmountMinor, required final  List<TransactionWithCategory> transactions}): _transactions = transactions;
   
 
 @override final  DateTime date;
-@override final  double totalAmount;
+@override final  int totalAmountMinor;
  final  List<TransactionWithCategory> _transactions;
 @override List<TransactionWithCategory> get transactions {
   if (_transactions is EqualUnmodifiableListView) return _transactions;
@@ -231,16 +231,16 @@ _$DailyTransactionsCopyWith<_DailyTransactions> get copyWith => __$DailyTransact
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyTransactions&&(identical(other.date, date) || other.date == date)&&(identical(other.totalAmount, totalAmount) || other.totalAmount == totalAmount)&&const DeepCollectionEquality().equals(other._transactions, _transactions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyTransactions&&(identical(other.date, date) || other.date == date)&&(identical(other.totalAmountMinor, totalAmountMinor) || other.totalAmountMinor == totalAmountMinor)&&const DeepCollectionEquality().equals(other._transactions, _transactions));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,date,totalAmount,const DeepCollectionEquality().hash(_transactions));
+int get hashCode => Object.hash(runtimeType,date,totalAmountMinor,const DeepCollectionEquality().hash(_transactions));
 
 @override
 String toString() {
-  return 'DailyTransactions(date: $date, totalAmount: $totalAmount, transactions: $transactions)';
+  return 'DailyTransactions(date: $date, totalAmountMinor: $totalAmountMinor, transactions: $transactions)';
 }
 
 
@@ -251,7 +251,7 @@ abstract mixin class _$DailyTransactionsCopyWith<$Res> implements $DailyTransact
   factory _$DailyTransactionsCopyWith(_DailyTransactions value, $Res Function(_DailyTransactions) _then) = __$DailyTransactionsCopyWithImpl;
 @override @useResult
 $Res call({
- DateTime date, double totalAmount, List<TransactionWithCategory> transactions
+ DateTime date, int totalAmountMinor, List<TransactionWithCategory> transactions
 });
 
 
@@ -268,11 +268,11 @@ class __$DailyTransactionsCopyWithImpl<$Res>
 
 /// Create a copy of DailyTransactions
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? totalAmount = null,Object? transactions = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? totalAmountMinor = null,Object? transactions = null,}) {
   return _then(_DailyTransactions(
 date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
-as DateTime,totalAmount: null == totalAmount ? _self.totalAmount : totalAmount // ignore: cast_nullable_to_non_nullable
-as double,transactions: null == transactions ? _self._transactions : transactions // ignore: cast_nullable_to_non_nullable
+as DateTime,totalAmountMinor: null == totalAmountMinor ? _self.totalAmountMinor : totalAmountMinor // ignore: cast_nullable_to_non_nullable
+as int,transactions: null == transactions ? _self._transactions : transactions // ignore: cast_nullable_to_non_nullable
 as List<TransactionWithCategory>,
   ));
 }

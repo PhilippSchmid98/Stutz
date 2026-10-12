@@ -79,3 +79,49 @@ test('backs up and restores typed transaction documents on the emulator', async 
         await app.delete();
     }
 });
+
+test('all-scope backup includes user data below a missing parent document', async () => {
+    const app = admin.initializeApp(
+        { projectId: `${PROJECT_ID}-all-scope` },
+        `backup-all-scope-${Date.now()}`,
+    );
+    const db = getFirestore(app);
+    const output = path.join(temporaryDirectory(), 'archive');
+    const userPath = 'users/orphan-user';
+    const expectedPaths = [
+        `${userPath}/expense_nodes/e1`,
+        `${userPath}/incomes/i1`,
+        `${userPath}/merchantCategoryRules/r1`,
+        `${userPath}/transactionDrafts/d1`,
+        `${userPath}/transactionMonths/2026-01`,
+        `${userPath}/transactions/t1`,
+    ];
+
+    try {
+        for (const documentPath of expectedPaths) {
+            await db.doc(documentPath).set({ value: documentPath });
+        }
+        assert.equal((await db.doc(userPath).get()).exists, false);
+
+        const backup = await createBackup(db, {
+            dryRun: false,
+            emulator: true,
+            force: false,
+            maxDocuments: null,
+            output,
+            projectId: `${PROJECT_ID}-all-scope`,
+            scope: 'all',
+            userId: null,
+        });
+        assert.equal(backup.manifest.documentCount, expectedPaths.length);
+
+        const records = fs.readFileSync(format.documentsPath(output), 'utf8')
+            .trim()
+            .split('\n')
+            .map((line) => JSON.parse(line).path)
+            .sort();
+        assert.deepEqual(records, expectedPaths.sort());
+    } finally {
+        await app.delete();
+    }
+});

@@ -32,7 +32,7 @@ void main() {
   final transaction = AppTransaction(
     id: 'transaction',
     expenseNodeId: 'category',
-    amount: 42.5,
+    amountMinor: 4250,
     dateTime: DateTime(2025, 6, 15, 18, 30),
     note: 'Abendessen',
   );
@@ -62,7 +62,7 @@ void main() {
   ) async {
     final group = DailyTransactions(
       date: DateTime(2025, 6, 15),
-      totalAmount: 42.5,
+      totalAmountMinor: 4250,
       transactions: [item],
     );
 
@@ -155,7 +155,7 @@ void main() {
     final category = ExpenseNode(
       id: 'category',
       name: 'Lebensmittel',
-      plannedAmount: 100,
+      plannedAmountMinor: 100,
       interval: PaymentInterval.monthly,
       type: ExpenseType.variable,
     );
@@ -450,7 +450,7 @@ PaginatedTransactionsState _loadOlderErrorState() {
     groupedDays: [
       DailyTransactions(
         date: DateTime(2025, 6, 15),
-        totalAmount: 0,
+        totalAmountMinor: 0,
         transactions: const [],
       ),
     ],

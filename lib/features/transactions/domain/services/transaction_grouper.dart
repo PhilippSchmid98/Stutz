@@ -41,9 +41,9 @@ class TransactionGrouper {
     final days = groupedMap.entries.map((entry) {
       return DailyTransactions(
         date: entry.key,
-        totalAmount: entry.value.fold(
-          0.0,
-          (sum, t) => sum + t.transaction.amount,
+        totalAmountMinor: entry.value.fold<int>(
+          0,
+          (sum, t) => sum + t.transaction.amountMinor,
         ),
         transactions: entry.value,
       );

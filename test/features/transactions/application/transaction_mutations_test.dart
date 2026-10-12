@@ -21,7 +21,7 @@ void main() {
       final transaction = AppTransaction(
         id: 'transaction-1',
         expenseNodeId: 'expense-1',
-        amount: 25,
+        amountMinor: 25,
         dateTime: DateTime(2026, 8, 18),
       );
 
@@ -50,7 +50,7 @@ void main() {
     final transaction = AppTransaction(
       id: 'transaction-1',
       expenseNodeId: 'expense-1',
-      amount: 25,
+      amountMinor: 25,
       dateTime: DateTime(2026, 8, 18),
     );
 

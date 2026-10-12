@@ -25,7 +25,9 @@ class AddTransactionDialog extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final amountCtrl = useTextEditingController(
-      text: existingItem?.transaction.amount.toString() ?? '',
+      text: existingItem == null
+          ? ''
+          : formatMinorUnits(existingItem!.transaction.amountMinor),
     );
     final noteCtrl = useTextEditingController(
       text: existingItem?.transaction.note ?? '',
@@ -81,8 +83,8 @@ class AddTransactionDialog extends HookConsumerWidget {
           return;
         }
 
-        final amount = parsePositiveAmount(amountCtrl.text);
-        if (amount == null) {
+        final amountMinor = parsePositiveMinorUnits(amountCtrl.text);
+        if (amountMinor == null) {
           showErrorSnackBar(context, "Bitte einen gültigen Betrag eingeben");
           return;
         }
@@ -92,7 +94,7 @@ class AddTransactionDialog extends HookConsumerWidget {
         final txn = AppTransaction(
           id: id,
           expenseNodeId: selectedNodeId.value!,
-          amount: amount,
+          amountMinor: amountMinor,
           dateTime: selectedDate.value,
           note: noteCtrl.text.isEmpty ? null : noteCtrl.text,
         );

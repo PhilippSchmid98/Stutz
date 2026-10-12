@@ -14,7 +14,11 @@ void main() {
 
     test('enriches transaction with category name from flatNodes', () {
       const node = ExpenseNode(id: 'e1', name: 'Groceries');
-      final txn = makeTransaction(id: 't1', expenseNodeId: 'e1', amount: 20);
+      final txn = makeTransaction(
+        id: 't1',
+        expenseNodeId: 'e1',
+        amountMinor: 20,
+      );
       final result = grouper.groupByDay([txn], [node]);
 
       expect(result, hasLength(1));
@@ -33,20 +37,20 @@ void main() {
         makeTransaction(
           id: 't1',
           expenseNodeId: 'e1',
-          amount: 10,
+          amountMinor: 10,
           dateTime: DateTime(2025, 6, 15, 8),
         ),
         makeTransaction(
           id: 't2',
           expenseNodeId: 'e1',
-          amount: 20,
+          amountMinor: 20,
           dateTime: DateTime(2025, 6, 15, 18),
         ),
       ];
       final result = grouper.groupByDay(txns, [node]);
 
       expect(result, hasLength(1));
-      expect(result.first.totalAmount, 30.0);
+      expect(result.first.totalAmountMinor, 30);
       expect(result.first.transactions, hasLength(2));
       // Newest-first within the day.
       expect(result.first.transactions.first.transaction.id, 't2');

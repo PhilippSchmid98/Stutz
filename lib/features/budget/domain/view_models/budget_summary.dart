@@ -1,24 +1,31 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 
 part 'budget_summary.freezed.dart';
 
 @freezed
 abstract class BudgetSummary with _$BudgetSummary {
   const factory BudgetSummary({
-    required double averageMonthlyIncome,
-    required double fixedMonthlyExpenses,
-    required double fixedYearlyExpenses,
-    required double variableMonthlyExpenses,
-    required double variableYearlyExpenses,
+    required int monthlyIncomeMinor,
+    required int yearlyIncomeMinor,
+    required int fixedMonthlyExpensesMinor,
+    required int fixedYearlyExpensesMinor,
+    required int variableMonthlyExpensesMinor,
+    required int variableYearlyExpensesMinor,
   }) = _BudgetSummary;
 
   const BudgetSummary._();
 
-  double get yearlyIncome => averageMonthlyIncome * 12;
-  double get fixedExpenses => fixedMonthlyExpenses + fixedYearlyExpenses / 12;
-  double get variableExpenses =>
-      variableMonthlyExpenses + variableYearlyExpenses / 12;
-  double get monthlyExpenses => fixedExpenses + variableExpenses;
-  double get balance => averageMonthlyIncome - monthlyExpenses;
-  bool get isDeficit => balance < 0;
+  int get averageMonthlyIncomeMinor =>
+      monthlyIncomeMinor + annualToMonthlyEstimateMinor(yearlyIncomeMinor);
+  int get totalYearlyIncomeMinor => monthlyIncomeMinor * 12 + yearlyIncomeMinor;
+  int get fixedExpensesMinor =>
+      fixedMonthlyExpensesMinor +
+      annualToMonthlyEstimateMinor(fixedYearlyExpensesMinor);
+  int get variableExpensesMinor =>
+      variableMonthlyExpensesMinor +
+      annualToMonthlyEstimateMinor(variableYearlyExpensesMinor);
+  int get monthlyExpensesMinor => fixedExpensesMinor + variableExpensesMinor;
+  int get balanceMinor => averageMonthlyIncomeMinor - monthlyExpensesMinor;
+  bool get isDeficit => balanceMinor < 0;
 }

@@ -78,10 +78,10 @@ class DashboardCalculator {
     required List<TransactionMonthSummary?> summaries,
     required PaymentInterval interval,
   }) {
-    final actualByNode = <String, double>{};
+    final actualByNode = <String, int>{};
     for (final summary in summaries) {
       if (summary == null) continue;
-      for (final entry in summary.categoryTotals.entries) {
+      for (final entry in summary.categoryTotalsMinor.entries) {
         final node = nodesById[entry.key];
         if (node?.type != ExpenseType.variable || node?.interval != interval) {
           continue;
@@ -104,8 +104,8 @@ class DashboardCalculator {
           categoryId: node.id,
           categoryName: node.name,
           isGroup: false,
-          actual: actualByNode[node.id] ?? 0,
-          planned: node.plannedAmount ?? 0,
+          actualMinor: actualByNode[node.id] ?? 0,
+          plannedMinor: node.plannedAmountMinor ?? 0,
         );
       }
 
@@ -120,8 +120,14 @@ class DashboardCalculator {
         categoryName: node.name,
         isGroup: true,
         children: children,
-        actual: children.fold<double>(0, (sum, child) => sum + child.actual),
-        planned: children.fold<double>(0, (sum, child) => sum + child.planned),
+        actualMinor: children.fold<int>(
+          0,
+          (sum, child) => sum + child.actualMinor,
+        ),
+        plannedMinor: children.fold<int>(
+          0,
+          (sum, child) => sum + child.plannedMinor,
+        ),
       );
     }
 
@@ -133,13 +139,13 @@ class DashboardCalculator {
 
   DashboardProgress _total(List<DashboardCategoryProgress> categories) {
     return DashboardProgress(
-      actual: categories.fold<double>(
+      actualMinor: categories.fold<int>(
         0,
-        (sum, category) => sum + category.actual,
+        (sum, category) => sum + category.actualMinor,
       ),
-      planned: categories.fold<double>(
+      plannedMinor: categories.fold<int>(
         0,
-        (sum, category) => sum + category.planned,
+        (sum, category) => sum + category.plannedMinor,
       ),
     );
   }
@@ -151,7 +157,7 @@ class DashboardCalculator {
     required Map<String, TransactionMonthSummary> summariesByMonth,
     required PaymentInterval interval,
   }) {
-    var yearToDateActual = 0.0;
+    var yearToDateActual = 0;
     return [
       for (var month = 1; month <= 12; month++)
         () {
@@ -163,11 +169,11 @@ class DashboardCalculator {
             interval,
           );
           if (interval == PaymentInterval.yearly) {
-            yearToDateActual += point.actual;
+            yearToDateActual += point.actualMinor;
             return DashboardHistoryPoint(
               month: point.month,
-              actual: yearToDateActual,
-              planned: point.planned,
+              actualMinor: yearToDateActual,
+              plannedMinor: point.plannedMinor,
             );
           }
           return point;
@@ -191,8 +197,8 @@ class DashboardCalculator {
     final total = _total(categories);
     return DashboardHistoryPoint(
       month: month,
-      actual: total.actual,
-      planned: total.planned,
+      actualMinor: total.actualMinor,
+      plannedMinor: total.plannedMinor,
     );
   }
 

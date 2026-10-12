@@ -7,6 +7,7 @@ import 'package:stutz/features/notification_import/domain/entities/transaction_d
 import 'package:stutz/features/notification_import/domain/services/merchant_category_rule_id.dart';
 import 'package:stutz/features/transactions/data/transaction_mapper.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
+import 'package:stutz/features/transactions/data/transaction_month_summary_mapper.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 
 part 'transaction_draft_repository.g.dart';
@@ -109,7 +110,7 @@ class TransactionDraftRepository {
       final appTransaction = AppTransaction(
         id: transactionId,
         expenseNodeId: confirmation.expenseNodeId,
-        amount: confirmation.amountMinor / 100,
+        amountMinor: confirmation.amountMinor,
         dateTime: dateOnly,
         note: confirmation.note?.trim().isEmpty ?? true
             ? draft.merchant
@@ -126,6 +127,7 @@ class TransactionDraftRepository {
           .doc(userId)
           .collection('transactionMonths')
           .doc(TransactionMonth.key(month));
+      final monthSnapshot = await transaction.get(monthReference);
       final ruleReference = _firestore
           .collection('users')
           .doc(userId)
@@ -136,16 +138,23 @@ class TransactionDraftRepository {
         transactionReference,
         TransactionMapper.toDocument(appTransaction),
       );
+      final monthData = monthSnapshot.data();
+      final categoryTotalsMinor =
+          TransactionMonthSummaryMapper.categoryTotalsMinorFromData(monthData);
+      categoryTotalsMinor.update(
+        appTransaction.expenseNodeId,
+        (value) => value + appTransaction.amountMinor,
+        ifAbsent: () => appTransaction.amountMinor,
+      );
+      final transactionCount = monthData?['transactionCount'];
       transaction.set(monthReference, {
         'monthKey': monthReference.id,
         'year': month.year,
         'month': month.month,
-        'transactionCount': FieldValue.increment(1),
-        'categoryTotals': {
-          appTransaction.expenseNodeId: FieldValue.increment(
-            appTransaction.amount,
-          ),
-        },
+        'transactionCount':
+            (transactionCount is num ? transactionCount.toInt() : 0) + 1,
+        'categoryTotalsMinor': categoryTotalsMinor,
+        'categoryTotals': FieldValue.delete(),
       }, SetOptions(merge: true));
       transaction.update(draftReference, {
         'status': TransactionDraftStatus.saved.name,

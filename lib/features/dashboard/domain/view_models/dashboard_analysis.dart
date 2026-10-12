@@ -1,12 +1,15 @@
 class DashboardProgress {
-  final double actual;
-  final double planned;
+  final int actualMinor;
+  final int plannedMinor;
 
-  const DashboardProgress({required this.actual, required this.planned});
+  const DashboardProgress({
+    required this.actualMinor,
+    required this.plannedMinor,
+  });
 
-  double get remaining => planned - actual;
-  double get ratio => planned <= 0 ? 0 : actual / planned;
-  bool get isOverBudget => actual > planned && planned >= 0;
+  int get remainingMinor => plannedMinor - actualMinor;
+  double get ratio => plannedMinor <= 0 ? 0 : actualMinor / plannedMinor;
+  bool get isOverBudget => actualMinor > plannedMinor && plannedMinor >= 0;
 }
 
 class DashboardCategoryProgress extends DashboardProgress {
@@ -20,8 +23,8 @@ class DashboardCategoryProgress extends DashboardProgress {
     required this.categoryName,
     required this.isGroup,
     this.children = const [],
-    required super.actual,
-    required super.planned,
+    required super.actualMinor,
+    required super.plannedMinor,
   });
 }
 
@@ -30,8 +33,8 @@ class DashboardHistoryPoint extends DashboardProgress {
 
   const DashboardHistoryPoint({
     required this.month,
-    required super.actual,
-    required super.planned,
+    required super.actualMinor,
+    required super.plannedMinor,
   });
 }
 

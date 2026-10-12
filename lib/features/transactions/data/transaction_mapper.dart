@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 
 class TransactionMapper {
@@ -28,8 +29,11 @@ class TransactionMapper {
       _ => throw FormatException('Transaction $id has an invalid dateTime'),
     };
 
-    final amount = data['amount'];
-    if (amount is! num) {
+    final amountMinor = storedMinorUnits(
+      minorValue: data['amountMinor'],
+      legacyMajorValue: data['amount'],
+    );
+    if (amountMinor == null) {
       throw FormatException('Transaction $id has an invalid amount');
     }
 
@@ -41,7 +45,7 @@ class TransactionMapper {
     return AppTransaction(
       id: id,
       expenseNodeId: expenseNodeId,
-      amount: amount.toDouble(),
+      amountMinor: amountMinor,
       dateTime: normalizedDateTime,
       note: data['note'] as String?,
     );
@@ -50,7 +54,7 @@ class TransactionMapper {
   static Map<String, dynamic> toDocument(AppTransaction transaction) {
     return {
       'expenseNodeId': transaction.expenseNodeId,
-      'amount': transaction.amount,
+      'amountMinor': transaction.amountMinor,
       'dateTime': Timestamp.fromDate(transaction.dateTime),
       'note': transaction.note,
     };

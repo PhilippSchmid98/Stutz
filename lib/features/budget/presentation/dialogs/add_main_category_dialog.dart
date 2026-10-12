@@ -66,7 +66,7 @@ class AddMainCategoryDialog extends HookConsumerWidget {
                         id: const Uuid().v4(),
                         parentId: null,
                         name: nameCtrl.text.trim(),
-                        plannedAmount: null,
+                        plannedAmountMinor: null,
                         interval: null,
                         type: null,
                         children: [],

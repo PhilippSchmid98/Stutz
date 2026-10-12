@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
@@ -61,7 +62,7 @@ class TransactionItem extends StatelessWidget {
               ),
             ),
             Text(
-              '-${item.transaction.amount.toStringAsFixed(2)} CHF',
+              '-${formatChfMinor(item.transaction.amountMinor)}',
               style: Theme.of(
                 context,
               ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),

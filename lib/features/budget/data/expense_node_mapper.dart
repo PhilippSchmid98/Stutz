@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 
@@ -25,7 +26,10 @@ class ExpenseNodeMapper {
       id: id,
       parentId: data['parentId'] as String?,
       name: data['name'] as String? ?? 'Unknown',
-      plannedAmount: (data['plannedAmount'] as num?)?.toDouble(),
+      plannedAmountMinor: storedMinorUnits(
+        minorValue: data['plannedAmountMinor'],
+        legacyMajorValue: data['plannedAmount'],
+      ),
       interval: _parseInterval(data['interval']),
       type: _parseType(data['type']),
       sortOrder: (data['sortOrder'] as num?)?.toInt() ?? 99999,
@@ -36,7 +40,7 @@ class ExpenseNodeMapper {
     return {
       'parentId': node.parentId,
       'name': node.name,
-      'plannedAmount': node.plannedAmount,
+      'plannedAmountMinor': node.plannedAmountMinor,
       'interval': node.interval?.name,
       'type': node.type?.name,
       'sortOrder': node.sortOrder,

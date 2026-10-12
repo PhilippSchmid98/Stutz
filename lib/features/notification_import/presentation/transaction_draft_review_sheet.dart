@@ -116,7 +116,7 @@ class _TransactionDraftReviewForm extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(GlobalKey<FormState>.new);
     final amountController = useTextEditingController(
-      text: draft.amount.toStringAsFixed(2),
+      text: formatMinorUnits(draft.amountMinor),
     );
     final noteController = useTextEditingController(text: draft.merchant);
     final selectedDate = useState(_dateOnly(draft.occurredAt));
@@ -171,8 +171,8 @@ class _TransactionDraftReviewForm extends HookConsumerWidget {
         showErrorSnackBar(context, 'Bitte Kategorie wählen');
         return;
       }
-      final amount = parsePositiveAmount(amountController.text);
-      if (amount == null) {
+      final amountMinor = parsePositiveMinorUnits(amountController.text);
+      if (amountMinor == null) {
         showErrorSnackBar(context, 'Bitte einen gültigen Betrag eingeben');
         return;
       }
@@ -183,7 +183,7 @@ class _TransactionDraftReviewForm extends HookConsumerWidget {
             .confirm(
               draft.id,
               TransactionDraftConfirmation(
-                amountMinor: (amount * 100).round(),
+                amountMinor: amountMinor,
                 dateTime: selectedDate.value,
                 expenseNodeId: categoryId,
                 note: noteController.text,

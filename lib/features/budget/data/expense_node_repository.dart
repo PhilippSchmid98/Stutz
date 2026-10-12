@@ -30,9 +30,7 @@ class ExpenseNodeRepository {
   }
 
   Future<void> updateExpenseNode(ExpenseNode node) async {
-    await _collection
-        .doc(node.id)
-        .set(ExpenseNodeMapper.toDocument(node), SetOptions(merge: true));
+    await _collection.doc(node.id).set(ExpenseNodeMapper.toDocument(node));
   }
 
   Future<void> deleteExpenseNode(String id) async {

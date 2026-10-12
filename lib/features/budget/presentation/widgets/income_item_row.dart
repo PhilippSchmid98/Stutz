@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/presentation/dialogs/add_income_dialog.dart';
@@ -36,7 +37,7 @@ class IncomeItemRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  "${item.amount.toStringAsFixed(2)} CHF",
+                  formatChfMinor(item.amountMinor),
                   style: Theme.of(
                     context,
                   ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),

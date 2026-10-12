@@ -17,7 +17,11 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final source = IncomeSource(id: 'income-1', name: 'Salary', amount: 3000);
+    final source = IncomeSource(
+      id: 'income-1',
+      name: 'Salary',
+      amountMinor: 3000,
+    );
     await container
         .read(budgetMutationsProvider.notifier)
         .addIncomeSource(source);
@@ -42,7 +46,7 @@ void main() {
     final node = ExpenseNode(
       id: 'expense-1',
       name: 'Food',
-      plannedAmount: 300,
+      plannedAmountMinor: 300,
       interval: PaymentInterval.monthly,
       type: ExpenseType.variable,
     );

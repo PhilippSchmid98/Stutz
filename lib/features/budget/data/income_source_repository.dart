@@ -26,9 +26,7 @@ class IncomeSourceRepository {
   }
 
   Future<void> updateIncomeSource(IncomeSource source) async {
-    await _collection
-        .doc(source.id)
-        .update(IncomeSourceMapper.toDocument(source));
+    await _collection.doc(source.id).set(IncomeSourceMapper.toDocument(source));
   }
 
   Future<void> deleteIncomeSource(String id) async {

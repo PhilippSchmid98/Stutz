@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 
 part 'income_source.freezed.dart';
@@ -10,12 +11,12 @@ abstract class IncomeSource with _$IncomeSource {
   const factory IncomeSource({
     required String id,
     required String name,
-    required double amount,
+    required int amountMinor,
     @Default(PaymentInterval.monthly) PaymentInterval interval,
     @Default(IncomeGroup.main) IncomeGroup group,
   }) = _IncomeSource;
 
-  /// Monthly-equivalent amount — yearly incomes are divided by 12.
-  double get monthlyAmount =>
-      interval == PaymentInterval.yearly ? amount / 12 : amount;
+  int get monthlyEstimateMinor => interval == PaymentInterval.yearly
+      ? annualToMonthlyEstimateMinor(amountMinor)
+      : amountMinor;
 }

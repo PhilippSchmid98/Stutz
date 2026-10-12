@@ -33,7 +33,7 @@ void main() {
         ..oldestTransaction = AppTransaction(
           id: 'oldest',
           expenseNodeId: 'category',
-          amount: 10,
+          amountMinor: 10,
           dateTime: DateTime(2026, 6, 2),
         );
       final container = ProviderContainer(

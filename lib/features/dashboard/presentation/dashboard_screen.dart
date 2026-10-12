@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/application/dashboard_providers.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
@@ -299,8 +300,8 @@ class _BudgetProgressCard extends HookWidget {
         ? colorScheme.error
         : colorScheme.primary;
     final remainingLabel = progress.isOverBudget
-        ? '${_amount(progress.actual - progress.planned)} über Budget'
-        : '${_amount(progress.remaining)} verfügbar';
+        ? '${_amount(progress.actualMinor - progress.plannedMinor)} über Budget'
+        : '${_amount(progress.remainingMinor)} verfügbar';
 
     return Card(
       child: Padding(
@@ -333,7 +334,7 @@ class _BudgetProgressCard extends HookWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              _amount(progress.actual),
+              _amount(progress.actualMinor),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: statusColor,
@@ -341,7 +342,7 @@ class _BudgetProgressCard extends HookWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '$subtitle von ${_amount(progress.planned)} geplant',
+              '$subtitle von ${_amount(progress.plannedMinor)} geplant',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -409,7 +410,7 @@ class _TopExpenses extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final expenses = _leafExpenses(categories)
-      ..sort((left, right) => right.actual.compareTo(left.actual));
+      ..sort((left, right) => right.actualMinor.compareTo(left.actualMinor));
     final topExpenses = expenses.take(3).toList();
 
     if (topExpenses.isEmpty) {
@@ -470,7 +471,7 @@ class _ExpensePreviewRow extends StatelessWidget {
               children: [
                 Expanded(child: Text(expense.categoryName)),
                 Text(
-                  '${_amount(expense.actual)} / ${_amount(expense.planned)}',
+                  '${_amount(expense.actualMinor)} / ${_amount(expense.plannedMinor)}',
                   style: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.w800,
@@ -553,15 +554,15 @@ class _HistoryChart extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final scrollController = useScrollController();
-    final maxValue = history.fold<double>(
+    final maxValue = history.fold<int>(
       0,
       (maximum, point) => [
         maximum,
-        point.actual,
-        point.planned,
+        point.actualMinor,
+        point.plannedMinor,
       ].reduce((left, right) => left > right ? left : right),
     );
-    final scale = maxValue == 0 ? 1.0 : maxValue;
+    final scale = maxValue == 0 ? 1.0 : maxValue.toDouble();
     final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
@@ -588,8 +589,11 @@ class _HistoryChart extends HookWidget {
               final point = history[index];
               final isSelected = point.month.month == selectedMonth.month;
               final colorScheme = Theme.of(context).colorScheme;
-              final actualHeight = (point.actual / scale * 84).clamp(0.0, 84.0);
-              final plannedHeight = (point.planned / scale * 84).clamp(
+              final actualHeight = (point.actualMinor / scale * 84).clamp(
+                0.0,
+                84.0,
+              );
+              final plannedHeight = (point.plannedMinor / scale * 84).clamp(
                 0.0,
                 84.0,
               );
@@ -649,8 +653,4 @@ class _HistoryChart extends HookWidget {
   }
 }
 
-String _amount(double value) => NumberFormat.currency(
-  locale: 'de_CH',
-  symbol: 'CHF',
-  decimalDigits: 2,
-).format(value);
+String _amount(int valueMinor) => formatChfMinor(valueMinor);

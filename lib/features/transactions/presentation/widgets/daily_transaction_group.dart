@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/transactions/domain/view_models/daily_transactions.dart';
 import 'package:stutz/features/transactions/presentation/widgets/transaction_item.dart';
 
@@ -41,7 +42,7 @@ class DailyTransactionGroup extends StatelessWidget {
                 ],
               ),
               Text(
-                '-${group.totalAmount.toStringAsFixed(2)} CHF',
+                '-${formatChfMinor(group.totalAmountMinor)}',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.bold,

@@ -1,3 +1,4 @@
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
@@ -11,55 +12,56 @@ import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
 class BudgetCalculator {
   const BudgetCalculator();
 
-  /// Total monthly income from all [sources] (yearly amounts divided by 12).
-  double totalMonthlyIncome(List<IncomeSource> sources) {
-    return sources.fold<double>(0.0, (sum, s) => sum + s.monthlyAmount);
+  int totalMonthlyIncomeMinor(List<IncomeSource> sources) {
+    final totals = incomeIntervalTotals(sources);
+    return totals.monthlyMinor +
+        annualToMonthlyEstimateMinor(totals.yearlyMinor);
   }
 
-  ({double monthly, double yearly}) incomeIntervalTotals(
+  ({int monthlyMinor, int yearlyMinor}) incomeIntervalTotals(
     List<IncomeSource> sources,
   ) {
-    var monthly = 0.0;
-    var yearly = 0.0;
+    var monthlyMinor = 0;
+    var yearlyMinor = 0;
 
     for (final source in sources) {
       if (source.interval == PaymentInterval.yearly) {
-        yearly += source.amount;
+        yearlyMinor += source.amountMinor;
       } else {
-        monthly += source.amount;
+        monthlyMinor += source.amountMinor;
       }
     }
 
-    return (monthly: monthly, yearly: yearly);
+    return (monthlyMinor: monthlyMinor, yearlyMinor: yearlyMinor);
   }
 
-  /// Total monthly planned expenses across all root [nodes]
-  /// (yearly amounts divided by 12; groups sum their children).
-  double totalMonthlyExpenses(List<ExpenseNode> nodes) {
-    return nodes.fold<double>(0.0, (sum, n) => sum + n.totalMonthlyCalculated);
+  int totalMonthlyExpensesMinor(List<ExpenseNode> nodes) {
+    final totals = expenseIntervalTotals(nodes);
+    return totals.monthlyMinor +
+        annualToMonthlyEstimateMinor(totals.yearlyMinor);
   }
 
-  ({double monthly, double yearly}) expenseIntervalTotals(
+  ({int monthlyMinor, int yearlyMinor}) expenseIntervalTotals(
     List<ExpenseNode> nodes,
   ) {
-    var monthly = 0.0;
-    var yearly = 0.0;
+    var monthlyMinor = 0;
+    var yearlyMinor = 0;
 
     for (final node in nodes) {
-      if (node.plannedAmount != null) {
+      if (node.children.isEmpty && node.plannedAmountMinor != null) {
         if (node.interval == PaymentInterval.yearly) {
-          yearly += node.plannedAmount!;
+          yearlyMinor += node.plannedAmountMinor!;
         } else {
-          monthly += node.plannedAmount!;
+          monthlyMinor += node.plannedAmountMinor!;
         }
       }
 
       final children = expenseIntervalTotals(node.children);
-      monthly += children.monthly;
-      yearly += children.yearly;
+      monthlyMinor += children.monthlyMinor;
+      yearlyMinor += children.yearlyMinor;
     }
 
-    return (monthly: monthly, yearly: yearly);
+    return (monthlyMinor: monthlyMinor, yearlyMinor: yearlyMinor);
   }
 
   /// Derives all budget totals from income sources and the expense tree.
@@ -67,24 +69,24 @@ class BudgetCalculator {
     List<IncomeSource> sources,
     List<ExpenseNode> roots,
   ) {
-    var fixedMonthlyExpenses = 0.0;
-    var fixedYearlyExpenses = 0.0;
-    var variableMonthlyExpenses = 0.0;
-    var variableYearlyExpenses = 0.0;
+    var fixedMonthlyExpensesMinor = 0;
+    var fixedYearlyExpensesMinor = 0;
+    var variableMonthlyExpensesMinor = 0;
+    var variableYearlyExpensesMinor = 0;
 
     void collectExpenseTypes(List<ExpenseNode> nodes) {
       for (final node in nodes) {
-        if (node.plannedAmount != null) {
-          final amount = node.plannedAmount!;
+        if (node.plannedAmountMinor != null) {
+          final amountMinor = node.plannedAmountMinor!;
           switch ((node.type, node.interval)) {
             case (ExpenseType.fixed, PaymentInterval.monthly):
-              fixedMonthlyExpenses += amount;
+              fixedMonthlyExpensesMinor += amountMinor;
             case (ExpenseType.fixed, PaymentInterval.yearly):
-              fixedYearlyExpenses += amount;
+              fixedYearlyExpensesMinor += amountMinor;
             case (ExpenseType.variable, PaymentInterval.monthly):
-              variableMonthlyExpenses += amount;
+              variableMonthlyExpensesMinor += amountMinor;
             case (ExpenseType.variable, PaymentInterval.yearly):
-              variableYearlyExpenses += amount;
+              variableYearlyExpensesMinor += amountMinor;
             case (_, _):
               break;
           }
@@ -95,12 +97,14 @@ class BudgetCalculator {
 
     collectExpenseTypes(roots);
 
+    final incomeTotals = incomeIntervalTotals(sources);
     return BudgetSummary(
-      averageMonthlyIncome: totalMonthlyIncome(sources),
-      fixedMonthlyExpenses: fixedMonthlyExpenses,
-      fixedYearlyExpenses: fixedYearlyExpenses,
-      variableMonthlyExpenses: variableMonthlyExpenses,
-      variableYearlyExpenses: variableYearlyExpenses,
+      monthlyIncomeMinor: incomeTotals.monthlyMinor,
+      yearlyIncomeMinor: incomeTotals.yearlyMinor,
+      fixedMonthlyExpensesMinor: fixedMonthlyExpensesMinor,
+      fixedYearlyExpensesMinor: fixedYearlyExpensesMinor,
+      variableMonthlyExpensesMinor: variableMonthlyExpensesMinor,
+      variableYearlyExpensesMinor: variableYearlyExpensesMinor,
     );
   }
 }

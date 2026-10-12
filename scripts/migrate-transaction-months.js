@@ -9,6 +9,7 @@ const {
     countMonthKeys,
     summarizeTransactions,
 } = require('./transaction-months');
+const { storedMinorUnits } = require('./money-minor-units');
 const {
     validateArchive,
 } = require('./firestore-restore');
@@ -120,7 +121,8 @@ function buildOperations(userReference, summaries, existingMonthIds) {
                 year,
                 month,
                 transactionCount: summary.transactionCount,
-                categoryTotals: summary.categoryTotals,
+                categoryTotalsMinor: summary.categoryTotalsMinor,
+                categoryTotals: FieldValue.delete(),
             },
         });
     }
@@ -138,7 +140,7 @@ function buildOperations(userReference, summaries, existingMonthIds) {
         type: 'set',
         reference: monthCollection.doc(META_DOCUMENT),
         data: {
-            migrationVersion: 2,
+            migrationVersion: 3,
             status: 'complete',
             timezone: TIME_ZONE,
             updatedAt: FieldValue.serverTimestamp(),
@@ -151,7 +153,7 @@ function buildOperations(userReference, summaries, existingMonthIds) {
 async function setMigrationStatus(db, userReference, status) {
     const reference = userReference.collection(MONTH_COLLECTION).doc(META_DOCUMENT);
     await db.batch().set(reference, {
-        migrationVersion: 2,
+        migrationVersion: 3,
         status,
         timezone: TIME_ZONE,
         updatedAt: FieldValue.serverTimestamp(),
@@ -178,12 +180,16 @@ async function migrateUser(db, userReference, { dryRun, transactionRecords }) {
     if (records == null) {
         const transactionSnapshot = await userReference
             .collection('transactions')
-            .select('dateTime', 'expenseNodeId', 'amount')
+            .select('dateTime', 'expenseNodeId', 'amountMinor', 'amount')
             .get();
         records = transactionSnapshot.docs.map((document) => ({
             dateTime: document.get('dateTime'),
             expenseNodeId: document.get('expenseNodeId'),
-            amount: document.get('amount'),
+            amountMinor: storedMinorUnits(document.data(), {
+                label: document.ref.path,
+                legacyField: 'amount',
+                minorField: 'amountMinor',
+            }).minor,
         }));
     }
 
@@ -235,7 +241,7 @@ async function main(argv = process.argv.slice(2)) {
 
             const transactionSnapshot = await db
                 .collectionGroup('transactions')
-                .select('dateTime', 'expenseNodeId', 'amount')
+                .select('dateTime', 'expenseNodeId', 'amountMinor', 'amount')
                 .get();
             for (const document of transactionSnapshot.docs) {
                 const userReference = document.ref.parent.parent;
@@ -246,7 +252,11 @@ async function main(argv = process.argv.slice(2)) {
                 records.push({
                     dateTime: document.get('dateTime'),
                     expenseNodeId: document.get('expenseNodeId'),
-                    amount: document.get('amount'),
+                    amountMinor: storedMinorUnits(document.data(), {
+                        label: document.ref.path,
+                        legacyField: 'amount',
+                        minorField: 'amountMinor',
+                    }).minor,
                 });
                 transactionRecordsByUser.set(userReference.path, records);
             }
