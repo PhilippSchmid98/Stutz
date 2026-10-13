@@ -148,6 +148,17 @@ class TransactionRepository {
   Future<void> addTransaction(AppTransaction t) async {
     await _firestore.runTransaction((transaction) async {
       final transactionReference = _collection.doc(t.id);
+      final existingSnapshot = await transaction.get(transactionReference);
+      if (existingSnapshot.exists) {
+        final existing = TransactionMapper.fromDocument(existingSnapshot);
+        if (existing != t) {
+          throw StateError(
+            'Transaction ${t.id} already exists with a different payload',
+          );
+        }
+        return;
+      }
+
       final month = TransactionMonth.fromDateTime(t.dateTime);
       final monthReference = _monthCollection.doc(TransactionMonth.key(month));
       final monthSnapshot = await transaction.get(monthReference);

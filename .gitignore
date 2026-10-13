@@ -56,6 +56,7 @@ keystore_base64.txt
 *service-account*.json
 migration-output/
 backups/
+distribution/money-migration-*.json
 *.partial/
 *.restore.journal.json
 *.restore.journal.json.tmp

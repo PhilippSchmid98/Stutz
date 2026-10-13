@@ -38,6 +38,7 @@ dev_dependencies:
   freezed: ^3.2.3
   riverpod_generator: ^3.0.3
   flutter_launcher_icons: ^0.14.4
+  fake_cloud_firestore: ^4.3.0
 
 
 flutter_launcher_icons:

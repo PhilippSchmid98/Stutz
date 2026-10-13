@@ -2,7 +2,7 @@
 
 **Grundlage:** [Application Audit vom 10. September 2026](application-audit-2026-09-10.de.md)  
 **Zweck:** Fortschritt, Nachweise und Release-Freigabe für die im Audit priorisierten Verbesserungen nachvollziehbar dokumentieren.  
-**Letzte Aktualisierung:** 9. Oktober 2026
+**Letzte Aktualisierung:** 13. Oktober 2026
 
 ## Verwendung und Status
 
@@ -27,8 +27,8 @@ daten- oder sicherheitsrelevante Massnahme.
 | Arbeitsstrom | Fortschritt | Status | Letzte Aktualisierung | Verantwortlich | Zieldatum | Blocker |
 |---|---:|---|---|---|---|---|
 | Prioritaet 1: Konto und Notification Privacy | 100 % | Erledigt | 30.09.2026 |  |  |  |
-| Prioritaet 2: Ganzzahliges Money-Schema | 67 % | Blockiert | 09.10.2026 |  |  | Produktives `scope=all`-Backup, Credentials, Maintenance Window und Freigabe fuer P2-02/P2-06 fehlen. |
-| Prioritaet 3: Trusted Write-Boundary | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
+| Prioritaet 2: Ganzzahliges Money-Schema | 100 % | Erledigt | 13.10.2026 |  |  |  |
+| Prioritaet 3: Trusted Write-Boundary | 33 % | In Arbeit | 13.10.2026 |  |  | Architekturentscheidung, Regeln, Kategoriearchivierung und Emulator-Abnahme stehen aus. |
 | Prioritaet 4: Anonyme Konten und Sign-out | 100 % | Erledigt | 30.09.2026 |  |  |  |
 | Prioritaet 5: Kritische Tests und Release-Gates | 0 % | Nicht begonnen | 16.09.2026 |  |  |  |
 
@@ -113,11 +113,11 @@ migriert.
 | ID | Arbeitspaket | Fortschritt | Status | Verantwortlich | Zieldatum | Letzte Aktualisierung | Naechster Schritt | Evidenz / PR / Blocker |
 |---|---|---:|---|---|---|---|---|---|
 | P2-01 | CHF-Minor-Unit- und Jahresumlage-Regeln dokumentieren. | 100 % | Erledigt |  |  | 09.10.2026 |  | [Money-Schema](money-schema.de.md). |
-| P2-02 | Persistierte, Quell- und Aggregat-Finanzfelder auf Ganzzahlen migrieren. | 100 % | Bereit zur Pruefung |  |  | 09.10.2026 | Produktionsmigration nach Freigabe ausfuehren. | App und Migration schreiben nur Integerfelder; Emulator bestanden. |
+| P2-02 | Persistierte, Quell- und Aggregat-Finanzfelder auf Ganzzahlen migrieren. | 100 % | Erledigt |  |  | 13.10.2026 |  | Produktiv migriert; Post-Migrations-Backup und leerer Verifikations-Dry-Run abgenommen. |
 | P2-03 | Striktes Direkt-zu-Minor-Unit-Parsing implementieren. | 100 % | Erledigt |  |  | 09.10.2026 |  | Parser, Formatter, Formulare und Grenzwerttests umgestellt. |
 | P2-04 | Dry-Run-Migration mit Validierung und Abweichungsreport bereitstellen. | 100 % | Erledigt |  |  | 09.10.2026 |  | `migrate:money-minor-units`; 13 Unit- und 1 Emulator-Test bestanden. |
 | P2-05 | Summen aus Quelltransaktionen neu aufbauen. | 100 % | Erledigt |  |  | 09.10.2026 |  | Integer-Summary-Rebuild, Legacy-Cleanup und leere Wiederholung getestet. |
-| P2-06 | Prae-/Post-Summen je Benutzer gegen verifiziertes Backup abgleichen. | 0 % | Blockiert |  |  | 09.10.2026 | Produktives All-Scope-Backup erstellen, Dry-Run-Report abnehmen und Apply ausfuehren. | Emulator-Reconciliation ist gruen; produktive Evidenz fehlt. |
+| P2-06 | Prae-/Post-Summen je Benutzer gegen verifiziertes Backup abgleichen. | 100 % | Erledigt |  |  | 13.10.2026 |  | 531 Quellen, 0 Wert- und 0 Summary-Abweichungen; alle 5 Migrationsmarker gueltig. |
 
 ### Umsetzung
 
@@ -131,7 +131,7 @@ migriert.
   nicht positiven Betraegen ablehnen.
 - [x] Dry-Run-Migration mit Validierung und Abweichungsbericht bauen.
 - [x] Monatssummen aus den Quelltransaktionen neu aufbauen.
-- [ ] Prae-/Post-Summen je Benutzer aus einem verifizierten Backup abgleichen.
+- [x] Prae-/Post-Summen je Benutzer aus einem verifizierten Backup abgleichen.
 
 ### Tests und Nachweise
 
@@ -146,12 +146,13 @@ migriert.
 
 ### Abnahme
 
-- [ ] Persistiertes Geld enthaelt keine `double`-Werte.
-- [ ] Jede Monatssumme entspricht exakt der Reduktion ihrer
+- [x] Persistiertes Geld enthaelt keine `double`-Werte.
+- [x] Jede Monatssumme entspricht exakt der Reduktion ihrer
   Quelltransaktionen.
-- [ ] Die Migration ist wiederholbar und ihr Reconciliation-Report ist
+- [x] Die Migration ist wiederholbar und ihr Reconciliation-Report ist
   abgenommen.
-- [ ] Migrationsplan, Backup-Referenz, Report und Freigabe sind verlinkt.
+- [x] Produktionsmigration, Backup-Integritaetspruefung, Apply und
+  Post-Apply-Verifikation sind dokumentiert.
 
 **Evidenz / Entscheidung / Rest-Risiko:** App-Domain, Formulare, Mapper,
 Repositories und Aggregationen verwenden ganzzahlige Rappen. Legacy-Felder
@@ -159,8 +160,11 @@ werden nur gelesen und bei jedem Write entfernt. Jahreswerte bleiben exakt;
 monatliche Schaetzungen werden nach Aggregation half-away-from-zero gerundet.
 Die Migrationssuite bestand mit 13 Unit-Tests und einem All-Scope-
 Emulator-End-to-End-Test inklusive Backup-Verifikation, Reconciliation und
-leerem Folgeplan. Die produktive Abnahme bleibt blockiert, bis ein aktuelles
-`scope=all`-Backup und die erforderlichen Credentials/Freigaben vorliegen.
+leerem Folgeplan. Die Produktionsmigration vom 13.10.2026 lief mit 5 Nutzern,
+531 Transaktionen, 14 Monaten und 0 Rundungsanpassungen durch. Der anschliessende
+Dry-Run enthielt 0 Restoperationen. Der Vergleich des Prae- mit dem
+Post-Migrations-Backup bestaetigte 0 Wert- und Summary-Abweichungen sowie
+gueltige Migrationsmarker fuer alle 5 Nutzer.
 
 ---
 
@@ -175,8 +179,8 @@ korrumpieren.
 | ID | Arbeitspaket | Fortschritt | Status | Verantwortlich | Zieldatum | Letzte Aktualisierung | Naechster Schritt | Evidenz / PR / Blocker |
 |---|---|---:|---|---|---|---|---|---|
 | P3-01 | Write-Architektur: Backend-Summen oder quellenbasierte Client-Writes entscheiden. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P3-02 | Manuelles Anlegen idempotent machen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
-| P3-03 | ID-Kollisionen und unzulaessige Ersetzungen ablehnen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
+| P3-02 | Manuelles Anlegen idempotent machen. | 100 % | Bereit zur Pruefung |  |  | 13.10.2026 | Gesamtvalidierung und Review. | Repository-Test: identischer Replay ist ein No-op ohne Summary-Delta. |
+| P3-03 | ID-Kollisionen und unzulaessige Ersetzungen ablehnen. | 100 % | Bereit zur Pruefung |  |  | 13.10.2026 | Gesamtvalidierung und Review. | Repository-Test: abweichender Replay wirft und bewahrt Quelle sowie Summary. |
 | P3-04 | Collection-spezifische Regeln deployen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
 | P3-05 | Kategorien archivieren statt race-anfaellig endgueltig zu loeschen. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
 | P3-06 | Emulator-Tests fuer Mutation und Ablehnungsfaelle liefern. | 0 % | Nicht begonnen |  |  | 16.09.2026 |  |  |
@@ -191,9 +195,9 @@ korrumpieren.
 
 ### Umsetzung
 
-- [ ] Manuelles Anlegen einer Transaktion idempotent machen.
-- [ ] Replays mit gleicher Command-/Transaktions-ID erkennen.
-- [ ] ID-Kollisionen und unzulaessige Ersetzungen explizit ablehnen.
+- [x] Manuelles Anlegen einer Transaktion idempotent machen.
+- [x] Replays mit gleicher Command-/Transaktions-ID erkennen.
+- [x] ID-Kollisionen und unzulaessige Ersetzungen explizit ablehnen.
 - [ ] Collection-spezifische Firestore-Regeln mit Schema- und
   Uebergangsvalidierung deployen.
 - [ ] Direkte Client-Writes auf abgeleitete Summen unterbinden oder nur an
@@ -365,7 +369,7 @@ Owner haben.
 | 6 | Verlaufsseiten inkrementell gruppieren oder Monatsfenster cachen. | Nicht begonnen |  |  |
 | 7 | Reporting und Reparaturwerkzeuge fuer fehlerhafte Datensaetze ergaenzen. | Nicht begonnen |  |  |
 | 8 | Synchronisierte Notification-Zeilen bereinigen, Rest-Queue verschluesseln. | Nicht begonnen |  |  |
-| 9 | Veralteten Sync-Code und ungenutzte direkte JSON-Codegen-Dependencies entfernen. | Bereit zur Pruefung |  | Phasen 1, 3 und 6 der [Refactoring-Checkliste](overengineering-refactoring-checklist.de.md) lokal validiert. |
+| 9 | Veralteten Sync-Code und ungenutzte direkte JSON-Codegen-Dependencies entfernen. | Erledigt |  | Bereinigung abgeschlossen; kein weiterer Refactoring-Arbeitsstrang offen. |
 | 10 | Grosse Kategoriebäume profilieren, dann ueber Sliver-Neufassung entscheiden. | Nicht begonnen |  |  |
 
 ---
@@ -376,7 +380,7 @@ Diese Liste ist die finale Freigabepruefung. Sie wird erst als bestanden
 markiert, wenn alle Nachweise aus den priorisierten Arbeitsstroemen in einem
 Release-Review vorliegen.
 
-- [ ] Alles persistierte Geld verwendet ganzzahlige Minor Units mit
+- [x] Alles persistierte Geld verwendet ganzzahlige Minor Units mit
   dokumentierter Rundung.
 - [ ] Jeder Transaktionsbefehl ist idempotent.
 - [ ] Abgeleitete Aggregate werden vom Backend verwaltet oder automatisiert
@@ -385,7 +389,7 @@ Release-Review vorliegen.
 - [x] Anonyme Benutzer haben einen getesteten Verknuepfungs- und Warnpfad;
   der bewusste Verzicht auf Export und nachtraegliche Wiederherstellung ist
   dokumentiert.
-- [ ] Der Sign-out loescht Firebase und native Ownership auch unter
+- [x] Der Sign-out loescht Firebase und native Ownership auch unter
   Fehlerbedingungen.
 - [ ] Notification-Daten sind vom Backup ausgeschlossen, verschluesselt,
   geschwaerzt und laufen ab.
