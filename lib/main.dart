@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stutz/app/app_loading_screen.dart';
 import 'package:stutz/app/app_router.dart';
 import 'package:stutz/core/theme/app_theme.dart';
-import 'package:stutz/firebase_options.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
+import 'package:stutz/firebase_options.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 void main() async {
@@ -51,11 +50,7 @@ class _MainAppState extends State<MainApp> {
       title: 'Expense Tracker',
       debugShowCheckedModeBanner: false,
       supportedLocales: const [Locale('de', 'CH')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: AppTheme.lightTheme,
       home: FutureBuilder<void>(
         future: _initialization,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stutz/features/budget/presentation/budget_planning_screen.dart';
 import 'package:stutz/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:stutz/features/transactions/presentation/transaction_screen.dart';

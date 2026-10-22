@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/presentation/account_sign_out_button.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';

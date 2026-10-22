@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/transactions/domain/view_models/daily_transactions.dart';
