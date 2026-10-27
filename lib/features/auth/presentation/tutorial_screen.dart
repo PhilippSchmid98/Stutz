@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
@@ -61,21 +63,31 @@ class _TutorialScreenState extends ConsumerState<TutorialScreen> {
     setState(() => _isCompleting = true);
     try {
       await ref.read(onboardingControllerProvider.notifier).complete();
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'Onboarding completion failed',
+        name: 'TutorialScreen',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!mounted) return;
       setState(() => _isCompleting = false);
       showErrorSnackBar(
         context,
         'Die Einführung konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
       );
+      return;
+    }
+    if (mounted) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Keep the auto-disposed controller alive while its save is in flight.
+    ref.watch(onboardingControllerProvider);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(

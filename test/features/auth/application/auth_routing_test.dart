@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,79 @@ import 'package:stutz/features/auth/presentation/tutorial_screen.dart';
 import 'package:stutz/features/auth/presentation/welcome_screen.dart';
 
 void main() {
+  for (final skip in [true, false]) {
+    testWidgets(
+      'tutorial ${skip ? 'skip' : 'completion'} survives a delayed preferences write',
+      (tester) async {
+        SharedPreferences.resetStatic();
+        const channel = MethodChannel('plugins.flutter.io/shared_preferences');
+        final writeStarted = Completer<void>();
+        final releaseWrite = Completer<void>();
+        final values = <String, Object>{};
+        tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+          channel,
+          (call) async {
+            switch (call.method) {
+              case 'getAll':
+                return values;
+              case 'setBool':
+                writeStarted.complete();
+                await releaseWrite.future;
+                values[call.arguments['key'] as String] =
+                    call.arguments['value'] as bool;
+                return true;
+              default:
+                throw MissingPluginException(
+                  'Unexpected method: ${call.method}',
+                );
+            }
+          },
+        );
+        addTearDown(() {
+          tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+            channel,
+            null,
+          );
+          SharedPreferences.resetStatic();
+        });
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              authStateProvider.overrideWith((ref) => Stream.value(null)),
+            ],
+            child: const MaterialApp(home: AppRouter()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Tour starten'));
+        await tester.pumpAndSettle();
+
+        if (!skip) {
+          for (var page = 0; page < 2; page++) {
+            await tester.tap(find.text('Weiter'));
+            await tester.pumpAndSettle();
+          }
+        }
+        await tester.tap(find.text(skip ? 'Überspringen' : 'Alles klar'));
+        await tester.pump();
+        expect(writeStarted.isCompleted, isTrue);
+        await tester.pump(const Duration(milliseconds: 100));
+        releaseWrite.complete();
+        await tester.pumpAndSettle();
+
+        expect(values['flutter.seenOnboarding'], isTrue);
+        expect(find.byType(LoginScreen), findsOneWidget);
+        expect(
+          find.text(
+            'Die Einführung konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
+          ),
+          findsNothing,
+        );
+      },
+    );
+  }
+
   group('AppRouter', () {
     testWidgets('shows splash screen while auth state is unresolved', (
       tester,
