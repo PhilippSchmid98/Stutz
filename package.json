@@ -6,6 +6,7 @@
         "backup:firestore": "node scripts/firestore-backup.js",
         "restore:firestore": "node scripts/firestore-restore.js",
         "migrate:transaction-months": "node scripts/migrate-transaction-months.js",
+        "verify:transaction-months": "node scripts/verify-transaction-months.js",
         "migrate:money-minor-units": "node scripts/migrate-money-minor-units.js",
         "test:backup": "node --test test/firestore-backup.test.js",
         "test:backup:emulator": "npx --yes firebase-tools@14.11.2 emulators:exec --only firestore \"node test/firestore-backup-emulator.test.js\"",

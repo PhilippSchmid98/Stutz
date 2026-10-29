@@ -94,10 +94,7 @@ test('builds deterministic month writes and puts completion last', () => {
     assert.equal(operations[2].reference.id, '2025-12');
     assert.equal(operations[3].reference.id, '_meta');
     assert.equal(operations[3].data.status, 'complete');
-    const firstMonthData = { ...operations[0].data };
-    assert.ok(firstMonthData.categoryTotals);
-    delete firstMonthData.categoryTotals;
-    assert.deepEqual(firstMonthData, {
+    assert.deepEqual(operations[0].data, {
         monthKey: '2026-01',
         year: 2026,
         month: 1,

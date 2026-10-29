@@ -3,29 +3,54 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
+import 'package:stutz/features/dashboard/application/dashboard_providers.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
+import 'package:stutz/features/dashboard/presentation/dashboard_pace_widgets.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
 import 'package:stutz/features/transactions/data/transaction_repository.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 
-class DashboardIntervalDetailScreen extends StatelessWidget {
+class DashboardIntervalDetailScreen extends ConsumerWidget {
   final List<DashboardCategoryProgress> categories;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const DashboardIntervalDetailScreen({
     super.key,
     required this.categories,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final title = interval == PaymentInterval.monthly
+  Widget build(BuildContext context, WidgetRef ref) {
+    final title = yearToDateAsOf != null
+        ? 'Jahresbilanz'
+        : interval == PaymentInterval.monthly
         ? 'Monatliche Ausgaben'
         : 'Jährliche Ausgaben';
+
+    Widget content(List<DashboardCategoryProgress> items, DateTime? asOf) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          if (items.isEmpty)
+            _EmptyCategoryState(interval: interval, yearToDate: asOf != null)
+          else
+            ...items.map(
+              (category) => _DashboardCategorySectionCard(
+                category: category,
+                selectedMonth: selectedMonth,
+                interval: interval,
+                yearToDateAsOf: asOf,
+              ),
+            ),
+        ],
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -34,21 +59,14 @@ class DashboardIntervalDetailScreen extends StatelessWidget {
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          if (categories.isEmpty)
-            _EmptyCategoryState(interval: interval)
-          else
-            ...categories.map(
-              (category) => _DashboardCategorySectionCard(
-                category: category,
-                selectedMonth: selectedMonth,
-                interval: interval,
-              ),
+      body: yearToDateAsOf == null
+          ? content(categories, null)
+          : AsyncStateView(
+              state: ref.watch(dashboardYearToDateAnalysisProvider),
+              errorMessage: 'Die Jahresbilanz konnte nicht geladen werden.',
+              builder: (analysis) =>
+                  content(analysis.categories, analysis.asOf),
             ),
-        ],
-      ),
     );
   }
 }
@@ -57,16 +75,49 @@ class DashboardCategoryDetailScreen extends ConsumerWidget {
   final DashboardCategoryProgress category;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const DashboardCategoryDetailScreen({
     super.key,
     required this.category,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    Widget content(DashboardCategoryProgress item, DateTime? asOf) {
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        children: [
+          _CategorySummary(
+            category: item,
+            interval: interval,
+            yearToDate: asOf != null,
+          ),
+          const SizedBox(height: 24),
+          if (item.children.isNotEmpty)
+            ...item.children.map(
+              (child) => _DashboardCategoryProgressRow(
+                category: child,
+                selectedMonth: selectedMonth,
+                interval: interval,
+                yearToDateAsOf: asOf,
+                depth: 0,
+              ),
+            )
+          else
+            _CategoryTransactions(
+              categoryId: item.categoryId,
+              selectedMonth: selectedMonth,
+              interval: interval,
+              yearToDateAsOf: asOf,
+            ),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(category.categoryName),
@@ -74,28 +125,25 @@ class DashboardCategoryDetailScreen extends ConsumerWidget {
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          _CategorySummary(category: category, interval: interval),
-          const SizedBox(height: 24),
-          if (category.children.isNotEmpty)
-            ...category.children.map(
-              (child) => _DashboardCategoryProgressRow(
-                category: child,
-                selectedMonth: selectedMonth,
-                interval: interval,
-                depth: 0,
-              ),
-            )
-          else
-            _CategoryTransactions(
-              categoryId: category.categoryId,
-              selectedMonth: selectedMonth,
-              interval: interval,
+      body: yearToDateAsOf == null
+          ? content(category, null)
+          : AsyncStateView(
+              state: ref.watch(dashboardYearToDateAnalysisProvider),
+              errorMessage: 'Die Jahresbilanz konnte nicht geladen werden.',
+              builder: (analysis) {
+                final item = _findCategory(
+                  analysis.categories,
+                  category.categoryId,
+                );
+                return item == null
+                    ? const Center(
+                        child: Text(
+                          'Diese Kategorie ist nicht mehr in der Jahresbilanz.',
+                        ),
+                      )
+                    : content(item, analysis.asOf);
+              },
             ),
-        ],
-      ),
     );
   }
 }
@@ -103,16 +151,24 @@ class DashboardCategoryDetailScreen extends ConsumerWidget {
 class _CategorySummary extends StatelessWidget {
   final DashboardCategoryProgress category;
   final PaymentInterval interval;
+  final bool yearToDate;
 
-  const _CategorySummary({required this.category, required this.interval});
+  const _CategorySummary({
+    required this.category,
+    required this.interval,
+    required this.yearToDate,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final statusColor = category.isOverBudget
+    final statusColor =
+        (yearToDate ? category.isOverPace : category.isOverBudget)
         ? colorScheme.error
         : colorScheme.primary;
-    final subtitle = interval == PaymentInterval.monthly
+    final subtitle = yearToDate
+        ? 'Variable Ausgaben seit Jahresbeginn'
+        : interval == PaymentInterval.monthly
         ? 'Monatliche variable Ausgaben'
         : 'Jährliche variable Ausgaben seit Jahresbeginn';
 
@@ -124,25 +180,43 @@ class _CategorySummary extends StatelessWidget {
           children: [
             Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 12),
-            Text(
-              _amount(category.actualMinor),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: statusColor,
-                fontWeight: FontWeight.w900,
+            if (yearToDate)
+              Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: _amount(category.actualMinor)),
+                    TextSpan(
+                      text: ' / ${_amount(category.plannedMinor)}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w900,
+                ),
+              )
+            else ...[
+              Text(
+                _amount(category.actualMinor),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
-            ),
-            Text(
-              'von ${_amount(category.plannedMinor)} geplant',
-              style: TextStyle(color: colorScheme.onSurfaceVariant),
-            ),
+              Text(
+                'von ${_amount(category.plannedMinor)} geplant',
+                style: TextStyle(color: colorScheme.onSurfaceVariant),
+              ),
+            ],
             const SizedBox(height: 14),
-            LinearProgressIndicator(
-              value: category.ratio.clamp(0.0, 1.0).toDouble(),
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(4),
-              color: statusColor,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-            ),
+            DashboardProgressBar(progress: category),
+            if (yearToDate) ...[
+              const SizedBox(height: 8),
+              DashboardPaceLabel(progress: category),
+            ],
           ],
         ),
       ),
@@ -154,11 +228,13 @@ class _DashboardCategorySectionCard extends StatefulWidget {
   final DashboardCategoryProgress category;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const _DashboardCategorySectionCard({
     required this.category,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
@@ -174,96 +250,130 @@ class _DashboardCategorySectionCardState
   Widget build(BuildContext context) {
     final category = widget.category;
     final colorScheme = Theme.of(context).colorScheme;
-    final statusColor = category.isOverBudget
+    final statusColor =
+        (widget.yearToDateAsOf == null
+            ? category.isOverBudget
+            : category.isOverPace)
         ? colorScheme.error
         : colorScheme.primary;
     final hasChildren = category.children.isNotEmpty;
+    final amountStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: statusColor,
+      fontWeight: FontWeight.w800,
+    );
+    final amountLabel = widget.yearToDateAsOf == null
+        ? Text(_amount(category.actualMinor), style: amountStyle)
+        : DashboardAmountPair(
+            actualMinor: category.actualMinor,
+            plannedMinor: category.plannedMinor,
+            style: amountStyle,
+          );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Card(
         clipBehavior: Clip.antiAlias,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.folder_outlined, color: statusColor, size: 20),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          category.categoryName,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      Text(
-                        _amount(category.actualMinor),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (hasChildren)
-                        IconButton(
-                          tooltip: _isExpanded ? 'Einklappen' : 'Ausklappen',
-                          onPressed: () =>
-                              setState(() => _isExpanded = !_isExpanded),
-                          icon: Icon(
-                            _isExpanded ? Icons.expand_less : Icons.expand_more,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  LinearProgressIndicator(
-                    value: category.ratio.clamp(0.0, 1.0).toDouble(),
-                    minHeight: 6,
-                    borderRadius: BorderRadius.circular(3),
-                    color: statusColor,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '${_amount(category.plannedMinor)} geplant',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+        child: InkWell(
+          onTap: !hasChildren && widget.yearToDateAsOf != null
+              ? () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DashboardCategoryDetailScreen(
+                      category: category,
+                      selectedMonth: widget.selectedMonth,
+                      interval: widget.interval,
+                      yearToDateAsOf: widget.yearToDateAsOf,
                     ),
                   ),
-                ],
-              ),
-            ),
-            if (hasChildren && _isExpanded) ...[
-              Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: colorScheme.outlineVariant,
-              ),
+                )
+              : null,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    for (final child in category.children)
-                      _DashboardCategoryProgressRow(
-                        category: child,
-                        selectedMonth: widget.selectedMonth,
-                        interval: widget.interval,
-                        depth: 0,
-                      ),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.folder_outlined,
+                          color: statusColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: widget.yearToDateAsOf == null ? 1 : 2,
+                          child: Text(
+                            category.categoryName,
+                            style: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                        if (widget.yearToDateAsOf != null)
+                          const SizedBox(width: 8),
+                        if (widget.yearToDateAsOf == null)
+                          amountLabel
+                        else
+                          Flexible(flex: 3, child: amountLabel),
+                        if (hasChildren)
+                          IconButton(
+                            tooltip: _isExpanded ? 'Einklappen' : 'Ausklappen',
+                            onPressed: () =>
+                                setState(() => _isExpanded = !_isExpanded),
+                            icon: Icon(
+                              _isExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                            ),
+                            visualDensity: VisualDensity.compact,
+                          )
+                        else if (widget.yearToDateAsOf != null)
+                          const Icon(Icons.chevron_right, size: 18),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    DashboardProgressBar(progress: category, height: 6),
+                    const SizedBox(height: 8),
+                    if (widget.yearToDateAsOf == null)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          '${_amount(category.plannedMinor)} geplant',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      )
+                    else
+                      DashboardPaceLabel(progress: category),
                   ],
                 ),
               ),
+              if (hasChildren && _isExpanded) ...[
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: colorScheme.outlineVariant,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      for (final child in category.children)
+                        _DashboardCategoryProgressRow(
+                          category: child,
+                          selectedMonth: widget.selectedMonth,
+                          interval: widget.interval,
+                          yearToDateAsOf: widget.yearToDateAsOf,
+                          depth: 0,
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -274,12 +384,14 @@ class _DashboardCategoryProgressRow extends StatefulWidget {
   final DashboardCategoryProgress category;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
   final int depth;
 
   const _DashboardCategoryProgressRow({
     required this.category,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
     required this.depth,
   });
 
@@ -302,9 +414,23 @@ class _DashboardCategoryProgressRowState
   Widget build(BuildContext context) {
     final category = widget.category;
     final colorScheme = Theme.of(context).colorScheme;
-    final statusColor = category.isOverBudget
+    final statusColor =
+        (widget.yearToDateAsOf == null
+            ? category.isOverBudget
+            : category.isOverPace)
         ? colorScheme.error
         : colorScheme.primary;
+    final amountStyle = Theme.of(context).textTheme.titleSmall?.copyWith(
+      color: statusColor,
+      fontWeight: FontWeight.bold,
+    );
+    final amountLabel = widget.yearToDateAsOf == null
+        ? Text(_amount(category.actualMinor), style: amountStyle)
+        : DashboardAmountPair(
+            actualMinor: category.actualMinor,
+            plannedMinor: category.plannedMinor,
+            style: amountStyle,
+          );
 
     return Column(
       children: [
@@ -320,6 +446,7 @@ class _DashboardCategoryProgressRowState
                         category: category,
                         selectedMonth: widget.selectedMonth,
                         interval: widget.interval,
+                        yearToDateAsOf: widget.yearToDateAsOf,
                       ),
                     ),
                   ),
@@ -352,6 +479,7 @@ class _DashboardCategoryProgressRowState
                       ),
                       const SizedBox(width: 8),
                       Expanded(
+                        flex: widget.yearToDateAsOf == null ? 1 : 2,
                         child: Text(
                           category.categoryName,
                           style: Theme.of(context).textTheme.bodyMedium
@@ -362,13 +490,12 @@ class _DashboardCategoryProgressRowState
                               ),
                         ),
                       ),
-                      Text(
-                        _amount(category.actualMinor),
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      if (widget.yearToDateAsOf != null)
+                        const SizedBox(width: 8),
+                      if (widget.yearToDateAsOf == null)
+                        amountLabel
+                      else
+                        Flexible(flex: 3, child: amountLabel),
                       const SizedBox(width: 4),
                       SizedBox(
                         width: 18,
@@ -383,23 +510,20 @@ class _DashboardCategoryProgressRowState
                     ],
                   ),
                   const SizedBox(height: 8),
-                  LinearProgressIndicator(
-                    value: category.ratio.clamp(0.0, 1.0).toDouble(),
-                    minHeight: 5,
-                    borderRadius: BorderRadius.circular(3),
-                    color: statusColor,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                  ),
+                  DashboardProgressBar(progress: category, height: 5),
                   const SizedBox(height: 5),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '${_amount(category.plannedMinor)} geplant',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                  if (widget.yearToDateAsOf == null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '${_amount(category.plannedMinor)} geplant',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ),
+                    )
+                  else
+                    DashboardPaceLabel(progress: category),
                 ],
               ),
             ),
@@ -411,6 +535,7 @@ class _DashboardCategoryProgressRowState
               category: child,
               selectedMonth: widget.selectedMonth,
               interval: widget.interval,
+              yearToDateAsOf: widget.yearToDateAsOf,
               depth: widget.depth + 1,
             ),
       ],
@@ -420,12 +545,15 @@ class _DashboardCategoryProgressRowState
 
 class _EmptyCategoryState extends StatelessWidget {
   final PaymentInterval interval;
+  final bool yearToDate;
 
-  const _EmptyCategoryState({required this.interval});
+  const _EmptyCategoryState({required this.interval, required this.yearToDate});
 
   @override
   Widget build(BuildContext context) {
-    final message = interval == PaymentInterval.monthly
+    final message = yearToDate
+        ? 'Noch keine variablen Kategorien geplant.'
+        : interval == PaymentInterval.monthly
         ? 'Noch keine monatlichen variablen Kategorien geplant.'
         : 'Noch keine jährlichen variablen Kategorien geplant.';
     return Padding(
@@ -443,24 +571,26 @@ class _CategoryTransactions extends ConsumerWidget {
   final String categoryId;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const _CategoryTransactions({
     required this.categoryId,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsAsync = ref.watch(
-      _categoryTransactionsProvider(
-        _CategoryPeriod(
-          categoryId: categoryId,
-          selectedMonth: selectedMonth,
-          interval: interval,
-        ),
-      ),
+    final period = _CategoryPeriod(
+      categoryId: categoryId,
+      selectedMonth: selectedMonth,
+      interval: interval,
+      yearToDateAsOf: yearToDateAsOf,
     );
+    final transactionsAsync = yearToDateAsOf == null
+        ? ref.watch(_categoryTransactionsProvider(period))
+        : ref.watch(_yearToDateCategoryTransactionsProvider(period));
 
     return AsyncStateView(
       state: transactionsAsync,
@@ -507,15 +637,31 @@ final _categoryTransactionsProvider = FutureProvider.autoDispose
           );
     });
 
+final _yearToDateCategoryTransactionsProvider = StreamProvider.autoDispose
+    .family<List<AppTransaction>, _CategoryPeriod>((ref, period) {
+      final asOf = period.yearToDateAsOf!;
+      return ref
+          .watch(transactionRepositoryProvider)
+          .watchCategoryTransactionsForPeriod(
+            categoryId: period.categoryId,
+            periodStart: TransactionMonth.startOfMonth(DateTime(asOf.year)),
+            periodEnd: TransactionMonth.startOfDay(
+              DateTime(asOf.year, asOf.month, asOf.day + 1),
+            ),
+          );
+    });
+
 class _CategoryPeriod {
   final String categoryId;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const _CategoryPeriod({
     required this.categoryId,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
@@ -524,7 +670,8 @@ class _CategoryPeriod {
       other.categoryId == categoryId &&
       other.selectedMonth.year == selectedMonth.year &&
       other.selectedMonth.month == selectedMonth.month &&
-      other.interval == interval;
+      other.interval == interval &&
+      other.yearToDateAsOf == yearToDateAsOf;
 
   @override
   int get hashCode => Object.hash(
@@ -532,7 +679,20 @@ class _CategoryPeriod {
     selectedMonth.year,
     selectedMonth.month,
     interval,
+    yearToDateAsOf,
   );
+}
+
+DashboardCategoryProgress? _findCategory(
+  List<DashboardCategoryProgress> categories,
+  String id,
+) {
+  for (final category in categories) {
+    if (category.categoryId == id) return category;
+    final child = _findCategory(category.children, id);
+    if (child != null) return child;
+  }
+  return null;
 }
 
 DateTime intervalStart(DateTime month, PaymentInterval interval) {

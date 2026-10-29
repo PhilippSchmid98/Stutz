@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
 import 'package:stutz/features/dashboard/presentation/dashboard_category_detail_screen.dart';
@@ -54,11 +55,13 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: DashboardIntervalDetailScreen(
-          categories: categories,
-          selectedMonth: DateTime(2026, 8),
-          interval: PaymentInterval.monthly,
+      ProviderScope(
+        child: MaterialApp(
+          home: DashboardIntervalDetailScreen(
+            categories: categories,
+            selectedMonth: DateTime(2026, 8),
+            interval: PaymentInterval.monthly,
+          ),
         ),
       ),
     );

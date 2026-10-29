@@ -27,4 +27,19 @@ void main() {
       DateTime.utc(2026, 1, 31, 23),
     );
   });
+
+  test('uses Zurich calendar days and daylight-saving aware boundaries', () {
+    expect(
+      TransactionMonth.dateFromDateTime(DateTime.utc(2024, 3, 30, 23, 30)),
+      DateTime(2024, 3, 31),
+    );
+    expect(
+      TransactionMonth.startOfDay(DateTime(2024, 3, 31)).toUtc(),
+      DateTime.utc(2024, 3, 30, 23),
+    );
+    expect(
+      TransactionMonth.startOfDay(DateTime(2024, 4, 1)).toUtc(),
+      DateTime.utc(2024, 3, 31, 22),
+    );
+  });
 }

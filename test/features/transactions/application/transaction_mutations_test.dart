@@ -81,6 +81,19 @@ class _FakeTransactionRepository implements TransactionRepository {
   Stream<List<TransactionMonthSummary>> watchMonthSummariesForYear(int year) =>
       const Stream.empty();
 
+  @override
+  Stream<List<AppTransaction>> watchTransactionsForPeriod({
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<List<AppTransaction>> watchCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
+
   final added = <AppTransaction>[];
   Object? error;
 

@@ -110,6 +110,20 @@ class TransactionRepository {
     );
   }
 
+  Stream<List<AppTransaction>> watchTransactionsForPeriod({
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _collection
+        .where('dateTime', isGreaterThanOrEqualTo: periodStart)
+        .where('dateTime', isLessThan: periodEnd)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+        );
+  }
+
   Future<AppTransaction?> getNewestTransaction() async {
     final snapshot = await _collection
         .orderBy('dateTime', descending: true)
@@ -136,13 +150,38 @@ class TransactionRepository {
     required DateTime periodStart,
     required DateTime periodEnd,
   }) async {
-    final snapshot = await _collection
+    final snapshot = await _categoryTransactionsQuery(
+      categoryId: categoryId,
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+    ).get();
+    return snapshot.docs.map(TransactionMapper.fromDocument).toList();
+  }
+
+  Stream<List<AppTransaction>> watchCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _categoryTransactionsQuery(
+      categoryId: categoryId,
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+    ).snapshots().map(
+      (snapshot) => snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+    );
+  }
+
+  Query<Map<String, dynamic>> _categoryTransactionsQuery({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _collection
         .where('expenseNodeId', isEqualTo: categoryId)
         .where('dateTime', isGreaterThanOrEqualTo: periodStart)
         .where('dateTime', isLessThan: periodEnd)
-        .orderBy('dateTime', descending: true)
-        .get();
-    return snapshot.docs.map(TransactionMapper.fromDocument).toList();
+        .orderBy('dateTime', descending: true);
   }
 
   Future<void> addTransaction(AppTransaction t) async {
@@ -289,8 +328,7 @@ class TransactionRepository {
       'month': month.month,
       'transactionCount': count,
       'categoryTotalsMinor': categoryTotalsMinor,
-      'categoryTotals': FieldValue.delete(),
-    }, SetOptions(merge: true));
+    });
   }
 }
 

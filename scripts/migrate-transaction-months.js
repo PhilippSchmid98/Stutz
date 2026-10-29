@@ -122,7 +122,6 @@ function buildOperations(userReference, summaries, existingMonthIds) {
                 month,
                 transactionCount: summary.transactionCount,
                 categoryTotalsMinor: summary.categoryTotalsMinor,
-                categoryTotals: FieldValue.delete(),
             },
         });
     }
