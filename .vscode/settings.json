@@ -22,6 +22,8 @@
         "/^git status --short; node --version; npm --version$/": {
             "approve": true,
             "matchCommandLine": true
-        }
+        },
+        ".\\gradlew.bat": true,
+        "ForEach-Object": true
     }
 }

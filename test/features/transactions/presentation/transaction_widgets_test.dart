@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -8,6 +8,9 @@ import 'package:stutz/core/connectivity/connectivity_provider.dart';
 import 'package:stutz/features/budget/application/selectable_categories_provider.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
+import 'package:stutz/features/notification_import/application/transaction_draft_providers.dart';
+import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/features/transactions/application/transaction_service.dart';
 import 'package:stutz/features/transactions/application/transaction_state.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
@@ -15,10 +18,10 @@ import 'package:stutz/features/transactions/domain/view_models/daily_transaction
 import 'package:stutz/features/transactions/domain/view_models/transaction_with_category.dart';
 import 'package:stutz/features/transactions/presentation/add_transaction_dialog.dart';
 import 'package:stutz/features/transactions/presentation/transaction_screen.dart';
+import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
 import 'package:stutz/features/transactions/presentation/widgets/daily_transaction_group.dart';
 import 'package:stutz/features/transactions/presentation/widgets/month_selector.dart';
 import 'package:stutz/features/transactions/presentation/widgets/transaction_item.dart';
-import 'package:stutz/features/transactions/presentation/widgets/category_picker_sheet.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
 
 void main() {
@@ -29,7 +32,7 @@ void main() {
   final transaction = AppTransaction(
     id: 'transaction',
     expenseNodeId: 'category',
-    amount: 42.5,
+    amountMinor: 4250,
     dateTime: DateTime(2025, 6, 15, 18, 30),
     note: 'Abendessen',
   );
@@ -59,7 +62,7 @@ void main() {
   ) async {
     final group = DailyTransactions(
       date: DateTime(2025, 6, 15),
-      totalAmount: 42.5,
+      totalAmountMinor: 4250,
       transactions: [item],
     );
 
@@ -152,7 +155,7 @@ void main() {
     final category = ExpenseNode(
       id: 'category',
       name: 'Lebensmittel',
-      plannedAmount: 100,
+      plannedAmountMinor: 100,
       interval: PaymentInterval.monthly,
       type: ExpenseType.variable,
     );
@@ -257,6 +260,71 @@ void main() {
     expect(find.text('Keine Ausgaben.'), findsOneWidget);
   });
 
+  testWidgets('pending draft indicator displays zero and expands for counts', (
+    tester,
+  ) async {
+    Future<void> pumpWithDrafts(int count) {
+      return tester.pumpWidget(
+        ProviderScope(
+          key: ValueKey(count),
+          overrides: [
+            pendingTransactionDraftsProvider.overrideWith(
+              (ref) => Stream.value(
+                List.generate(
+                  count,
+                  (index) => TransactionDraft(
+                    id: '$index',
+                    sourcePackage: 'test.package',
+                    sourceDedupeKey: '$index',
+                    capturedAt: DateTime(2025, 1, 1),
+                    merchant: 'Store',
+                    normalizedMerchant: 'store',
+                    amountMinor: 100,
+                    occurredAt: DateTime(2025, 1, 1),
+                    currencyCode: 'CHF',
+                    parserVersion: 1,
+                    status: TransactionDraftStatus.pending,
+                  ),
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              appBar: AppBar(
+                actions: const [PendingTransactionDraftsIndicator()],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await pumpWithDrafts(0);
+    await tester.pumpAndSettle();
+    expect(find.text('0'), findsOneWidget);
+    final zeroWidth = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .width;
+    final zeroHeight = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .height;
+    expect(zeroWidth, zeroHeight);
+
+    await pumpWithDrafts(10);
+    await tester.pumpAndSettle();
+    expect(find.text('10'), findsOneWidget);
+    final tenWidth = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .width;
+    final tenHeight = tester
+        .getSize(find.byKey(const ValueKey('pending-drafts-indicator')))
+        .height;
+
+    expect(tenWidth, greaterThan(tenHeight));
+    expect(tenHeight, zeroHeight);
+  });
+
   testWidgets(
     'transaction screen does not show a snackbar for an empty month',
     (tester) async {
@@ -274,10 +342,10 @@ void main() {
   );
 
   testWidgets(
-    'transaction screen exposes a retry action for load-more errors',
+    'transaction screen exposes a retry action for older-page errors',
     (tester) async {
       final fake = _FakePaginatedTransactionList(
-        _TransactionScreenMode.loadMoreError,
+        _TransactionScreenMode.loadOlderError,
       );
 
       await _pumpTransactionScreen(tester, paginatedNotifier: fake);
@@ -289,11 +357,11 @@ void main() {
       );
       expect(find.text('Erneut versuchen'), findsOneWidget);
 
-      final callsBeforeRetry = fake._loadNextPageCalls;
+      final callsBeforeRetry = fake._loadOlderPageCalls;
       await tester.tap(find.text('Erneut versuchen'));
       await tester.pump();
 
-      expect(fake._loadNextPageCalls, callsBeforeRetry + 1);
+      expect(fake._loadOlderPageCalls, callsBeforeRetry + 1);
     },
   );
 }
@@ -310,7 +378,9 @@ Future<void> _pumpTransactionScreen(
       overrides: [
         isOfflineProvider.overrideWithValue(false),
         availableMonthsProvider.overrideWith((ref) async => [month]),
-        currentVisibleMonthProvider.overrideWithValue(month),
+        currentVisibleMonthProvider.overrideWith(
+          () => _FakeCurrentVisibleMonth(month),
+        ),
         paginatedTransactionListProvider.overrideWith(
           () =>
               paginatedNotifier ??
@@ -322,12 +392,21 @@ Future<void> _pumpTransactionScreen(
   );
 }
 
-enum _TransactionScreenMode { loading, error, empty, loadMoreError }
+enum _TransactionScreenMode { loading, error, empty, loadOlderError }
+
+class _FakeCurrentVisibleMonth extends CurrentVisibleMonth {
+  final DateTime initialMonth;
+
+  _FakeCurrentVisibleMonth(this.initialMonth);
+
+  @override
+  DateTime build() => initialMonth;
+}
 
 class _FakePaginatedTransactionList extends PaginatedTransactionList {
   final _TransactionScreenMode _mode;
   final Completer<PaginatedTransactionsState>? _pending;
-  int _loadNextPageCalls = 0;
+  int _loadOlderPageCalls = 0;
 
   _FakePaginatedTransactionList(this._mode, [this._pending]);
 
@@ -340,36 +419,43 @@ class _FakePaginatedTransactionList extends PaginatedTransactionList {
         throw StateError('private transaction detail');
       case _TransactionScreenMode.empty:
         return _emptyTransactionState();
-      case _TransactionScreenMode.loadMoreError:
-        return _loadMoreErrorState();
+      case _TransactionScreenMode.loadOlderError:
+        return _loadOlderErrorState();
     }
   }
 
   @override
-  Future<void> loadNextPage() async {
-    _loadNextPageCalls++;
+  Future<void> loadOlderPage() async {
+    _loadOlderPageCalls++;
   }
+
+  @override
+  Future<bool> ensureMonthWindowLoaded(
+    DateTime month, {
+    DateTime? olderMonth,
+    DateTime? newerMonth,
+  }) async => false;
 }
 
 PaginatedTransactionsState _emptyTransactionState() {
   return PaginatedTransactionsState(
     groupedDays: const [],
     rawTransactions: const [],
-    hasReachedMax: true,
+    hasReachedOldest: true,
   );
 }
 
-PaginatedTransactionsState _loadMoreErrorState() {
+PaginatedTransactionsState _loadOlderErrorState() {
   return PaginatedTransactionsState(
     groupedDays: [
       DailyTransactions(
         date: DateTime(2025, 6, 15),
-        totalAmount: 0,
+        totalAmountMinor: 0,
         transactions: const [],
       ),
     ],
     rawTransactions: const [],
-    hasReachedMax: false,
-    loadMoreError: StateError('load more unavailable'),
+    hasReachedOldest: false,
+    loadOlderError: StateError('older page unavailable'),
   );
 }

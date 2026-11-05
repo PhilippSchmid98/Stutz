@@ -2,17 +2,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
 import 'package:stutz/features/notification_import/data/transaction_draft_mapper.dart';
-import 'package:stutz/features/notification_import/domain/entities/transaction_draft_confirmation.dart';
 import 'package:stutz/features/notification_import/domain/entities/transaction_draft.dart';
-import 'package:stutz/features/notification_import/domain/repositories/transaction_draft_store.dart';
+import 'package:stutz/features/notification_import/domain/entities/transaction_draft_confirmation.dart';
 import 'package:stutz/features/notification_import/domain/services/merchant_category_rule_id.dart';
 import 'package:stutz/features/transactions/data/transaction_mapper.dart';
 import 'package:stutz/features/transactions/data/transaction_month.dart';
+import 'package:stutz/features/transactions/data/transaction_month_summary_mapper.dart';
 import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 
 part 'transaction_draft_repository.g.dart';
 
-class TransactionDraftRepository implements TransactionDraftStore {
+class TransactionDraftRepository {
   final String userId;
   final FirebaseFirestore _firestore;
 
@@ -27,15 +27,24 @@ class TransactionDraftRepository implements TransactionDraftStore {
     return _collection
         .where('status', isEqualTo: TransactionDraftStatus.pending.name)
         .snapshots()
-        .map((snapshot) {
-          final drafts = snapshot.docs
-              .map(TransactionDraftMapper.fromDocument)
-              .toList();
-          drafts.sort(
-            (left, right) => left.occurredAt.compareTo(right.occurredAt),
-          );
-          return drafts;
-        });
+        .map(_pendingDraftsFromSnapshot);
+  }
+
+  Future<List<TransactionDraft>> getPendingDrafts() async {
+    final snapshot = await _collection
+        .where('status', isEqualTo: TransactionDraftStatus.pending.name)
+        .get();
+    return _pendingDraftsFromSnapshot(snapshot);
+  }
+
+  List<TransactionDraft> _pendingDraftsFromSnapshot(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
+    final drafts = snapshot.docs
+        .map(TransactionDraftMapper.fromDocument)
+        .toList();
+    drafts.sort((left, right) => left.occurredAt.compareTo(right.occurredAt));
+    return drafts;
   }
 
   Future<String?> getSuggestedExpenseNodeId(String normalizedMerchant) async {
@@ -101,7 +110,7 @@ class TransactionDraftRepository implements TransactionDraftStore {
       final appTransaction = AppTransaction(
         id: transactionId,
         expenseNodeId: confirmation.expenseNodeId,
-        amount: confirmation.amountMinor / 100,
+        amountMinor: confirmation.amountMinor,
         dateTime: dateOnly,
         note: confirmation.note?.trim().isEmpty ?? true
             ? draft.merchant
@@ -118,6 +127,7 @@ class TransactionDraftRepository implements TransactionDraftStore {
           .doc(userId)
           .collection('transactionMonths')
           .doc(TransactionMonth.key(month));
+      final monthSnapshot = await transaction.get(monthReference);
       final ruleReference = _firestore
           .collection('users')
           .doc(userId)
@@ -128,16 +138,23 @@ class TransactionDraftRepository implements TransactionDraftStore {
         transactionReference,
         TransactionMapper.toDocument(appTransaction),
       );
+      final monthData = monthSnapshot.data();
+      final categoryTotalsMinor =
+          TransactionMonthSummaryMapper.categoryTotalsMinorFromData(monthData);
+      categoryTotalsMinor.update(
+        appTransaction.expenseNodeId,
+        (value) => value + appTransaction.amountMinor,
+        ifAbsent: () => appTransaction.amountMinor,
+      );
+      final transactionCount = monthData?['transactionCount'];
       transaction.set(monthReference, {
         'monthKey': monthReference.id,
         'year': month.year,
         'month': month.month,
-        'transactionCount': FieldValue.increment(1),
-        'categoryTotals': {
-          appTransaction.expenseNodeId: FieldValue.increment(
-            appTransaction.amount,
-          ),
-        },
+        'transactionCount':
+            (transactionCount is num ? transactionCount.toInt() : 0) + 1,
+        'categoryTotalsMinor': categoryTotalsMinor,
+        'categoryTotals': FieldValue.delete(),
       }, SetOptions(merge: true));
       transaction.update(draftReference, {
         'status': TransactionDraftStatus.saved.name,
@@ -157,7 +174,6 @@ class TransactionDraftRepository implements TransactionDraftStore {
   }
 
   /// Writes a newly captured candidate once without changing a reviewed draft.
-  @override
   Future<void> upsertCapturedDraft(TransactionDraft draft) async {
     if (draft.status != TransactionDraftStatus.pending) {
       throw ArgumentError.value(

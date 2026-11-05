@@ -109,52 +109,6 @@ final class FlatExpenseNodesProvider
 
 String _$flatExpenseNodesHash() => r'09aa5b807836dcf3151d0462d655aa00d4163041';
 
-/// Read-only category contract for features that enrich transactions.
-
-@ProviderFor(categoryLookups)
-const categoryLookupsProvider = CategoryLookupsProvider._();
-
-/// Read-only category contract for features that enrich transactions.
-
-final class CategoryLookupsProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<CategoryLookup>>,
-          List<CategoryLookup>,
-          FutureOr<List<CategoryLookup>>
-        >
-    with
-        $FutureModifier<List<CategoryLookup>>,
-        $FutureProvider<List<CategoryLookup>> {
-  /// Read-only category contract for features that enrich transactions.
-  const CategoryLookupsProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'categoryLookupsProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$categoryLookupsHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<CategoryLookup>> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<CategoryLookup>> create(Ref ref) {
-    return categoryLookups(ref);
-  }
-}
-
-String _$categoryLookupsHash() => r'f83a907d48cf997f0703afd28ea7e7cf92007a21';
-
 /// Streams income sources directly from Firestore — auto-updates on any change
 /// without requiring manual [ref.invalidate] calls after mutations.
 
@@ -203,74 +157,6 @@ final class IncomeListProvider
 }
 
 String _$incomeListHash() => r'5406652a87c545b12c93e044b1659a668b69292c';
-
-@ProviderFor(totalMonthlyIncome)
-const totalMonthlyIncomeProvider = TotalMonthlyIncomeProvider._();
-
-final class TotalMonthlyIncomeProvider
-    extends $FunctionalProvider<AsyncValue<double>, double, FutureOr<double>>
-    with $FutureModifier<double>, $FutureProvider<double> {
-  const TotalMonthlyIncomeProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'totalMonthlyIncomeProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$totalMonthlyIncomeHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<double> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<double> create(Ref ref) {
-    return totalMonthlyIncome(ref);
-  }
-}
-
-String _$totalMonthlyIncomeHash() =>
-    r'dc08bf33ba3dcdbb03c48faa82e9d226262d6b57';
-
-@ProviderFor(totalMonthlyExpenses)
-const totalMonthlyExpensesProvider = TotalMonthlyExpensesProvider._();
-
-final class TotalMonthlyExpensesProvider
-    extends $FunctionalProvider<AsyncValue<double>, double, FutureOr<double>>
-    with $FutureModifier<double>, $FutureProvider<double> {
-  const TotalMonthlyExpensesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'totalMonthlyExpensesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$totalMonthlyExpensesHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<double> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<double> create(Ref ref) {
-    return totalMonthlyExpenses(ref);
-  }
-}
-
-String _$totalMonthlyExpensesHash() =>
-    r'b31f5098773ae01ad24b82636c64691777dc0133';
 
 @ProviderFor(budgetSummary)
 const budgetSummaryProvider = BudgetSummaryProvider._();

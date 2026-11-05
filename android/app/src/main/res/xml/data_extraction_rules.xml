@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <exclude domain="database" path="notification_capture.db" />
+        <exclude domain="sharedpref" path="notification_capture.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="notification_capture.db" />
+        <exclude domain="sharedpref" path="notification_capture.xml" />
+    </device-transfer>
+</data-extraction-rules>

@@ -8,12 +8,9 @@ part of 'expense_node_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 
 @ProviderFor(expenseNodeRepository)
 const expenseNodeRepositoryProvider = ExpenseNodeRepositoryProvider._();
-
-/// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 
 final class ExpenseNodeRepositoryProvider
     extends
@@ -23,7 +20,6 @@ final class ExpenseNodeRepositoryProvider
           ExpenseNodeRepository
         >
     with $Provider<ExpenseNodeRepository> {
-  /// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
   const ExpenseNodeRepositoryProvider._()
     : super(
         from: null,

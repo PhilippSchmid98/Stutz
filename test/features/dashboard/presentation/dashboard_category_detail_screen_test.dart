@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
 import 'package:stutz/features/dashboard/presentation/dashboard_category_detail_screen.dart';
@@ -23,15 +24,15 @@ void main() {
         categoryId: 'household',
         categoryName: 'Haushalt',
         isGroup: true,
-        actual: 300,
-        planned: 500,
+        actualMinor: 300,
+        plannedMinor: 500,
         children: [
           DashboardCategoryProgress(
             categoryId: 'food',
             categoryName: 'Lebensmittel',
             isGroup: false,
-            actual: 200,
-            planned: 300,
+            actualMinor: 200,
+            plannedMinor: 300,
           ),
         ],
       ),
@@ -39,26 +40,28 @@ void main() {
         categoryId: 'leisure',
         categoryName: 'Freizeit',
         isGroup: true,
-        actual: 50,
-        planned: 200,
+        actualMinor: 50,
+        plannedMinor: 200,
         children: [
           DashboardCategoryProgress(
             categoryId: 'cinema',
             categoryName: 'Kino',
             isGroup: false,
-            actual: 50,
-            planned: 100,
+            actualMinor: 50,
+            plannedMinor: 100,
           ),
         ],
       ),
     ];
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: DashboardIntervalDetailScreen(
-          categories: categories,
-          selectedMonth: DateTime(2026, 8),
-          interval: PaymentInterval.monthly,
+      ProviderScope(
+        child: MaterialApp(
+          home: DashboardIntervalDetailScreen(
+            categories: categories,
+            selectedMonth: DateTime(2026, 8),
+            interval: PaymentInterval.monthly,
+          ),
         ),
       ),
     );

@@ -1,11 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:stutz/core/utils/amount_parser.dart';
+import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/application/dashboard_providers.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
 import 'package:stutz/features/dashboard/presentation/dashboard_category_detail_screen.dart';
+import 'package:stutz/features/dashboard/presentation/dashboard_pace_widgets.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
@@ -16,6 +20,7 @@ class DashboardScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedMonth = ref.watch(dashboardSelectedMonthProvider);
     final analysisAsync = ref.watch(dashboardAnalysisProvider);
+    final yearToDateAsync = ref.watch(dashboardYearToDateAnalysisProvider);
 
     Future<void> chooseMonth() async {
       final selected = await showDialog<DateTime>(
@@ -35,7 +40,7 @@ class DashboardScreen extends HookConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Übersicht'),
-        actions: const [CloudStatusIcon()],
+        actions: const [PendingTransactionDraftsIndicator(), CloudStatusIcon()],
         backgroundColor: Colors.transparent,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
@@ -59,7 +64,16 @@ class DashboardScreen extends HookConsumerWidget {
               state: analysisAsync,
               errorMessage: 'Die Übersicht konnte nicht geladen werden.',
               onRetry: () => ref.invalidate(dashboardAnalysisProvider),
-              builder: _DashboardContent.new,
+              builder: (analysis) => _DashboardContent(
+                analysis,
+                yearToDateAsync,
+                onYearToDateRetry: () {
+                  ref.invalidate(expenseTreeProvider);
+                  ref.invalidate(dashboardYearSummariesProvider);
+                  ref.invalidate(dashboardCurrentMonthTransactionsProvider);
+                  ref.invalidate(dashboardTodayProvider);
+                },
+              ),
             ),
           ),
         ],
@@ -237,8 +251,14 @@ class _MonthPickerDialogState extends State<_MonthPickerDialog> {
 
 class _DashboardContent extends HookWidget {
   final DashboardAnalysis analysis;
+  final AsyncValue<DashboardYearToDateAnalysis> yearToDate;
+  final VoidCallback onYearToDateRetry;
 
-  const _DashboardContent(this.analysis);
+  const _DashboardContent(
+    this.analysis,
+    this.yearToDate, {
+    required this.onYearToDateRetry,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -265,8 +285,114 @@ class _DashboardContent extends HookWidget {
           interval: PaymentInterval.yearly,
         ),
         const SizedBox(height: 12),
+        AsyncStateView(
+          state: yearToDate,
+          errorMessage: 'Die Jahresbilanz konnte nicht geladen werden.',
+          onRetry: onYearToDateRetry,
+          builder: _YearToDateCard.new,
+        ),
+        const SizedBox(height: 12),
         _HistoryCard(analysis: analysis),
       ],
+    );
+  }
+}
+
+class _YearToDateCard extends HookWidget {
+  final DashboardYearToDateAnalysis analysis;
+
+  const _YearToDateCard(this.analysis);
+
+  @override
+  Widget build(BuildContext context) {
+    final expanded = useState(true);
+    final colors = Theme.of(context).colorScheme;
+    final progress = analysis.total;
+    final statusColor = progress.isOverPace ? colors.error : colors.primary;
+    final date = DateFormat('dd.MM.yyyy', 'de_CH').format(analysis.asOf);
+    final percent = (analysis.elapsedFraction * 100).toStringAsFixed(1);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.insights_outlined, color: statusColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Jahresbilanz · ${analysis.asOf.year}',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: expanded.value
+                      ? 'Ausgaben ausblenden'
+                      : 'Ausgaben anzeigen',
+                  onPressed: () => expanded.value = !expanded.value,
+                  icon: Icon(
+                    expanded.value ? Icons.expand_less : Icons.expand_more,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Text(
+              _amount(progress.actualMinor),
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                color: statusColor,
+              ),
+            ),
+            Text(
+              'Bis $date · Jahresbudget: ${_amount(progress.plannedMinor)}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
+            const SizedBox(height: 14),
+            DashboardProgressBar(progress: progress),
+            const SizedBox(height: 10),
+            DashboardPaceLabel(progress: progress),
+            const SizedBox(height: 14),
+            Text(
+              'Jahr vergangen: $percent %',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (expanded.value) ...[
+              const SizedBox(height: 20),
+              _TopExpenses(
+                categories: analysis.categories,
+                selectedMonth: analysis.asOf,
+                interval: PaymentInterval.yearly,
+                yearToDateAsOf: analysis.asOf,
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DashboardIntervalDetailScreen(
+                        categories: analysis.categories,
+                        selectedMonth: analysis.asOf,
+                        interval: PaymentInterval.yearly,
+                        yearToDateAsOf: analysis.asOf,
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_forward, size: 18),
+                  label: const Text('Alle Kategorien'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }
@@ -298,8 +424,8 @@ class _BudgetProgressCard extends HookWidget {
         ? colorScheme.error
         : colorScheme.primary;
     final remainingLabel = progress.isOverBudget
-        ? '${_amount(progress.actual - progress.planned)} über Budget'
-        : '${_amount(progress.remaining)} verfügbar';
+        ? '${_amount(progress.actualMinor - progress.plannedMinor)} über Budget'
+        : '${_amount(progress.remainingMinor)} verfügbar';
 
     return Card(
       child: Padding(
@@ -332,7 +458,7 @@ class _BudgetProgressCard extends HookWidget {
             ),
             const SizedBox(height: 18),
             Text(
-              _amount(progress.actual),
+              _amount(progress.actualMinor),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.w900,
                 color: statusColor,
@@ -340,7 +466,7 @@ class _BudgetProgressCard extends HookWidget {
             ),
             const SizedBox(height: 2),
             Text(
-              '$subtitle von ${_amount(progress.planned)} geplant',
+              '$subtitle von ${_amount(progress.plannedMinor)} geplant',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -398,17 +524,19 @@ class _TopExpenses extends StatelessWidget {
   final List<DashboardCategoryProgress> categories;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const _TopExpenses({
     required this.categories,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
   Widget build(BuildContext context) {
     final expenses = _leafExpenses(categories)
-      ..sort((left, right) => right.actual.compareTo(left.actual));
+      ..sort((left, right) => right.actualMinor.compareTo(left.actualMinor));
     final topExpenses = expenses.take(3).toList();
 
     if (topExpenses.isEmpty) {
@@ -425,6 +553,7 @@ class _TopExpenses extends StatelessWidget {
             expense: expense,
             selectedMonth: selectedMonth,
             interval: interval,
+            yearToDateAsOf: yearToDateAsOf,
           ),
       ],
     );
@@ -435,17 +564,20 @@ class _ExpensePreviewRow extends StatelessWidget {
   final DashboardCategoryProgress expense;
   final DateTime selectedMonth;
   final PaymentInterval interval;
+  final DateTime? yearToDateAsOf;
 
   const _ExpensePreviewRow({
     required this.expense,
     required this.selectedMonth,
     required this.interval,
+    this.yearToDateAsOf,
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final statusColor = expense.isOverBudget
+    final statusColor =
+        (yearToDateAsOf == null ? expense.isOverBudget : expense.isOverPace)
         ? colorScheme.error
         : colorScheme.primary;
 
@@ -457,6 +589,7 @@ class _ExpensePreviewRow extends StatelessWidget {
             category: expense,
             selectedMonth: selectedMonth,
             interval: interval,
+            yearToDateAsOf: yearToDateAsOf,
           ),
         ),
       ),
@@ -467,12 +600,17 @@ class _ExpensePreviewRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(expense.categoryName)),
-                Text(
-                  '${_amount(expense.actual)} / ${_amount(expense.planned)}',
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.w800,
+                Expanded(flex: 2, child: Text(expense.categoryName)),
+                const SizedBox(width: 8),
+                Flexible(
+                  flex: 3,
+                  child: DashboardAmountPair(
+                    actualMinor: expense.actualMinor,
+                    plannedMinor: expense.plannedMinor,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -484,13 +622,11 @@ class _ExpensePreviewRow extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 7),
-            LinearProgressIndicator(
-              value: expense.ratio.clamp(0.0, 1.0).toDouble(),
-              minHeight: 5,
-              borderRadius: BorderRadius.circular(3),
-              color: statusColor,
-              backgroundColor: colorScheme.surfaceContainerHighest,
-            ),
+            DashboardProgressBar(progress: expense, height: 5),
+            if (yearToDateAsOf != null) ...[
+              const SizedBox(height: 5),
+              DashboardPaceLabel(progress: expense),
+            ],
           ],
         ),
       ),
@@ -543,7 +679,7 @@ List<DashboardCategoryProgress> _leafExpenses(
   ];
 }
 
-class _HistoryChart extends StatelessWidget {
+class _HistoryChart extends HookWidget {
   final List<DashboardHistoryPoint> history;
   final DateTime selectedMonth;
 
@@ -551,84 +687,104 @@ class _HistoryChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxValue = history.fold<double>(
+    final scrollController = useScrollController();
+    final maxValue = history.fold<int>(
       0,
       (maximum, point) => [
         maximum,
-        point.actual,
-        point.planned,
+        point.actualMinor,
+        point.plannedMinor,
       ].reduce((left, right) => left > right ? left : right),
     );
-    final scale = maxValue == 0 ? 1.0 : maxValue;
+    final scale = maxValue == 0 ? 1.0 : maxValue.toDouble();
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SizedBox(
       height: 150,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: history.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final point = history[index];
-          final isSelected = point.month.month == selectedMonth.month;
-          final colorScheme = Theme.of(context).colorScheme;
-          final actualHeight = (point.actual / scale * 84).clamp(0.0, 84.0);
-          final plannedHeight = (point.planned / scale * 84).clamp(0.0, 84.0);
+      child: ScrollbarTheme(
+        data: ScrollbarTheme.of(context).copyWith(
+          thumbColor: WidgetStatePropertyAll(
+            colorScheme.outlineVariant.withValues(alpha: 0.65),
+          ),
+          thickness: const WidgetStatePropertyAll(4),
+          radius: const Radius.circular(4),
+        ),
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: true,
+          radius: const Radius.circular(4),
+          child: ListView.separated(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(bottom: 12),
+            itemCount: history.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final point = history[index];
+              final isSelected = point.month.month == selectedMonth.month;
+              final colorScheme = Theme.of(context).colorScheme;
+              final actualHeight = (point.actualMinor / scale * 84).clamp(
+                0.0,
+                84.0,
+              );
+              final plannedHeight = (point.plannedMinor / scale * 84).clamp(
+                0.0,
+                84.0,
+              );
 
-          return SizedBox(
-            width: 34,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                SizedBox(
-                  height: 92,
-                  child: Stack(
-                    alignment: Alignment.bottomCenter,
-                    children: [
-                      Container(
-                        width: 22,
-                        height: plannedHeight.toDouble(),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+              return SizedBox(
+                width: 34,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      height: 92,
+                      child: Stack(
+                        alignment: Alignment.bottomCenter,
+                        children: [
+                          Container(
+                            width: 22,
+                            height: plannedHeight.toDouble(),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          Container(
+                            width: 14,
+                            height: actualHeight.toDouble(),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colorScheme.primary
+                                  : colorScheme.secondary,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ],
                       ),
-                      Container(
-                        width: 14,
-                        height: actualHeight.toDouble(),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? colorScheme.primary
-                              : colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      DateFormat(
+                        'MMM',
+                        'de_CH',
+                      ).format(point.month).replaceAll('.', ''),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                        fontWeight: isSelected ? FontWeight.w800 : null,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat(
-                    'MMM',
-                    'de_CH',
-                  ).format(point.month).replaceAll('.', ''),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: isSelected
-                        ? colorScheme.primary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: isSelected ? FontWeight.w800 : null,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 }
 
-String _amount(double value) => NumberFormat.currency(
-  locale: 'de_CH',
-  symbol: 'CHF',
-  decimalDigits: 2,
-).format(value);
+String _amount(int valueMinor) => formatChfMinor(valueMinor);

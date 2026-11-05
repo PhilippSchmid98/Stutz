@@ -49,19 +49,19 @@ function summarizeTransactions(transactions) {
             || transaction.expenseNodeId.length === 0) {
             throw new Error(`Invalid expense node ID for month ${monthKey}`);
         }
-        if (typeof transaction.amount !== 'number'
-            || !Number.isFinite(transaction.amount)) {
-            throw new Error(`Invalid transaction amount for month ${monthKey}`);
+        if (!Number.isSafeInteger(transaction.amountMinor)
+            || transaction.amountMinor <= 0) {
+            throw new Error(`Invalid transaction minor amount for month ${monthKey}`);
         }
 
         const summary = summaries.get(monthKey) ?? {
             transactionCount: 0,
-            categoryTotals: {},
+            categoryTotalsMinor: {},
         };
         summary.transactionCount += 1;
-        summary.categoryTotals[transaction.expenseNodeId] = (
-            summary.categoryTotals[transaction.expenseNodeId] ?? 0
-        ) + transaction.amount;
+        summary.categoryTotalsMinor[transaction.expenseNodeId] = (
+            summary.categoryTotalsMinor[transaction.expenseNodeId] ?? 0
+        ) + transaction.amountMinor;
         summaries.set(monthKey, summary);
     }
 

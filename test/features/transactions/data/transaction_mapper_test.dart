@@ -16,13 +16,26 @@ void main() {
 
     expect(transaction.id, 'transaction-1');
     expect(transaction.expenseNodeId, 'node-1');
-    expect(transaction.amount, 42.5);
+    expect(transaction.amountMinor, 4250);
     expect(transaction.dateTime, timestamp.toDate());
     expect(data.containsKey('id'), isFalse);
 
     final document = TransactionMapper.toDocument(transaction);
     expect(document['dateTime'], timestamp);
+    expect(document['amountMinor'], 4250);
+    expect(document.containsKey('amount'), isFalse);
     expect(document.containsKey('id'), isFalse);
+  });
+
+  test('transaction mapper prefers canonical integer minor units', () {
+    final transaction = TransactionMapper.fromData('transaction-1', {
+      'expenseNodeId': 'node-1',
+      'amountMinor': 1205,
+      'amount': 99,
+      'dateTime': Timestamp.now(),
+    });
+
+    expect(transaction.amountMinor, 1205);
   });
 
   test('transaction mapper rejects malformed data', () {

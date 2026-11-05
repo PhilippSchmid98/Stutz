@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stutz/features/auth/application/auth_providers.dart';
+import 'package:stutz/features/auth/presentation/account_sign_out_button.dart';
 import 'package:stutz/features/budget/application/budget_providers.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/entities/income_source.dart';
@@ -10,8 +10,9 @@ import 'package:stutz/features/budget/presentation/dialogs/add_main_category_dia
 import 'package:stutz/features/budget/presentation/widgets/budget_overview_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/expense_section_card.dart';
 import 'package:stutz/features/budget/presentation/widgets/income_section_card.dart';
-import 'package:stutz/shared/widgets/async_state_view.dart';
+import 'package:stutz/features/notification_import/presentation/pending_transaction_drafts_indicator.dart';
 import 'package:stutz/shared/widgets/app_bottom_sheet.dart';
+import 'package:stutz/shared/widgets/async_state_view.dart';
 import 'package:stutz/shared/widgets/cloud_status_icon.dart';
 
 class BudgetPlanningScreen extends ConsumerWidget {
@@ -51,13 +52,9 @@ class BudgetPlanningScreen extends ConsumerWidget {
     return AppBar(
       title: const Text('Budget Planung'),
       actions: [
+        const PendingTransactionDraftsIndicator(),
         const CloudStatusIcon(),
-        IconButton(
-          icon: const Icon(Icons.logout),
-          onPressed: () async {
-            await ref.read(authControllerProvider.notifier).signOut();
-          },
-        ),
+        const AccountSignOutButton(),
       ],
       backgroundColor: Colors.transparent,
       foregroundColor: Theme.of(ref.context).colorScheme.onSurface,
@@ -73,8 +70,8 @@ class BudgetPlanningScreen extends ConsumerWidget {
         final totals = const BudgetCalculator().incomeIntervalTotals(incomes);
         return IncomeSectionCard(
           incomes: incomes,
-          monthlyTotal: totals.monthly,
-          yearlyTotal: totals.yearly,
+          monthlyTotalMinor: totals.monthlyMinor,
+          yearlyTotalMinor: totals.yearlyMinor,
         );
       },
     );
@@ -123,8 +120,8 @@ class BudgetPlanningScreen extends ConsumerWidget {
     );
     return ExpenseSectionCard(
       rootNode: rootNode,
-      monthlyTotal: totals.monthly,
-      yearlyTotal: totals.yearly,
+      monthlyTotalMinor: totals.monthlyMinor,
+      yearlyTotalMinor: totals.yearlyMinor,
     );
   }
 

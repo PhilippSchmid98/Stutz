@@ -1,10 +1,73 @@
+import 'package:stutz/core/utils/amount_parser.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/dashboard/domain/view_models/dashboard_analysis.dart';
+import 'package:stutz/features/transactions/data/transaction_month.dart';
+import 'package:stutz/features/transactions/domain/entities/app_transaction.dart';
 import 'package:stutz/features/transactions/domain/entities/transaction_month_summary.dart';
 
 class DashboardCalculator {
   const DashboardCalculator();
+
+  DashboardYearToDateAnalysis calculateYearToDate({
+    required DateTime asOf,
+    required List<ExpenseNode> expenseRoots,
+    required List<TransactionMonthSummary> monthSummaries,
+    required List<AppTransaction> currentMonthTransactions,
+  }) {
+    final date = DateTime(asOf.year, asOf.month, asOf.day);
+    final yearStart = DateTime.utc(date.year);
+    final nextYear = DateTime.utc(date.year + 1);
+    final elapsedDays =
+        DateTime.utc(
+          date.year,
+          date.month,
+          date.day,
+        ).difference(yearStart).inDays +
+        1;
+    final daysInYear = nextYear.difference(yearStart).inDays;
+    final currentMonthStart = TransactionMonth.startOfMonth(date);
+    final periodEnd = TransactionMonth.startOfDay(
+      DateTime(date.year, date.month, date.day + 1),
+    );
+    final currentTotals = <String, int>{};
+    for (final transaction in currentMonthTransactions) {
+      if (transaction.dateTime.isBefore(currentMonthStart) ||
+          !transaction.dateTime.isBefore(periodEnd)) {
+        continue;
+      }
+      currentTotals.update(
+        transaction.expenseNodeId,
+        (value) => value + transaction.amountMinor,
+        ifAbsent: () => transaction.amountMinor,
+      );
+    }
+
+    final categories = _categoryProgress(
+      roots: expenseRoots,
+      nodesById: _nodesById(expenseRoots),
+      summaries: [
+        for (final summary in monthSummaries)
+          if (summary.month.year == date.year &&
+              summary.month.month < date.month)
+            summary,
+        TransactionMonthSummary(
+          month: DateTime(date.year, date.month),
+          transactionCount: currentMonthTransactions.length,
+          categoryTotalsMinor: currentTotals,
+        ),
+      ],
+      elapsedDays: elapsedDays,
+      daysInYear: daysInYear,
+    );
+    return DashboardYearToDateAnalysis(
+      asOf: date,
+      elapsedDays: elapsedDays,
+      daysInYear: daysInYear,
+      total: _total(categories, includeExpected: true),
+      categories: categories,
+    );
+  }
 
   DashboardAnalysis calculate({
     required DateTime selectedMonth,
@@ -76,14 +139,18 @@ class DashboardCalculator {
     required List<ExpenseNode> roots,
     required Map<String, ExpenseNode> nodesById,
     required List<TransactionMonthSummary?> summaries,
-    required PaymentInterval interval,
+    PaymentInterval? interval,
+    int? elapsedDays,
+    int? daysInYear,
   }) {
-    final actualByNode = <String, double>{};
+    final actualByNode = <String, int>{};
     for (final summary in summaries) {
       if (summary == null) continue;
-      for (final entry in summary.categoryTotals.entries) {
+      for (final entry in summary.categoryTotalsMinor.entries) {
         final node = nodesById[entry.key];
-        if (node?.type != ExpenseType.variable || node?.interval != interval) {
+        if (node?.type != ExpenseType.variable ||
+            node?.interval == null ||
+            (interval != null && node?.interval != interval)) {
           continue;
         }
         actualByNode.update(
@@ -97,15 +164,25 @@ class DashboardCalculator {
     DashboardCategoryProgress? progressFor(ExpenseNode node) {
       final isLeaf = node.children.isEmpty;
       if (isLeaf) {
-        if (node.type != ExpenseType.variable || node.interval != interval) {
+        if (node.type != ExpenseType.variable ||
+            node.interval == null ||
+            (interval != null && node.interval != interval)) {
           return null;
         }
+        final planned =
+            (node.plannedAmountMinor ?? 0) *
+            (interval == null && node.interval == PaymentInterval.monthly
+                ? 12
+                : 1);
         return DashboardCategoryProgress(
           categoryId: node.id,
           categoryName: node.name,
           isGroup: false,
-          actual: actualByNode[node.id] ?? 0,
-          planned: node.plannedAmount ?? 0,
+          actualMinor: actualByNode[node.id] ?? 0,
+          plannedMinor: planned,
+          expectedMinor: elapsedDays == null || daysInYear == null
+              ? null
+              : divideMinorUnitsRounded(planned * elapsedDays, daysInYear),
         );
       }
 
@@ -120,8 +197,17 @@ class DashboardCalculator {
         categoryName: node.name,
         isGroup: true,
         children: children,
-        actual: children.fold<double>(0, (sum, child) => sum + child.actual),
-        planned: children.fold<double>(0, (sum, child) => sum + child.planned),
+        actualMinor: children.fold<int>(
+          0,
+          (sum, child) => sum + child.actualMinor,
+        ),
+        plannedMinor: children.fold<int>(
+          0,
+          (sum, child) => sum + child.plannedMinor,
+        ),
+        expectedMinor: elapsedDays == null
+            ? null
+            : children.fold<int>(0, (sum, child) => sum + child.expectedMinor!),
       );
     }
 
@@ -131,16 +217,25 @@ class DashboardCalculator {
     ];
   }
 
-  DashboardProgress _total(List<DashboardCategoryProgress> categories) {
+  DashboardProgress _total(
+    List<DashboardCategoryProgress> categories, {
+    bool includeExpected = false,
+  }) {
     return DashboardProgress(
-      actual: categories.fold<double>(
+      actualMinor: categories.fold<int>(
         0,
-        (sum, category) => sum + category.actual,
+        (sum, category) => sum + category.actualMinor,
       ),
-      planned: categories.fold<double>(
+      plannedMinor: categories.fold<int>(
         0,
-        (sum, category) => sum + category.planned,
+        (sum, category) => sum + category.plannedMinor,
       ),
+      expectedMinor: includeExpected
+          ? categories.fold<int>(
+              0,
+              (sum, category) => sum + category.expectedMinor!,
+            )
+          : null,
     );
   }
 
@@ -151,7 +246,7 @@ class DashboardCalculator {
     required Map<String, TransactionMonthSummary> summariesByMonth,
     required PaymentInterval interval,
   }) {
-    var yearToDateActual = 0.0;
+    var yearToDateActual = 0;
     return [
       for (var month = 1; month <= 12; month++)
         () {
@@ -163,11 +258,11 @@ class DashboardCalculator {
             interval,
           );
           if (interval == PaymentInterval.yearly) {
-            yearToDateActual += point.actual;
+            yearToDateActual += point.actualMinor;
             return DashboardHistoryPoint(
               month: point.month,
-              actual: yearToDateActual,
-              planned: point.planned,
+              actualMinor: yearToDateActual,
+              plannedMinor: point.plannedMinor,
             );
           }
           return point;
@@ -191,8 +286,8 @@ class DashboardCalculator {
     final total = _total(categories);
     return DashboardHistoryPoint(
       month: month,
-      actual: total.actual,
-      planned: total.planned,
+      actualMinor: total.actualMinor,
+      plannedMinor: total.plannedMinor,
     );
   }
 

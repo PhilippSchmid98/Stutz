@@ -5,7 +5,7 @@ import 'package:stutz/features/notification_import/data/notification_capture_met
 
 part 'notification_capture_providers.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 NotificationCaptureGateway notificationCaptureGateway(Ref ref) {
   if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
     return const UnsupportedNotificationCaptureGateway();

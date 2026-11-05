@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
 import 'package:stutz/features/budget/domain/services/tree_builder.dart';
+
 import '../../../../helpers/test_data.dart';
 
 void main() {
@@ -74,7 +75,11 @@ void main() {
 
   group('fixed nodes', () {
     test('fixed-type nodes are included in tree', () {
-      final fixed = ExpenseNode(id: 'fixed', name: 'Rent', plannedAmount: 1200);
+      final fixed = ExpenseNode(
+        id: 'fixed',
+        name: 'Rent',
+        plannedAmountMinor: 1200,
+      );
       final result = builder.buildTree([fixed]);
       expect(result, hasLength(1));
     });

@@ -16,6 +16,25 @@ class TransactionMonth {
 
   static DateTime current() => fromDateTime(DateTime.now());
 
+  static DateTime dateFromDateTime(DateTime dateTime) {
+    initialize();
+    final zonedDate = tz.TZDateTime.from(
+      dateTime,
+      tz.getLocation(timezoneName),
+    );
+    return DateTime(zonedDate.year, zonedDate.month, zonedDate.day);
+  }
+
+  static DateTime startOfDay(DateTime date) {
+    initialize();
+    return tz.TZDateTime(
+      tz.getLocation(timezoneName),
+      date.year,
+      date.month,
+      date.day,
+    );
+  }
+
   static DateTime startOfMonth(DateTime month) {
     initialize();
     return tz.TZDateTime(tz.getLocation(timezoneName), month.year, month.month);
@@ -23,11 +42,11 @@ class TransactionMonth {
 
   static DateTime fromDateTime(DateTime dateTime) {
     initialize();
-    final zurichDate = tz.TZDateTime.from(
+    final zonedDate = tz.TZDateTime.from(
       dateTime,
       tz.getLocation(timezoneName),
     );
-    return DateTime(zurichDate.year, zurichDate.month);
+    return DateTime(zonedDate.year, zonedDate.month);
   }
 
   static String keyFromDateTime(DateTime dateTime) =>

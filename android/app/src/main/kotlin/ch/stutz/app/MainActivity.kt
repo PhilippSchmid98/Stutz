@@ -5,6 +5,7 @@ import android.content.Intent
 import android.provider.Settings
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
@@ -17,6 +18,28 @@ class MainActivity : FlutterActivity() {
 			flutterEngine.dartExecutor.binaryMessenger,
 			NOTIFICATION_CAPTURE_CHANNEL,
 		).setMethodCallHandler { call, result -> handleNotificationCaptureCall(call, result) }
+		EventChannel(
+			flutterEngine.dartExecutor.binaryMessenger,
+			NOTIFICATION_CAPTURE_EVENTS_CHANNEL,
+		).setStreamHandler(object : EventChannel.StreamHandler {
+			override fun onListen(
+				arguments: Any?,
+				events: EventChannel.EventSink,
+			) {
+				GoogleWalletNotificationListener.setOnDraftCapturedListener {
+					runOnUiThread { events.success("captured") }
+				}
+			}
+
+			override fun onCancel(arguments: Any?) {
+				GoogleWalletNotificationListener.setOnDraftCapturedListener(null)
+			}
+		})
+	}
+
+	override fun onDestroy() {
+		GoogleWalletNotificationListener.setOnDraftCapturedListener(null)
+		super.onDestroy()
 	}
 
 	private fun handleNotificationCaptureCall(call: MethodCall, result: MethodChannel.Result) {
@@ -85,5 +108,7 @@ class MainActivity : FlutterActivity() {
 
 	private companion object {
 		const val NOTIFICATION_CAPTURE_CHANNEL = "ch.stutz.app/notification_capture"
+		const val NOTIFICATION_CAPTURE_EVENTS_CHANNEL =
+			"ch.stutz.app/notification_capture_events"
 	}
 }

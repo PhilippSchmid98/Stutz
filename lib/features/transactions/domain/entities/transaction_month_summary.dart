@@ -3,30 +3,30 @@ import 'package:stutz/features/transactions/domain/entities/app_transaction.dart
 class TransactionMonthSummary {
   final DateTime month;
   final int transactionCount;
-  final Map<String, double> categoryTotals;
+  final Map<String, int> categoryTotalsMinor;
 
-  const TransactionMonthSummary({
+  TransactionMonthSummary({
     required this.month,
     required this.transactionCount,
-    required this.categoryTotals,
-  });
+    required Map<String, int> categoryTotalsMinor,
+  }) : categoryTotalsMinor = Map.unmodifiable(categoryTotalsMinor);
 }
 
-Map<String, double> categoryDeltasForTransactionUpdate(
+Map<String, int> categoryDeltasForTransactionUpdate(
   AppTransaction existing,
   AppTransaction updated,
 ) {
-  final deltas = <String, double>{};
+  final deltas = <String, int>{};
 
-  void addDelta(String categoryId, double amount) {
+  void addDelta(String categoryId, int amountMinor) {
     deltas.update(
       categoryId,
-      (current) => current + amount,
-      ifAbsent: () => amount,
+      (current) => current + amountMinor,
+      ifAbsent: () => amountMinor,
     );
   }
 
-  addDelta(existing.expenseNodeId, -existing.amount);
-  addDelta(updated.expenseNodeId, updated.amount);
+  addDelta(existing.expenseNodeId, -existing.amountMinor);
+  addDelta(updated.expenseNodeId, updated.amountMinor);
   return deltas;
 }

@@ -8,7 +8,7 @@ part 'daily_transactions.freezed.dart';
 abstract class DailyTransactions with _$DailyTransactions {
   const factory DailyTransactions({
     required DateTime date,
-    required double totalAmount,
+    required int totalAmountMinor,
     required List<TransactionWithCategory> transactions,
   }) = _DailyTransactions;
 }

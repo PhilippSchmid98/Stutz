@@ -12,15 +12,19 @@ void main() {
     makeExpense(
       id: 'home',
       name: 'Home',
-      plannedAmount: null,
+      plannedAmountMinor: null,
       interval: null,
       type: null,
       children: [
-        makeExpense(id: 'groceries', name: 'Groceries', plannedAmount: 500),
+        makeExpense(
+          id: 'groceries',
+          name: 'Groceries',
+          plannedAmountMinor: 500,
+        ),
         makeExpense(
           id: 'tech',
           name: 'Tech',
-          plannedAmount: 2000,
+          plannedAmountMinor: 2000,
           interval: PaymentInterval.yearly,
         ),
       ],
@@ -35,15 +39,15 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 6),
           transactionCount: 2,
-          categoryTotals: {'groceries': 300, 'tech': 1000},
+          categoryTotalsMinor: {'groceries': 300, 'tech': 1000},
         ),
       ],
     );
 
-    expect(analysis.monthly.actual, 300);
-    expect(analysis.monthly.planned, 500);
-    expect(analysis.yearly.actual, 1000);
-    expect(analysis.yearly.planned, 2000);
+    expect(analysis.monthly.actualMinor, 300);
+    expect(analysis.monthly.plannedMinor, 500);
+    expect(analysis.yearly.actualMinor, 1000);
+    expect(analysis.yearly.plannedMinor, 2000);
   });
 
   test('includes the full year in annual progress', () {
@@ -54,18 +58,18 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 2),
           transactionCount: 1,
-          categoryTotals: {'tech': 400},
+          categoryTotalsMinor: {'tech': 400},
         ),
         TransactionMonthSummary(
           month: DateTime(2026, 11),
           transactionCount: 1,
-          categoryTotals: {'tech': 600},
+          categoryTotalsMinor: {'tech': 600},
         ),
       ],
     );
 
-    expect(analysis.yearly.actual, 1000);
-    expect(analysis.yearly.planned, 2000);
+    expect(analysis.yearly.actualMinor, 1000);
+    expect(analysis.yearly.plannedMinor, 2000);
   });
 
   test('reclassifies historical totals from the current category interval', () {
@@ -74,7 +78,7 @@ void main() {
       expenseRoots: [
         makeExpense(
           id: 'tech',
-          plannedAmount: 2000,
+          plannedAmountMinor: 2000,
           interval: PaymentInterval.monthly,
         ),
       ],
@@ -82,15 +86,15 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 1),
           transactionCount: 1,
-          categoryTotals: {'tech': 1000},
+          categoryTotalsMinor: {'tech': 1000},
         ),
       ],
     );
 
-    expect(analysis.monthly.actual, 0);
-    expect(analysis.yearly.actual, 0);
-    expect(analysis.monthlyHistory.first.actual, 1000);
-    expect(analysis.yearlyHistory.first.actual, 0);
+    expect(analysis.monthly.actualMinor, 0);
+    expect(analysis.yearly.actualMinor, 0);
+    expect(analysis.monthlyHistory.first.actualMinor, 1000);
+    expect(analysis.yearlyHistory.first.actualMinor, 0);
   });
 
   test('rolls category values up to the top-level group', () {
@@ -101,7 +105,7 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 6),
           transactionCount: 2,
-          categoryTotals: {'groceries': 300, 'tech': 1000},
+          categoryTotalsMinor: {'groceries': 300, 'tech': 1000},
         ),
       ],
     );
@@ -109,8 +113,8 @@ void main() {
     final home = analysis.monthlyCategories.single;
     expect(home.categoryName, 'Home');
     expect(home.isGroup, isTrue);
-    expect(home.actual, 300);
-    expect(home.planned, 500);
+    expect(home.actualMinor, 300);
+    expect(home.plannedMinor, 500);
   });
 
   test(
@@ -122,34 +126,34 @@ void main() {
           makeExpense(
             id: 'living',
             name: 'Living',
-            plannedAmount: null,
+            plannedAmountMinor: null,
             interval: null,
             type: null,
             children: [
               makeExpense(
                 id: 'rent',
                 name: 'Rent',
-                plannedAmount: 1500,
+                plannedAmountMinor: 1500,
                 type: ExpenseType.fixed,
               ),
               makeExpense(
                 id: 'groceries',
                 name: 'Groceries',
-                plannedAmount: 500,
+                plannedAmountMinor: 500,
               ),
             ],
           ),
           makeExpense(
             id: 'fixed-only',
             name: 'Subscriptions',
-            plannedAmount: null,
+            plannedAmountMinor: null,
             interval: null,
             type: null,
             children: [
               makeExpense(
                 id: 'insurance',
                 name: 'Insurance',
-                plannedAmount: 2400,
+                plannedAmountMinor: 2400,
                 interval: PaymentInterval.yearly,
                 type: ExpenseType.fixed,
               ),
@@ -160,14 +164,14 @@ void main() {
           TransactionMonthSummary(
             month: DateTime(2026, 6),
             transactionCount: 2,
-            categoryTotals: {'rent': 1500, 'groceries': 300},
+            categoryTotalsMinor: {'rent': 1500, 'groceries': 300},
           ),
         ],
       );
 
-      expect(analysis.monthly.actual, 300);
-      expect(analysis.monthly.planned, 500);
-      expect(analysis.monthlyHistory[5].actual, 300);
+      expect(analysis.monthly.actualMinor, 300);
+      expect(analysis.monthly.plannedMinor, 500);
+      expect(analysis.monthlyHistory[5].actualMinor, 300);
       expect(analysis.monthlyCategories, hasLength(1));
       expect(analysis.monthlyCategories.single.categoryName, 'Living');
       expect(
@@ -188,15 +192,15 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 1),
           transactionCount: 1,
-          categoryTotals: {'groceries': 250},
+          categoryTotalsMinor: {'groceries': 250},
         ),
       ],
     );
 
     expect(analysis.monthlyHistory, hasLength(12));
-    expect(analysis.monthlyHistory.first.actual, 250);
-    expect(analysis.monthlyHistory[1].actual, 0);
-    expect(analysis.monthlyHistory.first.planned, 500);
+    expect(analysis.monthlyHistory.first.actualMinor, 250);
+    expect(analysis.monthlyHistory[1].actualMinor, 0);
+    expect(analysis.monthlyHistory.first.plannedMinor, 500);
   });
 
   test('accumulates yearly history from January through each month', () {
@@ -207,19 +211,19 @@ void main() {
         TransactionMonthSummary(
           month: DateTime(2026, 1),
           transactionCount: 1,
-          categoryTotals: {'tech': 100},
+          categoryTotalsMinor: {'tech': 100},
         ),
         TransactionMonthSummary(
           month: DateTime(2026, 6),
           transactionCount: 1,
-          categoryTotals: {'tech': 1000},
+          categoryTotalsMinor: {'tech': 1000},
         ),
       ],
     );
 
-    expect(analysis.yearlyHistory.first.actual, 100);
-    expect(analysis.yearlyHistory[4].actual, 100);
-    expect(analysis.yearlyHistory[5].actual, 1100);
-    expect(analysis.yearlyHistory[5].planned, 2000);
+    expect(analysis.yearlyHistory.first.actualMinor, 100);
+    expect(analysis.yearlyHistory[4].actualMinor, 100);
+    expect(analysis.yearlyHistory[5].actualMinor, 1100);
+    expect(analysis.yearlyHistory[5].plannedMinor, 2000);
   });
 }

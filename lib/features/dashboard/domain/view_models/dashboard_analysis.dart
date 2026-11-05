@@ -1,12 +1,18 @@
 class DashboardProgress {
-  final double actual;
-  final double planned;
+  final int actualMinor;
+  final int plannedMinor;
+  final int? expectedMinor;
 
-  const DashboardProgress({required this.actual, required this.planned});
+  const DashboardProgress({
+    required this.actualMinor,
+    required this.plannedMinor,
+    this.expectedMinor,
+  });
 
-  double get remaining => planned - actual;
-  double get ratio => planned <= 0 ? 0 : actual / planned;
-  bool get isOverBudget => actual > planned && planned >= 0;
+  int get remainingMinor => plannedMinor - actualMinor;
+  double get ratio => plannedMinor <= 0 ? 0 : actualMinor / plannedMinor;
+  bool get isOverBudget => actualMinor > plannedMinor && plannedMinor >= 0;
+  bool get isOverPace => expectedMinor != null && actualMinor > expectedMinor!;
 }
 
 class DashboardCategoryProgress extends DashboardProgress {
@@ -20,9 +26,28 @@ class DashboardCategoryProgress extends DashboardProgress {
     required this.categoryName,
     required this.isGroup,
     this.children = const [],
-    required super.actual,
-    required super.planned,
+    required super.actualMinor,
+    required super.plannedMinor,
+    super.expectedMinor,
   });
+}
+
+class DashboardYearToDateAnalysis {
+  final DateTime asOf;
+  final int elapsedDays;
+  final int daysInYear;
+  final DashboardProgress total;
+  final List<DashboardCategoryProgress> categories;
+
+  const DashboardYearToDateAnalysis({
+    required this.asOf,
+    required this.elapsedDays,
+    required this.daysInYear,
+    required this.total,
+    required this.categories,
+  });
+
+  double get elapsedFraction => elapsedDays / daysInYear;
 }
 
 class DashboardHistoryPoint extends DashboardProgress {
@@ -30,8 +55,8 @@ class DashboardHistoryPoint extends DashboardProgress {
 
   const DashboardHistoryPoint({
     required this.month,
-    required super.actual,
-    required super.planned,
+    required super.actualMinor,
+    required super.plannedMinor,
   });
 }
 

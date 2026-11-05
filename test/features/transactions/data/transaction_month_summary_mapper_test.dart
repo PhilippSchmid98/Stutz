@@ -10,7 +10,7 @@ void main() {
 
     expect(summary.month, DateTime(2026, 6));
     expect(summary.transactionCount, 3);
-    expect(summary.categoryTotals, {'groceries': 125.5, 'tech': 1000.0});
+    expect(summary.categoryTotalsMinor, {'groceries': 12550, 'tech': 100000});
   });
 
   test('ignores malformed count and category total values', () {
@@ -20,6 +20,20 @@ void main() {
     });
 
     expect(summary.transactionCount, 0);
-    expect(summary.categoryTotals, {'valid': 20.0});
+    expect(summary.categoryTotalsMinor, {'valid': 2000});
+  });
+
+  test('prefers canonical integer category totals', () {
+    final summary = TransactionMonthSummaryMapper.fromData('2026-06', {
+      'transactionCount': 1,
+      'categoryTotalsMinor': {'groceries': 1205},
+      'categoryTotals': {'groceries': 99},
+    });
+
+    expect(summary.categoryTotalsMinor, {'groceries': 1205});
+    expect(
+      () => summary.categoryTotalsMinor['groceries'] = 1,
+      throwsUnsupportedError,
+    );
   });
 }

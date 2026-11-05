@@ -25,7 +25,7 @@ void main() {
       final draft = TransactionDraftMapper.fromData('draft-1', data);
 
       expect(draft.id, 'draft-1');
-      expect(draft.amount, 12.45);
+      expect(draft.amountMinor, 1245);
       expect(draft.capturedAt, capturedAt.toDate());
       expect(draft.status, TransactionDraftStatus.pending);
       expect(data.containsKey('id'), isFalse);

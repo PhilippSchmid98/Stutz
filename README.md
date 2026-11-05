@@ -175,6 +175,21 @@ can contain payment data and are ignored by Git. The command reads currently
 active notifications only; it cannot recover notifications that Android has
 already removed.
 
+### Year-to-date dashboard
+
+The Jahresbilanz combines monthly and yearly variable categories for the current
+Zurich calendar year through today, independently of the selected overview
+month. Monthly budgets are multiplied by 12; annual budgets are unchanged.
+The elapsed-year marker and expected spending use an even daily pace (including
+today and leap days). Expected amounts are rounded per leaf category to the
+nearest cent, then summed for groups. Yearly purchases can naturally fall
+earlier or later than this guide.
+
+The dashboard uses completed month summaries and current-month transactions up
+to the end of today; category drill-downs use the same cutoff. As in the
+existing overview, historical spending is classified and compared using the
+current category tree and budgets, not historical budget snapshots.
+
 ### Transaction month index migration
 
 Existing transaction data can be indexed once with the Admin SDK. Store the
@@ -239,6 +254,18 @@ migration is safe to repeat. It writes exact per-month counts and category
 totals, removes stale month documents, and marks each completed user with the
 `_meta` document.
 
+To audit a backup without accessing Firestore or changing data, recalculate
+each `transactionMonths` document from the archived transactions:
+
+```powershell
+npm run verify:transaction-months -- --input=$backup --report=distribution/transaction-months-check.json
+```
+
+The command verifies the backup checksum first. It exits with code `1` and
+reports the affected user, month, and differing totals if an aggregate is
+missing, stale, or inconsistent. Add `--user-id=<USER_ID>` to limit the
+audit to one user.
+
 To inspect or restore an archive, start with a dry run. Normal restore is an
 idempotent upsert in batches of at most 500 documents. An interrupted restore
 leaves a journal; rerun it with `--resume` to continue from the last committed
@@ -255,6 +282,40 @@ scope. It can remove data and should only be used with a maintenance window
 and an explicit `--confirm`. Production restores require `--confirm`; a
 project mismatch is rejected unless `--allow-project-mismatch` is supplied
 intentionally.
+
+### Integer money migration
+
+The app stores CHF values as integer minor units. The schema and rounding
+policy are documented in
+[docs/money-schema.de.md](docs/money-schema.de.md). Before the production
+cutover, stop old writing clients or require an app update so that legacy
+`double` fields cannot be recreated.
+
+Test the complete migration against the Firestore emulator:
+
+```powershell
+npm run test:migration
+npm run test:migration:emulator
+```
+
+For production, first create a complete logical backup. A transaction-only
+backup is deliberately rejected because income and budget documents also
+contain money:
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\outside\stutz\stutz-service-account.json"
+$backup = "backups/firestore-all-$(Get-Date -Format yyyy-MM-dd)"
+$report = "distribution/money-migration-dry-run-$(Get-Date -Format yyyy-MM-dd).json"
+
+npm run backup:firestore -- --project-id=stutz-7ed90 --scope=all --output=$backup
+npm run migrate:money-minor-units -- --project-id=stutz-7ed90 --dry-run --backup-dir=$backup --report=$report
+npm run migrate:money-minor-units -- --project-id=stutz-7ed90 --apply --backup-dir=$backup --report=distribution/money-migration-applied.json
+```
+
+The command converts source documents, rebuilds `transactionMonths` from the
+transactions, removes legacy money fields, reports every rounding adjustment,
+and verifies after apply that a second plan contains zero operations. Keep the
+backup and reports outside version control with appropriate encryption.
 
 ---
 

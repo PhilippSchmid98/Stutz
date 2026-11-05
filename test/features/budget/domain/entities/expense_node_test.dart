@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:stutz/features/budget/domain/enums/enums.dart';
 import 'package:stutz/features/budget/domain/entities/expense_node.dart';
+import 'package:stutz/features/budget/domain/enums/enums.dart';
 
 void main() {
   group('ExpenseNode', () {
@@ -8,13 +8,13 @@ void main() {
       final node = ExpenseNode(
         id: '1',
         name: 'Food',
-        plannedAmount: 200,
-        actualAmount: 150,
+        plannedAmountMinor: 200,
+        actualAmountMinor: 150,
       );
       expect(node.id, '1');
       expect(node.name, 'Food');
-      expect(node.plannedAmount, 200);
-      expect(node.actualAmount, 150);
+      expect(node.plannedAmountMinor, 200);
+      expect(node.actualAmountMinor, 150);
       expect(node.children, isEmpty);
     });
 
@@ -38,8 +38,8 @@ void main() {
     });
 
     test('Freezed equality: same values are equal', () {
-      final a = ExpenseNode(id: '1', name: 'X', plannedAmount: 100);
-      final b = ExpenseNode(id: '1', name: 'X', plannedAmount: 100);
+      final a = ExpenseNode(id: '1', name: 'X', plannedAmountMinor: 100);
+      final b = ExpenseNode(id: '1', name: 'X', plannedAmountMinor: 100);
       expect(a, equals(b));
     });
 
@@ -57,48 +57,48 @@ void main() {
       expect(original.name, 'Old');
     });
 
-    group('totalMonthlyCalculated', () {
+    group('totalMonthlyEstimateMinor', () {
       test('leaf node monthly: returns own amount', () {
         final node = ExpenseNode(
           id: '1',
           name: 'Netflix',
-          plannedAmount: 15.0,
+          plannedAmountMinor: 15,
           interval: PaymentInterval.monthly,
         );
-        expect(node.totalMonthlyCalculated, 15.0);
+        expect(node.totalMonthlyEstimateMinor, 15);
       });
 
       test('leaf node yearly: returns amount / 12', () {
         final node = ExpenseNode(
           id: '1',
           name: 'Insurance',
-          plannedAmount: 1200.0,
+          plannedAmountMinor: 1200,
           interval: PaymentInterval.yearly,
         );
-        expect(node.totalMonthlyCalculated, 100.0);
+        expect(node.totalMonthlyEstimateMinor, 100);
       });
 
       test('group node: sums children and ignores own amount', () {
         final child1 = ExpenseNode(
           id: 'c1',
           name: 'Miete',
-          plannedAmount: 1000.0,
+          plannedAmountMinor: 1000,
           interval: PaymentInterval.monthly,
         );
         final child2 = ExpenseNode(
           id: 'c2',
           name: 'Strom',
-          plannedAmount: 600.0,
+          plannedAmountMinor: 600,
           interval: PaymentInterval.yearly, // = 50 per month
         );
         final group = ExpenseNode(
           id: 'root',
           name: 'Wohnen',
-          plannedAmount: 99999.0, // should be ignored
+          plannedAmountMinor: 99999, // should be ignored
           interval: PaymentInterval.monthly,
           children: [child1, child2],
         );
-        expect(group.totalMonthlyCalculated, 1050.0);
+        expect(group.totalMonthlyEstimateMinor, 1050);
       });
     });
 
@@ -115,7 +115,7 @@ void main() {
           () => ExpenseNode(
             id: 'leaf',
             name: 'Housing',
-            plannedAmount: 100,
+            plannedAmountMinor: 100,
           ).validateForWrite(),
           throwsA(isA<ExpenseNodeValidationException>()),
         );
@@ -126,7 +126,7 @@ void main() {
           () => ExpenseNode(
             id: 'leaf',
             name: 'Housing',
-            plannedAmount: 0,
+            plannedAmountMinor: 0,
             interval: PaymentInterval.monthly,
             type: ExpenseType.fixed,
           ).validateForWrite(),

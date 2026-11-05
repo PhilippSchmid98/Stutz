@@ -21,7 +21,7 @@ void main() {
       final transaction = AppTransaction(
         id: 'transaction-1',
         expenseNodeId: 'expense-1',
-        amount: 25,
+        amountMinor: 25,
         dateTime: DateTime(2026, 8, 18),
       );
 
@@ -50,7 +50,7 @@ void main() {
     final transaction = AppTransaction(
       id: 'transaction-1',
       expenseNodeId: 'expense-1',
-      amount: 25,
+      amountMinor: 25,
       dateTime: DateTime(2026, 8, 18),
     );
 
@@ -80,6 +80,19 @@ class _FakeTransactionRepository implements TransactionRepository {
   @override
   Stream<List<TransactionMonthSummary>> watchMonthSummariesForYear(int year) =>
       const Stream.empty();
+
+  @override
+  Stream<List<AppTransaction>> watchTransactionsForPeriod({
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<List<AppTransaction>> watchCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
 
   final added = <AppTransaction>[];
   Object? error;
@@ -111,5 +124,13 @@ class _FakeTransactionRepository implements TransactionRepository {
   getPagedTransactions({
     required int limit,
     QueryDocumentSnapshot<Object?>? startAfter,
+    bool descending = true,
   }) async => [];
+
+  @override
+  Future<AppTransaction?> getNewestTransaction() async => null;
+
+  @override
+  Future<TransactionMonthPage> getTransactionsForMonth(DateTime month) async =>
+      const TransactionMonthPage(transactions: []);
 }

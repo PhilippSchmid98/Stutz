@@ -6,7 +6,6 @@ import 'package:stutz/features/budget/domain/entities/income_source.dart';
 import 'package:stutz/features/budget/domain/services/budget_calculator.dart';
 import 'package:stutz/features/budget/domain/services/tree_builder.dart';
 import 'package:stutz/features/budget/domain/view_models/budget_summary.dart';
-import 'package:stutz/features/budget/domain/view_models/category_lookup.dart';
 
 part 'budget_providers.g.dart';
 
@@ -26,33 +25,11 @@ Future<List<ExpenseNode>> flatExpenseNodes(Ref ref) async {
   return const TreeBuilder().flattenTree(roots);
 }
 
-/// Read-only category contract for features that enrich transactions.
-@riverpod
-Future<List<CategoryLookup>> categoryLookups(Ref ref) async {
-  final nodes = await ref.watch(flatExpenseNodesProvider.future);
-  return [
-    for (final node in nodes)
-      CategoryLookup(id: node.id, name: node.name, parentId: node.parentId),
-  ];
-}
-
 /// Streams income sources directly from Firestore — auto-updates on any change
 /// without requiring manual [ref.invalidate] calls after mutations.
 @riverpod
 Stream<List<IncomeSource>> incomeList(Ref ref) {
   return ref.watch(incomeSourceRepositoryProvider).watchAllIncomeSources();
-}
-
-@riverpod
-Future<double> totalMonthlyIncome(Ref ref) async {
-  final sources = await ref.watch(incomeListProvider.future);
-  return const BudgetCalculator().totalMonthlyIncome(sources);
-}
-
-@riverpod
-Future<double> totalMonthlyExpenses(Ref ref) async {
-  final roots = await ref.watch(expenseTreeProvider.future);
-  return const BudgetCalculator().totalMonthlyExpenses(roots);
 }
 
 @riverpod

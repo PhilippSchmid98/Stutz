@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stutz/features/auth/data/auth_service.dart';
+import 'package:stutz/features/notification_import/application/notification_capture_providers.dart';
 
 part 'auth_providers.g.dart';
 
@@ -51,6 +52,24 @@ class AuthController extends _$AuthController {
     }
   }
 
+  Future<GoogleAccountLinkResult> linkAnonymousUserWithGoogle({
+    bool chooseAnotherAccount = false,
+  }) async {
+    state = const AsyncLoading();
+    try {
+      final result = await ref
+          .read(authServiceProvider)
+          .linkAnonymousUserWithGoogle(
+            chooseAnotherAccount: chooseAnotherAccount,
+          );
+      state = const AsyncData(null);
+      return result;
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
+  }
+
   /// Signs out the current user and marks onboarding as seen so the app
   /// routes to [LoginScreen] (not [WelcomeScreen]) on the next cold start.
   Future<void> signOut() async {
@@ -60,9 +79,15 @@ class AuthController extends _$AuthController {
 
     state = const AsyncLoading();
     try {
+      try {
+        await ref.read(notificationCaptureGatewayProvider).clearActiveOwner();
+      } catch (_) {
+        // The auth-state listener retries cleanup after Firebase signs out.
+      }
       await ref.read(authServiceProvider).signOut();
       state = const AsyncData(null);
     } catch (e, st) {
+      ref.read(voluntarySignOutProvider.notifier).setVoluntary(false);
       state = AsyncError(e, st);
       rethrow;
     }
@@ -95,6 +120,11 @@ class OnboardingController extends _$OnboardingController {
 @Riverpod(keepAlive: true)
 Stream<User?> authState(Ref ref) {
   return ref.watch(authServiceProvider).authStateChanges;
+}
+
+@riverpod
+bool currentUserIsAnonymous(Ref ref) {
+  return ref.watch(authStateProvider).asData?.value?.isAnonymous ?? false;
 }
 
 /// Returns whether the user has completed the onboarding flow at least once.

@@ -16,10 +16,15 @@ void main() {
 
     expect(node.id, 'node-1');
     expect(node.parentId, 'root');
-    expect(node.plannedAmount, 250);
+    expect(node.plannedAmountMinor, 25000);
     expect(node.interval, PaymentInterval.monthly);
     expect(node.type, ExpenseType.variable);
     expect(ExpenseNodeMapper.toDocument(node)['children'], isNull);
+    expect(ExpenseNodeMapper.toDocument(node)['plannedAmountMinor'], 25000);
+    expect(
+      ExpenseNodeMapper.toDocument(node).containsKey('plannedAmount'),
+      isFalse,
+    );
   });
 
   test('income mapper rejects a malformed amount', () {
@@ -39,6 +44,11 @@ void main() {
 
     expect(income.interval, PaymentInterval.yearly);
     expect(income.group, IncomeGroup.additional);
-    expect(IncomeSourceMapper.toDocument(income)['amount'], 1200);
+    expect(income.amountMinor, 120000);
+    expect(IncomeSourceMapper.toDocument(income)['amountMinor'], 120000);
+    expect(
+      IncomeSourceMapper.toDocument(income).containsKey('amount'),
+      isFalse,
+    );
   });
 }

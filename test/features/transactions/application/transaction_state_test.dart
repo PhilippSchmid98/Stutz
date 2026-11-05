@@ -33,7 +33,7 @@ void main() {
         ..oldestTransaction = AppTransaction(
           id: 'oldest',
           expenseNodeId: 'category',
-          amount: 10,
+          amountMinor: 10,
           dateTime: DateTime(2026, 6, 2),
         );
       final container = ProviderContainer(
@@ -71,6 +71,19 @@ class _FakeTransactionRepository implements TransactionRepository {
       const Stream.empty();
 
   @override
+  Stream<List<AppTransaction>> watchTransactionsForPeriod({
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
+
+  @override
+  Stream<List<AppTransaction>> watchCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) => throw UnimplementedError();
+
+  @override
   Future<AppTransaction?> getOldestTransaction() async {
     oldestTransactionCalls++;
     return oldestTransaction;
@@ -97,5 +110,13 @@ class _FakeTransactionRepository implements TransactionRepository {
   getPagedTransactions({
     required int limit,
     QueryDocumentSnapshot<Object?>? startAfter,
+    bool descending = true,
   }) async => [];
+
+  @override
+  Future<AppTransaction?> getNewestTransaction() async => null;
+
+  @override
+  Future<TransactionMonthPage> getTransactionsForMonth(DateTime month) async =>
+      const TransactionMonthPage(transactions: []);
 }

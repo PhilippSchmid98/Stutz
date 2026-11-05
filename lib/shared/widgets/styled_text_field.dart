@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stutz/shared/widgets/styled_field_decoration.dart';
 
 class StyledTextField extends StatelessWidget {

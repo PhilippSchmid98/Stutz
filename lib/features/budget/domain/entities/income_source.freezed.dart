@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$IncomeSource {
 
- String get id; String get name; double get amount; PaymentInterval get interval; IncomeGroup get group;
+ String get id; String get name; int get amountMinor; PaymentInterval get interval; IncomeGroup get group;
 /// Create a copy of IncomeSource
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $IncomeSourceCopyWith<IncomeSource> get copyWith => _$IncomeSourceCopyWithImpl<I
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is IncomeSource&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.group, group) || other.group == group));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is IncomeSource&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.amountMinor, amountMinor) || other.amountMinor == amountMinor)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.group, group) || other.group == group));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,amount,interval,group);
+int get hashCode => Object.hash(runtimeType,id,name,amountMinor,interval,group);
 
 @override
 String toString() {
-  return 'IncomeSource(id: $id, name: $name, amount: $amount, interval: $interval, group: $group)';
+  return 'IncomeSource(id: $id, name: $name, amountMinor: $amountMinor, interval: $interval, group: $group)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $IncomeSourceCopyWith<$Res>  {
   factory $IncomeSourceCopyWith(IncomeSource value, $Res Function(IncomeSource) _then) = _$IncomeSourceCopyWithImpl;
 @useResult
 $Res call({
- String id, String name, double amount, PaymentInterval interval, IncomeGroup group
+ String id, String name, int amountMinor, PaymentInterval interval, IncomeGroup group
 });
 
 
@@ -62,12 +62,12 @@ class _$IncomeSourceCopyWithImpl<$Res>
 
 /// Create a copy of IncomeSource
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? amount = null,Object? interval = null,Object? group = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? amountMinor = null,Object? interval = null,Object? group = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as double,interval: null == interval ? _self.interval : interval // ignore: cast_nullable_to_non_nullable
+as String,amountMinor: null == amountMinor ? _self.amountMinor : amountMinor // ignore: cast_nullable_to_non_nullable
+as int,interval: null == interval ? _self.interval : interval // ignore: cast_nullable_to_non_nullable
 as PaymentInterval,group: null == group ? _self.group : group // ignore: cast_nullable_to_non_nullable
 as IncomeGroup,
   ));
@@ -154,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  double amount,  PaymentInterval interval,  IncomeGroup group)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String name,  int amountMinor,  PaymentInterval interval,  IncomeGroup group)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _IncomeSource() when $default != null:
-return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);case _:
+return $default(_that.id,_that.name,_that.amountMinor,_that.interval,_that.group);case _:
   return orElse();
 
 }
@@ -175,10 +175,10 @@ return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  double amount,  PaymentInterval interval,  IncomeGroup group)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String name,  int amountMinor,  PaymentInterval interval,  IncomeGroup group)  $default,) {final _that = this;
 switch (_that) {
 case _IncomeSource():
-return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);case _:
+return $default(_that.id,_that.name,_that.amountMinor,_that.interval,_that.group);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +195,10 @@ return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);cas
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  double amount,  PaymentInterval interval,  IncomeGroup group)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String name,  int amountMinor,  PaymentInterval interval,  IncomeGroup group)?  $default,) {final _that = this;
 switch (_that) {
 case _IncomeSource() when $default != null:
-return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);case _:
+return $default(_that.id,_that.name,_that.amountMinor,_that.interval,_that.group);case _:
   return null;
 
 }
@@ -210,12 +210,12 @@ return $default(_that.id,_that.name,_that.amount,_that.interval,_that.group);cas
 
 
 class _IncomeSource extends IncomeSource {
-  const _IncomeSource({required this.id, required this.name, required this.amount, this.interval = PaymentInterval.monthly, this.group = IncomeGroup.main}): super._();
+  const _IncomeSource({required this.id, required this.name, required this.amountMinor, this.interval = PaymentInterval.monthly, this.group = IncomeGroup.main}): super._();
   
 
 @override final  String id;
 @override final  String name;
-@override final  double amount;
+@override final  int amountMinor;
 @override@JsonKey() final  PaymentInterval interval;
 @override@JsonKey() final  IncomeGroup group;
 
@@ -229,16 +229,16 @@ _$IncomeSourceCopyWith<_IncomeSource> get copyWith => __$IncomeSourceCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IncomeSource&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.group, group) || other.group == group));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _IncomeSource&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.amountMinor, amountMinor) || other.amountMinor == amountMinor)&&(identical(other.interval, interval) || other.interval == interval)&&(identical(other.group, group) || other.group == group));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,name,amount,interval,group);
+int get hashCode => Object.hash(runtimeType,id,name,amountMinor,interval,group);
 
 @override
 String toString() {
-  return 'IncomeSource(id: $id, name: $name, amount: $amount, interval: $interval, group: $group)';
+  return 'IncomeSource(id: $id, name: $name, amountMinor: $amountMinor, interval: $interval, group: $group)';
 }
 
 
@@ -249,7 +249,7 @@ abstract mixin class _$IncomeSourceCopyWith<$Res> implements $IncomeSourceCopyWi
   factory _$IncomeSourceCopyWith(_IncomeSource value, $Res Function(_IncomeSource) _then) = __$IncomeSourceCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String name, double amount, PaymentInterval interval, IncomeGroup group
+ String id, String name, int amountMinor, PaymentInterval interval, IncomeGroup group
 });
 
 
@@ -266,12 +266,12 @@ class __$IncomeSourceCopyWithImpl<$Res>
 
 /// Create a copy of IncomeSource
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? amount = null,Object? interval = null,Object? group = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? amountMinor = null,Object? interval = null,Object? group = null,}) {
   return _then(_IncomeSource(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as double,interval: null == interval ? _self.interval : interval // ignore: cast_nullable_to_non_nullable
+as String,amountMinor: null == amountMinor ? _self.amountMinor : amountMinor // ignore: cast_nullable_to_non_nullable
+as int,interval: null == interval ? _self.interval : interval // ignore: cast_nullable_to_non_nullable
 as PaymentInterval,group: null == group ? _self.group : group // ignore: cast_nullable_to_non_nullable
 as IncomeGroup,
   ));

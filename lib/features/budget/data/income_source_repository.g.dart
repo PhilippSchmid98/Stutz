@@ -8,12 +8,9 @@ part of 'income_source_repository.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
-/// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 
 @ProviderFor(incomeSourceRepository)
 const incomeSourceRepositoryProvider = IncomeSourceRepositoryProvider._();
-
-/// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 
 final class IncomeSourceRepositoryProvider
     extends
@@ -23,7 +20,6 @@ final class IncomeSourceRepositoryProvider
           IncomeSourceRepository
         >
     with $Provider<IncomeSourceRepository> {
-  /// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
   const IncomeSourceRepositoryProvider._()
     : super(
         from: null,

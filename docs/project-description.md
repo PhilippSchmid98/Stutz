@@ -288,7 +288,7 @@ Firestore stores nodes as a flat collection. `children` is reconstructed after r
 
 [budget_summary.dart](../lib/features/budget/domain/view_models/budget_summary.dart) is the presentation-ready aggregate containing monthly/yearly fixed and variable amounts. Derived getters calculate yearly income, monthly-equivalent expenses, balance, and deficit state.
 
-[category_lookup.dart](../lib/features/budget/domain/view_models/category_lookup.dart) is a deliberately small cross-feature contract containing only category ID, name, and parent ID. Transaction code uses it without depending on the budget repository.
+Transaction code uses the shared flat `ExpenseNode` view for category enrichment. This keeps the ID, name, and parent ID in their existing domain entity without an additional field-copying contract.
 
 ### 7.2 Pure domain services
 
@@ -323,7 +323,7 @@ Children and roots are sorted by `sortOrder`, then by name. The service can also
 users/{userId}/expense_nodes/{nodeId}
 ```
 
-It provides one-shot and streaming tree reads, add/update/delete operations, and batched sort-order updates. Deletion checks that the category has no direct children and is not referenced by a transaction.
+It provides streaming tree reads, add/update/delete operations, and batched sort-order updates. Deletion checks that the category has no direct children and is not referenced by a transaction.
 
 [income_source_repository.dart](../lib/features/budget/data/income_source_repository.dart) operates on:
 
@@ -331,7 +331,7 @@ It provides one-shot and streaming tree reads, add/update/delete operations, and
 users/{userId}/incomes/{incomeId}
 ```
 
-It provides one-shot and streaming reads plus add, update, and delete operations.
+It provides streaming reads plus add, update, and delete operations.
 
 Both repository providers watch `currentUserIdProvider`. A changed user therefore creates repositories scoped to the new UID.
 
@@ -346,14 +346,14 @@ flowchart TD
     ER --> TREE[expenseTreeProvider]
     IR --> INCOME[incomeListProvider]
     TREE --> FLAT[flatExpenseNodesProvider]
-    FLAT --> LOOKUP[categoryLookupsProvider]
+    FLAT --> SELECTABLE[selectableCategoriesProvider]
     TREE --> SUMMARY[budgetSummaryProvider]
     INCOME --> SUMMARY
 ```
 
-Additional providers calculate total monthly income and expenses. Generated providers are auto-disposed unless explicitly kept alive.
+Generated providers are auto-disposed unless explicitly kept alive.
 
-[selectable_categories_provider.dart](../lib/features/budget/application/selectable_categories_provider.dart) flattens the expense tree and exposes only variable expense leaves/groups suitable for assigning transactions.
+[selectable_categories_provider.dart](../lib/features/budget/application/selectable_categories_provider.dart) filters the shared flat expense-tree view to variable expense leaves/groups suitable for assigning transactions. The transaction paginator uses that same flat view directly for category enrichment.
 
 [budget_mutations.dart](../lib/features/budget/application/budget_mutations.dart) is the write entry point used by presentation code. It exposes add/update/delete methods for categories and incomes and represents progress or failure through `AsyncValue<void>`.
 
@@ -379,8 +379,7 @@ The major widgets are:
 - [income_section_card.dart](../lib/features/budget/presentation/widgets/income_section_card.dart): separates main and additional incomes;
 - [income_item_row.dart](../lib/features/budget/presentation/widgets/income_item_row.dart): displays and opens one income for editing;
 - [expense_section_card.dart](../lib/features/budget/presentation/widgets/expense_section_card.dart): displays one root category and its actions;
-- [expense_item_row.dart](../lib/features/budget/presentation/widgets/expense_item_row.dart): recursively displays, expands, edits, and adds nested expense nodes;
-- [legend_row.dart](../lib/features/budget/presentation/widgets/legend_row.dart): shared legend presentation within budget views.
+- [expense_item_row.dart](../lib/features/budget/presentation/widgets/expense_item_row.dart): recursively displays, expands, edits, and adds nested expense nodes.
 
 ## 8. Transaction feature
 
@@ -467,10 +466,10 @@ users/{userId}/transactionMonths/_meta
 
 - loads 20 Firestore documents per page;
 - retains raw transactions and grouped days;
-- tracks the last Firestore snapshot cursor;
-- distinguishes initial failure from load-more failure;
-- prevents duplicate page loads;
-- can continue loading until a requested month appears.
+- tracks newest and oldest Firestore snapshot cursors;
+- distinguishes initial, newer-page, older-page, and month-loading failures;
+- prevents duplicate directional page loads;
+- can load a requested month and its immediate neighbors.
 
 `TransactionMutations`:
 
@@ -666,7 +665,8 @@ Supported calls are:
 
 ### 10.6 Synchronization
 
-[draft_sync_service.dart](../lib/features/notification_import/application/draft_sync_service.dart) performs ordered synchronization:
+[notification_draft_sync.dart](../lib/features/notification_import/application/notification_draft_sync.dart)
+performs ordered synchronization:
 
 1. set the active native owner;
 2. ask the listener to inspect active notifications;
@@ -674,9 +674,10 @@ Supported calls are:
 4. upload every draft;
 5. acknowledge local drafts only after all uploads succeed.
 
-The narrow [transaction_draft_store.dart](../lib/features/notification_import/domain/repositories/transaction_draft_store.dart) interface lets this process be tested without Firestore.
-
-[notification_draft_sync.dart](../lib/features/notification_import/application/notification_draft_sync.dart) connects synchronization to auth state. A resolved signed-out state clears the native active owner.
+It receives the repository's `upsertCapturedDraft` method as a callback, so
+the synchronization flow remains testable without a Firestore dependency. It
+also connects synchronization to auth state. A resolved signed-out state clears
+the native active owner.
 
 ### 10.7 Firestore draft repository
 
@@ -698,7 +699,7 @@ It:
 - records the selected category as a merchant rule;
 - treats repeated confirmation of an already-saved draft as idempotent.
 
-Merchant rule IDs are derived by [merchant_category_rule_id.dart](../lib/features/notification_import/domain/services/merchant_category_rule_id.dart). [merchant_normalizer.dart](../lib/features/notification_import/domain/services/merchant_normalizer.dart) lowercases and normalizes whitespace. [merchant_category_suggester.dart](../lib/features/notification_import/domain/services/merchant_category_suggester.dart) performs exact normalized-merchant matching.
+Merchant rule IDs are derived by [merchant_category_rule_id.dart](../lib/features/notification_import/domain/services/merchant_category_rule_id.dart) and used as deterministic Firestore document IDs for exact normalized-merchant matching.
 
 ### 10.8 Draft providers and review UI
 
@@ -728,7 +729,6 @@ Reusable widgets are under [lib/shared/widgets](../lib/shared/widgets).
 | `choice_group.dart` | Segmented selection for enum/binary form values |
 | `styled_field_decoration.dart` | Budget and transaction input-decoration variants |
 | `styled_text_field.dart` | Shared text form field wrapper and validation behavior |
-| `styled_dropdown.dart` | Dropdown using the shared field decoration |
 | `dialog_helpers.dart` | Confirmation dialogs and error SnackBars |
 | `section_card.dart` | Expandable/actionable section with monthly/yearly totals |
 | `add_button.dart` | Shared add-entry affordance |

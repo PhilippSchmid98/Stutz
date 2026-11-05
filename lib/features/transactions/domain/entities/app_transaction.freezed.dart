@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$AppTransaction {
 
- String get id; String get expenseNodeId; double get amount; DateTime get dateTime; String? get note;
+ String get id; String get expenseNodeId; int get amountMinor; DateTime get dateTime; String? get note;
 /// Create a copy of AppTransaction
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $AppTransactionCopyWith<AppTransaction> get copyWith => _$AppTransactionCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amountMinor, amountMinor) || other.amountMinor == amountMinor)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amount,dateTime,note);
+int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amountMinor,dateTime,note);
 
 @override
 String toString() {
-  return 'AppTransaction(id: $id, expenseNodeId: $expenseNodeId, amount: $amount, dateTime: $dateTime, note: $note)';
+  return 'AppTransaction(id: $id, expenseNodeId: $expenseNodeId, amountMinor: $amountMinor, dateTime: $dateTime, note: $note)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $AppTransactionCopyWith<$Res>  {
   factory $AppTransactionCopyWith(AppTransaction value, $Res Function(AppTransaction) _then) = _$AppTransactionCopyWithImpl;
 @useResult
 $Res call({
- String id, String expenseNodeId, double amount, DateTime dateTime, String? note
+ String id, String expenseNodeId, int amountMinor, DateTime dateTime, String? note
 });
 
 
@@ -62,12 +62,12 @@ class _$AppTransactionCopyWithImpl<$Res>
 
 /// Create a copy of AppTransaction
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? expenseNodeId = null,Object? amount = null,Object? dateTime = null,Object? note = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? expenseNodeId = null,Object? amountMinor = null,Object? dateTime = null,Object? note = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,expenseNodeId: null == expenseNodeId ? _self.expenseNodeId : expenseNodeId // ignore: cast_nullable_to_non_nullable
-as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as double,dateTime: null == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
+as String,amountMinor: null == amountMinor ? _self.amountMinor : amountMinor // ignore: cast_nullable_to_non_nullable
+as int,dateTime: null == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
 as DateTime,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -154,10 +154,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  int amountMinor,  DateTime dateTime,  String? note)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppTransaction() when $default != null:
-return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
+return $default(_that.id,_that.expenseNodeId,_that.amountMinor,_that.dateTime,_that.note);case _:
   return orElse();
 
 }
@@ -175,10 +175,10 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String expenseNodeId,  int amountMinor,  DateTime dateTime,  String? note)  $default,) {final _that = this;
 switch (_that) {
 case _AppTransaction():
-return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
+return $default(_that.id,_that.expenseNodeId,_that.amountMinor,_that.dateTime,_that.note);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +195,10 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String expenseNodeId,  double amount,  DateTime dateTime,  String? note)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String expenseNodeId,  int amountMinor,  DateTime dateTime,  String? note)?  $default,) {final _that = this;
 switch (_that) {
 case _AppTransaction() when $default != null:
-return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.note);case _:
+return $default(_that.id,_that.expenseNodeId,_that.amountMinor,_that.dateTime,_that.note);case _:
   return null;
 
 }
@@ -210,12 +210,12 @@ return $default(_that.id,_that.expenseNodeId,_that.amount,_that.dateTime,_that.n
 
 
 class _AppTransaction implements AppTransaction {
-  const _AppTransaction({required this.id, required this.expenseNodeId, required this.amount, required this.dateTime, this.note});
+  const _AppTransaction({required this.id, required this.expenseNodeId, required this.amountMinor, required this.dateTime, this.note});
   
 
 @override final  String id;
 @override final  String expenseNodeId;
-@override final  double amount;
+@override final  int amountMinor;
 @override final  DateTime dateTime;
 @override final  String? note;
 
@@ -229,16 +229,16 @@ _$AppTransactionCopyWith<_AppTransaction> get copyWith => __$AppTransactionCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amount, amount) || other.amount == amount)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppTransaction&&(identical(other.id, id) || other.id == id)&&(identical(other.expenseNodeId, expenseNodeId) || other.expenseNodeId == expenseNodeId)&&(identical(other.amountMinor, amountMinor) || other.amountMinor == amountMinor)&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.note, note) || other.note == note));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amount,dateTime,note);
+int get hashCode => Object.hash(runtimeType,id,expenseNodeId,amountMinor,dateTime,note);
 
 @override
 String toString() {
-  return 'AppTransaction(id: $id, expenseNodeId: $expenseNodeId, amount: $amount, dateTime: $dateTime, note: $note)';
+  return 'AppTransaction(id: $id, expenseNodeId: $expenseNodeId, amountMinor: $amountMinor, dateTime: $dateTime, note: $note)';
 }
 
 
@@ -249,7 +249,7 @@ abstract mixin class _$AppTransactionCopyWith<$Res> implements $AppTransactionCo
   factory _$AppTransactionCopyWith(_AppTransaction value, $Res Function(_AppTransaction) _then) = __$AppTransactionCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String expenseNodeId, double amount, DateTime dateTime, String? note
+ String id, String expenseNodeId, int amountMinor, DateTime dateTime, String? note
 });
 
 
@@ -266,12 +266,12 @@ class __$AppTransactionCopyWithImpl<$Res>
 
 /// Create a copy of AppTransaction
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? expenseNodeId = null,Object? amount = null,Object? dateTime = null,Object? note = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? expenseNodeId = null,Object? amountMinor = null,Object? dateTime = null,Object? note = freezed,}) {
   return _then(_AppTransaction(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,expenseNodeId: null == expenseNodeId ? _self.expenseNodeId : expenseNodeId // ignore: cast_nullable_to_non_nullable
-as String,amount: null == amount ? _self.amount : amount // ignore: cast_nullable_to_non_nullable
-as double,dateTime: null == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
+as String,amountMinor: null == amountMinor ? _self.amountMinor : amountMinor // ignore: cast_nullable_to_non_nullable
+as int,dateTime: null == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
 as DateTime,note: freezed == note ? _self.note : note // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

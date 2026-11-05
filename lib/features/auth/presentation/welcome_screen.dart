@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stutz/features/auth/presentation/tutorial_screen.dart';
 import 'package:stutz/shared/widgets/app_action_buttons.dart';
 

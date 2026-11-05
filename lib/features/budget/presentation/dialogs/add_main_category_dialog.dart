@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:stutz/features/budget/application/budget_mutations.dart';
@@ -66,7 +66,7 @@ class AddMainCategoryDialog extends HookConsumerWidget {
                         id: const Uuid().v4(),
                         parentId: null,
                         name: nameCtrl.text.trim(),
-                        plannedAmount: null,
+                        plannedAmountMinor: null,
                         interval: null,
                         type: null,
                         children: [],

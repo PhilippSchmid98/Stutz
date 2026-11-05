@@ -1,10 +1,8 @@
 package ch.stutz.app
 
 import android.app.Notification
-import android.content.pm.ApplicationInfo
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.security.MessageDigest
@@ -42,41 +40,27 @@ class GoogleWalletNotificationListener : NotificationListenerService() {
     private fun captureNotification(notification: StatusBarNotification) {
         if (notification.packageName != GOOGLE_WALLET_PACKAGE) return
 
-        logDebugNotification(notification)
         val draft = GoogleWalletNotificationParser.parse(
             notification = notification.notification,
             notificationKey = notification.key,
             postedAtMillis = notification.postTime,
         ) ?: return
-        queue.enqueue(draft)
-    }
-
-    private fun logDebugNotification(notification: StatusBarNotification) {
-        if (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE == 0) return
-
-        val extras = notification.notification.extras
-        Log.d(
-            DIAGNOSTIC_TAG,
-            """
-            Google Wallet notification received
-            key=${notification.key}
-            postedAt=${notification.postTime}
-            title=${extras.getCharSequence(Notification.EXTRA_TITLE)}
-            text=${extras.getCharSequence(Notification.EXTRA_TEXT)}
-            bigText=${extras.getCharSequence(Notification.EXTRA_BIG_TEXT)}
-            subText=${extras.getCharSequence(Notification.EXTRA_SUB_TEXT)}
-            summaryText=${extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)}
-            """.trimIndent(),
-        )
+        if (queue.enqueue(draft)) {
+            onDraftCaptured?.invoke()
+        }
     }
 
     companion object {
         private var activeInstance: GoogleWalletNotificationListener? = null
-
-        private const val DIAGNOSTIC_TAG = "StutzWalletDiagnostic"
+        @Volatile
+        private var onDraftCaptured: (() -> Unit)? = null
 
         fun captureActiveNotifications() {
             activeInstance?.captureActiveNotificationsInternal()
+        }
+
+        fun setOnDraftCapturedListener(listener: (() -> Unit)?) {
+            onDraftCaptured = listener
         }
     }
 }

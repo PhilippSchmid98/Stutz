@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:stutz/features/auth/application/auth_providers.dart';
+
 import '../domain/entities/app_transaction.dart';
 import '../domain/entities/transaction_month_summary.dart';
 import 'transaction_mapper.dart';
@@ -8,6 +9,18 @@ import 'transaction_month.dart';
 import 'transaction_month_summary_mapper.dart';
 
 part 'transaction_repository.g.dart';
+
+class TransactionMonthPage {
+  final List<AppTransaction> transactions;
+  final QueryDocumentSnapshot? newestSnapshot;
+  final QueryDocumentSnapshot? oldestSnapshot;
+
+  const TransactionMonthPage({
+    required this.transactions,
+    this.newestSnapshot,
+    this.oldestSnapshot,
+  });
+}
 
 class TransactionRepository {
   final String userId;
@@ -64,8 +77,11 @@ class TransactionRepository {
   getPagedTransactions({
     required int limit,
     QueryDocumentSnapshot? startAfter,
+    bool descending = true,
   }) async {
-    var query = _collection.orderBy('dateTime', descending: true).limit(limit);
+    var query = _collection
+        .orderBy('dateTime', descending: descending)
+        .limit(limit);
 
     if (startAfter != null) {
       query = query.startAfterDocument(startAfter);
@@ -73,6 +89,49 @@ class TransactionRepository {
 
     final snapshot = await query.get();
     return snapshot.docs;
+  }
+
+  /// Loads a calendar month directly so month navigation does not need to
+  /// page through every newer transaction first.
+  Future<TransactionMonthPage> getTransactionsForMonth(DateTime month) async {
+    final start = TransactionMonth.startOfMonth(month);
+    final end = TransactionMonth.startOfMonth(
+      DateTime(month.year, month.month + 1),
+    );
+    final snapshot = await _collection
+        .where('dateTime', isGreaterThanOrEqualTo: start)
+        .where('dateTime', isLessThan: end)
+        .orderBy('dateTime', descending: true)
+        .get();
+    return TransactionMonthPage(
+      transactions: snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+      newestSnapshot: snapshot.docs.isEmpty ? null : snapshot.docs.first,
+      oldestSnapshot: snapshot.docs.isEmpty ? null : snapshot.docs.last,
+    );
+  }
+
+  Stream<List<AppTransaction>> watchTransactionsForPeriod({
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _collection
+        .where('dateTime', isGreaterThanOrEqualTo: periodStart)
+        .where('dateTime', isLessThan: periodEnd)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+        );
+  }
+
+  Future<AppTransaction?> getNewestTransaction() async {
+    final snapshot = await _collection
+        .orderBy('dateTime', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return TransactionMapper.fromDocument(snapshot.docs.first);
   }
 
   /// Holt die absolut älteste Transaktion, um das Startdatum für die Monatsliste zu kennen.
@@ -91,30 +150,68 @@ class TransactionRepository {
     required DateTime periodStart,
     required DateTime periodEnd,
   }) async {
-    final snapshot = await _collection
-        .where('expenseNodeId', isEqualTo: categoryId)
-        .where('dateTime', isGreaterThanOrEqualTo: periodStart)
-        .where('dateTime', isLessThan: periodEnd)
-        .orderBy('dateTime', descending: true)
-        .get();
+    final snapshot = await _categoryTransactionsQuery(
+      categoryId: categoryId,
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+    ).get();
     return snapshot.docs.map(TransactionMapper.fromDocument).toList();
   }
 
-  Future<void> addTransaction(AppTransaction t) async {
-    final transactionReference = _collection.doc(t.id);
-    final month = TransactionMonth.fromDateTime(t.dateTime);
-    final monthReference = _monthCollection.doc(TransactionMonth.key(month));
-    final batch = _firestore.batch();
+  Stream<List<AppTransaction>> watchCategoryTransactionsForPeriod({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _categoryTransactionsQuery(
+      categoryId: categoryId,
+      periodStart: periodStart,
+      periodEnd: periodEnd,
+    ).snapshots().map(
+      (snapshot) => snapshot.docs.map(TransactionMapper.fromDocument).toList(),
+    );
+  }
 
-    batch.set(transactionReference, TransactionMapper.toDocument(t));
-    batch.set(monthReference, {
-      'monthKey': monthReference.id,
-      'year': month.year,
-      'month': month.month,
-      'transactionCount': FieldValue.increment(1),
-      'categoryTotals': {t.expenseNodeId: FieldValue.increment(t.amount)},
-    }, SetOptions(merge: true));
-    await batch.commit();
+  Query<Map<String, dynamic>> _categoryTransactionsQuery({
+    required String categoryId,
+    required DateTime periodStart,
+    required DateTime periodEnd,
+  }) {
+    return _collection
+        .where('expenseNodeId', isEqualTo: categoryId)
+        .where('dateTime', isGreaterThanOrEqualTo: periodStart)
+        .where('dateTime', isLessThan: periodEnd)
+        .orderBy('dateTime', descending: true);
+  }
+
+  Future<void> addTransaction(AppTransaction t) async {
+    await _firestore.runTransaction((transaction) async {
+      final transactionReference = _collection.doc(t.id);
+      final existingSnapshot = await transaction.get(transactionReference);
+      if (existingSnapshot.exists) {
+        final existing = TransactionMapper.fromDocument(existingSnapshot);
+        if (existing != t) {
+          throw StateError(
+            'Transaction ${t.id} already exists with a different payload',
+          );
+        }
+        return;
+      }
+
+      final month = TransactionMonth.fromDateTime(t.dateTime);
+      final monthReference = _monthCollection.doc(TransactionMonth.key(month));
+      final monthSnapshot = await transaction.get(monthReference);
+
+      transaction.set(transactionReference, TransactionMapper.toDocument(t));
+      _setMonthSummary(
+        transaction,
+        monthReference,
+        monthSnapshot,
+        month: month,
+        countDelta: 1,
+        categoryDeltas: {t.expenseNodeId: t.amountMinor},
+      );
+    });
   }
 
   Future<void> updateTransaction(AppTransaction t) async {
@@ -138,7 +235,7 @@ class TransactionRepository {
           ? oldMonthSnapshot
           : await transaction.get(newMonthReference);
 
-      transaction.update(transactionReference, TransactionMapper.toDocument(t));
+      transaction.set(transactionReference, TransactionMapper.toDocument(t));
 
       if (oldMonthKey == newMonthKey) {
         _setMonthSummary(
@@ -155,7 +252,7 @@ class TransactionRepository {
           oldMonthSnapshot,
           month: oldMonth,
           countDelta: -1,
-          categoryDeltas: {existing.expenseNodeId: -existing.amount},
+          categoryDeltas: {existing.expenseNodeId: -existing.amountMinor},
         );
         _setMonthSummary(
           transaction,
@@ -163,7 +260,7 @@ class TransactionRepository {
           newMonthSnapshot,
           month: newMonth,
           countDelta: 1,
-          categoryDeltas: {t.expenseNodeId: t.amount},
+          categoryDeltas: {t.expenseNodeId: t.amountMinor},
         );
       }
     });
@@ -187,7 +284,7 @@ class TransactionRepository {
         monthSnapshot,
         month: month,
         countDelta: -1,
-        categoryDeltas: {existing.expenseNodeId: -existing.amount},
+        categoryDeltas: {existing.expenseNodeId: -existing.amountMinor},
       );
     });
   }
@@ -198,17 +295,12 @@ class TransactionRepository {
     return value.toInt().clamp(0, 1 << 31);
   }
 
-  Map<String, double> _categoryTotals(
+  Map<String, int> _categoryTotalsMinor(
     DocumentSnapshot<Map<String, dynamic>>? snapshot,
   ) {
-    final rawTotals = snapshot?.data()?['categoryTotals'];
-    if (rawTotals is! Map) return {};
-
-    return {
-      for (final entry in rawTotals.entries)
-        if (entry.key is String && entry.value is num)
-          entry.key as String: (entry.value as num).toDouble(),
-    };
+    return TransactionMonthSummaryMapper.categoryTotalsMinorFromData(
+      snapshot?.data(),
+    );
   }
 
   void _setMonthSummary(
@@ -217,17 +309,17 @@ class TransactionRepository {
     DocumentSnapshot<Map<String, dynamic>>? snapshot, {
     required DateTime month,
     int countDelta = 0,
-    required Map<String, double> categoryDeltas,
+    required Map<String, int> categoryDeltas,
   }) {
-    final categoryTotals = _categoryTotals(snapshot);
+    final categoryTotalsMinor = _categoryTotalsMinor(snapshot);
     for (final entry in categoryDeltas.entries) {
-      categoryTotals.update(
+      categoryTotalsMinor.update(
         entry.key,
         (value) => value + entry.value,
         ifAbsent: () => entry.value,
       );
     }
-    categoryTotals.removeWhere((_, value) => value <= 0);
+    categoryTotalsMinor.removeWhere((_, value) => value <= 0);
 
     final count = (_monthCount(snapshot) + countDelta).clamp(0, 1 << 31);
     transaction.set(reference, {
@@ -235,13 +327,11 @@ class TransactionRepository {
       'year': month.year,
       'month': month.month,
       'transactionCount': count,
-      'categoryTotals': categoryTotals,
-    }, SetOptions(merge: true));
+      'categoryTotalsMinor': categoryTotalsMinor,
+    });
   }
 }
 
-// Der Provider lebt direkt beim Repository!
-// Bridges to the not-yet-migrated Auth feature via the old presentation layer.
 @riverpod
 TransactionRepository transactionRepository(Ref ref) {
   final uid = ref.watch(currentUserIdProvider);
