@@ -366,4 +366,10 @@ Wenn du das Repository forkst, musst du folgende **Repository Secrets** in GitHu
 
 Releases werden automatisch bei Tags im Format `v*` erstellt.
 
+APK- und AAB-Release-Builds verwenden R8 mit Code- und Ressourcen-Shrinking.
+Die in Git versionierte Datei `android/app/proguard-rules.pro` muss vorhanden
+sein, da `android/app/build.gradle.kts` sie referenziert. Aktuell sind keine
+app-spezifischen Regeln erforderlich; Flutter und die Android-Abhaengigkeiten
+liefern ihre eigenen Regeln. Die Unit Tests pruefen diesen Release-Schritt nicht.
+
 </details>
